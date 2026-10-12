@@ -101,32 +101,22 @@ class ContentManager:
 
 
     def search_ids(self):
-        _id = re.findall(r"\{(imdb-\d+|tmdb-\d+|igdb-\d+)}", self.file_name, re.IGNORECASE)
-        if _id:
-            # // Searching..
-            for id in _id:
-                if 'imdb-' in id:
-                    self.imdb_id = id.replace('imdb-', '')
-                    self.imdb_id = self.imdb_id if self.imdb_id.isdigit() else None
-                    self.display_name = self.display_name.replace(f"imdb-{self.imdb_id}", '')
-                elif 'tmdb-' in id:
-                    self.tmdb_id = id.replace('tmdb-', '')
-                    self.tmdb_id = self.tmdb_id if self.tmdb_id.isdigit() else None
-                    self.display_name = self.display_name.replace(f"tmdb-{self.tmdb_id}", '')
-                elif 'tvdb-' in id:
-                    self.tvdb_id = id.replace('tvdb-', '')
-                    self.tvdb_id = self.tvdb_id if self.tvdb_id.isdigit() else None
-                    self.display_name = self.display_name.replace(f"tvdb-{self.tvdb_id}", '')
-                elif 'igdb-' in id:
-                    self.igdb_id = id.replace('igdb-', '')
-                    self.igdb_id = self.igdb_id if self.igdb_id.isdigit() else None
-                    self.display_name = self.display_name.replace(f"igdb-{self.igdb_id}", '')
+        # Reset the IDs of the previous file: this instance processes every media in the list
+        self.imdb_id = 0
+        self.tmdb_id = 0
+        self.tvdb_id = 0
+        self.igdb_id = 0
 
-        else:
-            self.imdb_id = 0
-            self.tmdb_id = 0
-            self.tvdb_id = 0
-            self.igdb_id = 0
+        # e.g. {imdb-tt0133093} (Radarr/Sonarr/Plex naming), {imdb-0133093}, {tmdb-603}
+        _id = re.findall(r"\{(imdb|tmdb|tvdb|igdb)-(tt)?(\d+)}", self.file_name, re.IGNORECASE)
+        for source, _, value in _id:
+            setattr(self, f"{source.lower()}_id", value)
+
+        if _id:
+            # The display name is already cleaned, so '{imdb-tt0133093}' may now read '{imdb tt0133093}'
+            self.display_name = re.sub(r"\{?\s*(imdb|tmdb|tvdb|igdb)[\s-]+(tt)?\d+\s*}?", '',
+                                       self.display_name, flags=re.IGNORECASE)
+            self.display_name = re.sub(r"\s{2,}", ' ', self.display_name).strip()
 
     def process_file(self) -> bool:
         """Process individual files and gather metadata"""

@@ -220,13 +220,16 @@ class Validate:
             # Remove wrong chars
             sanitized_path = sanitize_filepath(path)
 
-            # not configured = no_path
+            # not configured = no_path -> the caller falls back to the default path
+            if 'no_path' in sanitized_path.lower():
+                return None
+
             # '.' current path
-            if 'no_path' or '.' in sanitized_path.lower():
+            if sanitized_path == '.':
                 return sanitized_path
 
-            # Test for absolute path
-            return sanitized_path if os.path.isabs(path) and 'no_path' not in path else None
+            # Test for absolute path ('~' is expanded by the caller)
+            return sanitized_path if os.path.isabs(os.path.expanduser(path)) else None
         except ValueError:
             # not a valid path
             return None

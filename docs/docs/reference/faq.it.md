@@ -10,7 +10,7 @@ Normale: il bot ha appena creato `ittup.json` e i file di supporto con i valori 
 
 Un valore in `ittup.json` è malformato (colore inesistente, numero non numerico, URL senza schema…). Apri il file e correggi il campo indicato tra apici. La [Config completa](config.md) elenca tipo e valori ammessi di ogni chiave.
 
-### `'-mt' has been removed: ittup uploads only to ItaTorrents`
+### `'-mt' has been removed: ITTup uploads only to ItaTorrents`
 
 `-mt` e `-tracker` arrivano da Unit3Dup e non esistono più: ogni upload va su ItaTorrents. Togli il flag dal comando o dallo script.
 

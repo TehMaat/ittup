@@ -3,7 +3,7 @@ import os
 import argparse
 
 from ittup.common.utility import System
-from ittup.common.about import APP_DESCRIPTION, APP_NAME
+from ittup.common.about import APP_DESCRIPTION, APP_NAME, PACKAGE_NAME
 
 
 class RemovedFlag(argparse.Action):
@@ -22,7 +22,7 @@ class CommandLine:
         # Main parser
         # /////////////////////////
         parser = argparse.ArgumentParser(
-            prog=APP_NAME,
+            prog=PACKAGE_NAME,
             description=f"{APP_DESCRIPTION}: manage torrents, uploads, searches and config checks",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
@@ -70,7 +70,7 @@ class CommandLine:
         upload_group.add_argument("-personal", "--personal", action="store_true", help="Personal release")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
 
-        # Removed flags: ittup uploads only to ItaTorrents. Without this '-mt' would be parsed as '-m t'
+        # Removed flags: ITTup uploads only to ItaTorrents. Without this '-mt' would be parsed as '-m t'
         upload_group.add_argument("-mt", "--mt", "-tracker", "--tracker", nargs='?', action=RemovedFlag,
                                   help=argparse.SUPPRESS)
 

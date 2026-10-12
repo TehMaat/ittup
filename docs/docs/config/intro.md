@@ -19,7 +19,7 @@ Folder contents:
 | `ban_list.json` | Tags to exclude from the title autobuild ([details](../usage/tags.md)) |
 
 !!! note "Coming from Unit3Dup?"
-    On the first run ittup copies `Unit3Dup_config/Unit3Dbot.json` and the three lists into `ittup_config` (the old folder is left untouched). Details: [Upgrade](../install/upgrade.md#coming-from-unit3dup).
+    On the first run ITTup copies `Unit3Dup_config/Unit3Dbot.json` and the three lists into `ittup_config` (the old folder is left untouched). Details: [Upgrade](../install/upgrade.md#coming-from-unit3dup).
 
 In the same folder the bot also creates the default subfolders `torrent_archive_path` (where generated `.torrent` files are stored), `cache_path`, `watcher_path` and `watcher_destination_path` — all customizable (see [Advanced options](options.md)).
 

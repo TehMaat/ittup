@@ -2,7 +2,7 @@
 
 `tracker_config` section of `ittup.json`.
 
-ittup uploads only to **ItaTorrents** (ITT): there is no tracker to choose and no multi-tracker list.
+ITTup uploads only to **ItaTorrents** (ITT): there is no tracker to choose and no multi-tracker list.
 
 ## The three ITT keys
 

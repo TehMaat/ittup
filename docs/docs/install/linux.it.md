@@ -5,7 +5,7 @@
 - **Python 3.10 o superiore** (consigliato: dalla 3.10 alla 3.12 — le versioni più recenti possono dare problemi con alcune librerie)
 - **FFmpeg** — usato per estrarre gli screenshot dai video
 - **Poppler** — solo se vuoi creare torrent di documenti PDF
-- **Git** — `pip` lo usa per installare ittup direttamente da GitHub
+- **Git** — `pip` lo usa per installare ITTup direttamente da GitHub
 
 Distribuzioni testate: Ubuntu 22, Debian 12.
 
@@ -21,7 +21,7 @@ Solo se caricherai documenti PDF:
 sudo apt install poppler-utils
 ```
 
-## 2. Installa ittup
+## 2. Installa ITTup
 
 ```bash
 pip install git+https://github.com/TehMaat/ittup

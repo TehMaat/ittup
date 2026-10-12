@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TehMaat/ittup/compare/1.2.0...1.2.1) (2026-10-12)
+
+
+### Bug Fixes
+
+* repair broken merge of the immediate-seeding change ([bb1ef2d](https://github.com/TehMaat/ittup/commit/bb1ef2dd02339703b4adeaa55be61e85e0e43970))
+
 ## [1.2.0](https://github.com/TehMaat/ittup/compare/1.1.0...1.2.0) (2026-10-12)
 
 

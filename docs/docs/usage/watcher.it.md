@@ -28,15 +28,17 @@ In `user_preferences` ([Opzioni avanzate](../config/options.md#watcher)):
 
 ## Cosa fa a ogni ciclo
 
-Allo scadere di `WATCHER_INTERVAL` (a schermo vedi il conto alla rovescia):
+Allo scadere di `WATCHER_INTERVAL`:
 
-1. Controlla `WATCHER_PATH`; se è vuota, riparte il conto alla rovescia
+1. Controlla `WATCHER_PATH`; se è vuota, aspetta il ciclo successivo
 2. **Sposta** tutti i file in `WATCHER_DESTINATION_PATH`, preservando le sottocartelle (le cartelle svuotate vengono rimosse)
 3. Processa i file spostati **uno alla volta** e li **carica sul tracker** con seeding, come uno [`-scan`](upload.md)
 4. Ricomincia
 
 Il loop è infinito: si esce con ++ctrl+c++.
 
+!!! note "Conto alla rovescia e log"
+    In un terminale interattivo il conto alla rovescia appare su una sola riga, che viene cancellata quando parte il controllo. Quando l'output finisce in un log (file, pipe, `docker logs`, servizio) il conto alla rovescia non c'è: il bot scrive una sola volta `WATCHDOG: checking the Watcher folder every N seconds` quando resta in attesa, e poi solo quello che succede davvero (file spostati, upload).
 !!! info "Restart automatico se un file si blocca"
     Ogni file o cartella viene processato a parte. Se uno si ferma con un errore, o è ancora in corso dopo `WATCHER_TIMEOUT` secondi (es. ffmpeg bloccato su un file corrotto, o una domanda a cui nessuno risponde), il bot lo interrompe, scrive `... Skipped, restarting the watcher` e passa al successivo.
     Il file saltato resta in `WATCHER_DESTINATION_PATH` e non viene ritentato: controllalo e caricalo a mano con [`-u`](upload.md).

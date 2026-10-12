@@ -16,6 +16,7 @@ In `user_preferences` ([Opzioni avanzate](../config/options.md#watcher)):
 
 ```json
 "WATCHER_INTERVAL": 60,
+"WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "/percorso/cartella/sorgente",
 "WATCHER_DESTINATION_PATH": "/percorso/cartella/destinazione",
 ```
@@ -23,6 +24,7 @@ In `user_preferences` ([Opzioni avanzate](../config/options.md#watcher)):
 - `WATCHER_PATH` → la cartella **monitorata** (es. dove vengono scaricati i file)
 - `WATCHER_DESTINATION_PATH` → la cartella dove i file vengono **spostati** e da cui parte l'upload
 - `WATCHER_INTERVAL` → ogni quanti **secondi** scatta il controllo
+- `WATCHER_TIMEOUT` → dopo quanti **secondi** un singolo file o cartella viene considerato bloccato (`0` = nessun limite)
 
 ## Cosa fa a ogni ciclo
 
@@ -30,10 +32,15 @@ Allo scadere di `WATCHER_INTERVAL` (a schermo vedi il conto alla rovescia):
 
 1. Controlla `WATCHER_PATH`; se è vuota, riparte il conto alla rovescia
 2. **Sposta** tutti i file in `WATCHER_DESTINATION_PATH`, preservando le sottocartelle (le cartelle svuotate vengono rimosse)
-3. Processa i file spostati e li **carica sul tracker** con seeding, come uno [`-scan`](upload.md)
+3. Processa i file spostati **uno alla volta** e li **carica sul tracker** con seeding, come uno [`-scan`](upload.md)
 4. Ricomincia
 
 Il loop è infinito: si esce con ++ctrl+c++.
+
+!!! info "Restart automatico se un file si blocca"
+    Ogni file o cartella viene processato a parte. Se uno si ferma con un errore, o è ancora in corso dopo `WATCHER_TIMEOUT` secondi (es. ffmpeg bloccato su un file corrotto, o una domanda a cui nessuno risponde), il bot lo interrompe, scrive `... Skipped, restarting the watcher` e passa al successivo.
+    Il file saltato resta in `WATCHER_DESTINATION_PATH` e non viene ritentato: controllalo e caricalo a mano con [`-u`](upload.md).
+    L'hash dei file molto grandi richiede tempo: se carichi remux pesanti da un disco lento, alza `WATCHER_TIMEOUT`.
 
 !!! warning "I file vengono spostati, non copiati"
     `WATCHER_PATH` viene **svuotata** a ogni ciclo. Non puntarla a una cartella i cui file devono restare dove sono (es. quella di seeding del client).

@@ -66,6 +66,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `SKIP_YOUTUBE` | booleano | `true` | Non cercare trailer su YouTube |
 | `SIZE_TH` | numero | `10` | Soglia % di differenza dimensione per il match duplicati |
 | `WATCHER_INTERVAL` | numero | `60` | Secondi tra i controlli del watcher |
+| `WATCHER_TIMEOUT` | numero | `3600` | Secondi massimi che il watcher dedica a un file o cartella prima di saltarlo (`0` = nessun limite) |
 | `WATCHER_PATH` | stringa | `no_path` | Cartella monitorata dal watcher |
 | `WATCHER_DESTINATION_PATH` | stringa | `no_path` | Destinazione dei file del watcher |
 | `TORRENT_ARCHIVE_PATH` | stringa | `no_path` | Archivio dei `.torrent` generati |

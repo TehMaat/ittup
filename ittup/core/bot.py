@@ -2,8 +2,11 @@
 
 from pathlib import Path
 import argparse
+import multiprocessing
 import os
 import math
+import signal
+import sys
 import time
 import shutil
 
@@ -115,7 +118,7 @@ class Bot:
         return True
 
 
-    def watcher(self, duration: int, watcher_path: str,  destination_path: str)-> bool:
+    def watcher(self, duration: int, watcher_path: str,  destination_path: str, timeout: int = 0)-> bool:
         """
         Monitors the watcher path for new files, moves them to the destination folder,
         then uploads them to the tracker
@@ -124,14 +127,22 @@ class Bot:
         Only the entries whose size did not change between the two snapshots are moved (a file still
         being copied is left for the next cycle) and only the moved entries are processed
 
+        The waiting message is logged once when the watcher becomes idle, not on every cycle,
+        so an idle watcher doesn't fill the log
+        Each moved entry is processed in its own child process: if it crashes or is still running after
+        'timeout' seconds, it is stopped and the watcher goes on with the next entry
+
         Args:
             duration (int): The time duration in seconds for the watchdog to wait before checking again
             watcher_path (str): The path to the folder being monitored for new files
             destination_path: The destination path for the new files
+            timeout (int): Maximum seconds for processing a single entry. 0 = no limit
         """
         self.path = str(destination_path)
         watcher_path = Path(watcher_path)
         destination = Path(destination_path)
+        # Log the waiting message only when the watcher becomes idle
+        announce_idle = True
         try:
             # Watchdog loop
             while True:
@@ -143,22 +154,20 @@ class Bot:
                 # First check
                 previous_snapshot = self._snapshot(watcher_path)
 
-                print()
-                # Counter
-                end_time = time.perf_counter() + duration
-                while (remaining_time := end_time - time.perf_counter()) > 0:
-                    custom_console.bot_counter_log(
-                        f"WATCHDOG: {math.ceil(remaining_time)} seconds Ctrl-c to Exit "
-                    )
-                    time.sleep(min(1.0, remaining_time))
-                print()
+                if announce_idle:
+                    if not previous_snapshot:
+                        custom_console.bot_log("There are no files in the Watcher folder")
+                    custom_console.bot_log(f"WATCHDOG: checking the Watcher folder every {duration} seconds."
+                                           f" Ctrl-c to Exit")
+                    announce_idle = False
+
+                custom_console.bot_countdown(duration)
 
                 # Second check
                 current_snapshot = self._snapshot(watcher_path)
 
                 # Skip if there are no files in the watcher folder
                 if not current_snapshot:
-                    custom_console.bot_log("The are no files in the Watcher folder\n")
                     continue
 
                 # Move only the entries whose size is unchanged since the previous check
@@ -187,12 +196,50 @@ class Bot:
                 if not moved_paths:
                     continue
 
-                # Start uploading only the new files
+                # Start uploading only the new files, one at a time
                 print()
                 self.run(include_paths=moved_paths)
+                print()
+                announce_idle = True
+                for moved_path in moved_paths:
+                    self._run_isolated(include_path=moved_path, timeout=timeout)
 
         except KeyboardInterrupt:
             custom_console.bot_log("Exiting...")
+        return True
+
+    def _run_isolated(self, include_path: str, timeout: int) -> bool:
+        """
+        Processes a single entry in a child process, so that a file which hangs or crashes the upload
+        doesn't stop the watcher. The child is stopped if it is still running after 'timeout' seconds
+
+        Returns:
+            True if the child process ended without errors
+        """
+        name = os.path.basename(include_path)
+        process = multiprocessing.Process(target=_run_worker, args=(self, include_path), daemon=True)
+        process.start()
+        try:
+            process.join(timeout if timeout > 0 else None)
+            if process.is_alive():
+                custom_console.bot_error_log(
+                    f"'{name}' is stuck: still processing after {timeout} seconds. Skipped, restarting the watcher\n"
+                )
+                return False
+        finally:
+            # Stop the child if it timed out or if the user pressed Ctrl-c
+            if process.is_alive():
+                process.terminate()
+                process.join(10)
+                if process.is_alive():
+                    process.kill()
+                    process.join()
+
+        if process.exitcode != 0:
+            custom_console.bot_error_log(
+                f"'{name}' stopped with an error (exit code {process.exitcode}). Skipped, restarting the watcher\n"
+            )
+            return False
         return True
 
     @staticmethod
@@ -292,3 +339,24 @@ class Bot:
 
             self.run()
         return None
+
+
+def _run_worker(bot: Bot, include_path: str) -> None:
+    """
+    Child process entry point for Bot._run_isolated
+    """
+    # Turn SIGTERM into SystemExit: subprocess.run then kills the running ffmpeg/ffprobe before exiting
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
+
+    # multiprocessing redirects the child's stdin to devnull: reconnect it to the console,
+    # so the questions (TMDB ID, duplicates..) can still be answered
+    try:
+        sys.stdin = open(0, closefd=False)
+    except OSError:
+        pass
+
+    try:
+        bot.run(include_paths=[include_path])
+    except KeyboardInterrupt:
+        # Ctrl-c reaches the watcher too: let it print the exit message
+        sys.exit(1)

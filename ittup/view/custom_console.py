@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import math
+import time
+
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
@@ -45,8 +48,22 @@ class CustomConsole(Console):
     def bot_question_log(self, message: str):
         self.print(message, end="", style=config_settings.console_options.QUESTION_MESSAGE_COLOR)
 
-    def bot_counter_log(self, message: str):
-        self.print(message, end="\r", style=config_settings.console_options.QUESTION_MESSAGE_COLOR)
+    def bot_countdown(self, seconds: int):
+        """
+        Waits 'seconds' seconds. In an interactive terminal the countdown is shown on a single status line
+        that is cleared at the end; otherwise (log file, pipe, docker logs, service) nothing is printed,
+        so the log doesn't get one line per second
+        """
+        if not self.is_terminal or self.is_dumb_terminal:
+            time.sleep(seconds)
+            return
+
+        end_time = time.perf_counter() + seconds
+        with self.status("") as status:
+            while (remaining_time := end_time - time.perf_counter()) > 0:
+                status.update(Text(f"WATCHDOG: {math.ceil(remaining_time)} seconds Ctrl-c to Exit",
+                                   style=config_settings.console_options.QUESTION_MESSAGE_COLOR))
+                time.sleep(min(1.0, remaining_time))
 
     def bot_process_table_log(self, content: list):
 

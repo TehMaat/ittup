@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from argparse import Namespace
+from collections.abc import Callable
 import os
 
 from ittup.common.external_services.igdb.client import IGDBClient
@@ -14,18 +15,21 @@ from ittup.view import custom_console
 
 class GameManager:
 
-    def __init__(self, contents: list["Media"], cli: Namespace):
+    def __init__(self, contents: list["Media"], cli: Namespace,
+                 on_upload: Callable[[BittorrentData], None] | None = None):
         """
         Initialize the GameManager with the given contents
 
         Args:
             contents (list): List of content media objects
             cli (argparse.Namespace): user flag Command line
+            on_upload: if set, called with each uploaded torrent right after the upload
         """
         self.contents: list[Media] = contents
         self.cli: Namespace = cli
         self.igdb = IGDBClient()
         self.igdb_logged: bool = False
+        self.on_upload = on_upload
 
     def process(self, selected_tracker: str, tracker_name_list: list,  tracker_archive: str) -> list[BittorrentData]:
         """
@@ -107,5 +111,17 @@ class GameManager:
             # Seed it right away, without waiting for the other contents
             if not self.cli.noseed:
                 UserContent.send_to_bittorrent([bittorrent_data], 'GAME')
+            bittorrent_list.append(
+                BittorrentData(
+                    tracker_response=tracker_response,
+                    torrent_response=torrent_response,
+                    content=content,
+                    tracker_message=tracker_message,
+                    archive_path = torrent_filepath,
+                ))
+
+            # Send the torrent to the client as soon as it is uploaded
+            if self.on_upload:
+                self.on_upload(bittorrent_list[-1])
         return bittorrent_list
 

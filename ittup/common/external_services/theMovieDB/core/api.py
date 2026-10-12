@@ -222,6 +222,19 @@ class TmdbAPI(MyHttp):
             print(f"Endpoint for category '{category}' not found.")
             return []
 
+    def find_by_imdb(self, imdb_id: int, category: str) -> int | None:
+        """ Return the TMDB ID of the movie or tv show that matches the IMDB ID """
+        if category not in ['movie', 'tv']:
+            return None
+        request = {'url': f'{base_url}/find/tt{int(imdb_id):07d}', 'datatype': dict, 'query': '',
+                   'params': {'external_source': 'imdb_id'}}
+        response = self.request(endpoint=request)
+        if response:
+            results = response[0].get(f'{category}_results', [])
+            if results:
+                return results[0].get('id')
+        return None
+
     def external_ids(self, video_id: int, category: str) -> dict | None:
         if endpoint_class := self.ENDPOINTS.get(category):
             request = endpoint_class.external_ids(video_id)
@@ -236,7 +249,7 @@ class TmdbAPI(MyHttp):
         :param endpoint: request endpoint
         :return: list of T or None
         """
-        params = {**self.params, "query": endpoint['query']}
+        params = {**self.params, "query": endpoint['query'], **endpoint.get('params', {})}
         response = self.get_url(endpoint['url'], params=params)
 
         if response:
@@ -266,10 +279,11 @@ class DbOnline(TmdbAPI):
         if config_settings.user_preferences.CACHE_DBONLINE:
             self.cache = diskcache.Cache(str(os.path.join(config_settings.user_preferences.CACHE_PATH, "tmdb.cache")))
 
-        if media.tmdb_id or media.imdb_id or media.tmdb_id:
+        if media.tmdb_id or media.imdb_id or media.tvdb_id:
             # Skip cache if there is a tmdb id or imdb in the title string
-            self.media_result = self.results_in_string(tmdb_id=int(media.tmdb_id), imdb_id=int(media.imdb_id),
-                                                       tvdb_id=int(media.tvdb_id))
+            self.media_result = self.results_in_string(tmdb_id=int(media.tmdb_id or 0),
+                                                       imdb_id=int(media.imdb_id or 0),
+                                                       tvdb_id=int(media.tvdb_id or 0))
         else:
             # Load from the cache or search online for a tmdb id or imdb
             # Search for a video based on the filename or the title from the -notitle flag in the CLI
@@ -383,17 +397,24 @@ class DbOnline(TmdbAPI):
         """
         keywords_list = ''
         trailer_key = ''
+        self.imdb_id = imdb_id or None
+        self.tvdb_id = tvdb_id or None
 
-        if tmdb_id:
-            if tmdb_id > 0:
-                # Request trailer and keywords
-                trailer_key = self.trailer(tmdb_id)
-                keywords_list = self.keywords(tmdb_id) if trailer_key else ''
-        else:
-            tmdb_id = 0
+        # Only the IMDB ID in the title string: ask TMDB for the matching TMDB ID
+        if not tmdb_id and imdb_id:
+            tmdb_id = self.find_by_imdb(imdb_id=imdb_id, category=self.category) or 0
+            if not tmdb_id:
+                custom_console.bot_warning_log(f"TMDB ID not found for IMDB ID '{imdb_id}'")
 
-        search_results = MediaResult(video_id=tmdb_id, imdb_id=self.imdb_id, tvdb_id=tvdb_id, trailer_key=trailer_key,
-                                     keywords_list=keywords_list)
+        if tmdb_id > 0:
+            # Fill the IDs missing from the title string
+            self.add_external_ids(tmdb_id)
+            # Request trailer and keywords
+            trailer_key = self.trailer(tmdb_id)
+            keywords_list = self.keywords(tmdb_id) if trailer_key else ''
+
+        search_results = MediaResult(video_id=tmdb_id, imdb_id=self.imdb_id, tvdb_id=self.tvdb_id,
+                                     trailer_key=trailer_key, keywords_list=keywords_list)
         self.print_results(results=search_results)
         return search_results
 
@@ -406,6 +427,15 @@ class DbOnline(TmdbAPI):
         if config_settings.user_preferences.CACHE_DBONLINE:
             search_results = self.load_cache(self.hash_key(self.query))
             if search_results:
+                # Results cached by older versions may lack the IMDB ID
+                if search_results.video_id and not search_results.imdb_id:
+                    self.imdb_id = None
+                    self.tvdb_id = search_results.tvdb_id
+                    self.add_external_ids(search_results.video_id)
+                    if self.imdb_id:
+                        search_results.imdb_id = self.imdb_id
+                        search_results.tvdb_id = self.tvdb_id
+                        self.cache[self.hash_key(self.query)] = search_results
                 self.print_results(results=search_results)
                 return search_results
 
@@ -425,12 +455,7 @@ class DbOnline(TmdbAPI):
                 keywords_list = self.keywords(result.id)
 
                 # TMDB external_ids as override: only override if the field is present
-                ext = self.external_ids(video_id=result.id, category=self.category)
-                if ext:
-                    if ext.get('imdb_id'):
-                        self.imdb_id = ext['imdb_id'].replace('tt', '')
-                    if ext.get('tvdb_id'):
-                        self.tvdb_id = ext['tvdb_id']
+                self.add_external_ids(result.id, override=True)
 
                 search_results = MediaResult(result, video_id=result.id, imdb_id=self.imdb_id, tvdb_id=self.tvdb_id,
                                              trailer_key=trailer_key, keywords_list=keywords_list)
@@ -464,6 +489,15 @@ class DbOnline(TmdbAPI):
         if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
             self.cache[self.hash_key(self.query)] = search_results
         return search_results
+
+    def add_external_ids(self, video_id: int, override: bool = False) -> None:
+        """ Set the IMDB and TVDB IDs from TMDB; override=False keeps the ones already known """
+        ext = self.external_ids(video_id=video_id, category=self.category)
+        if ext:
+            if ext.get('imdb_id') and (override or not self.imdb_id):
+                self.imdb_id = int(ext['imdb_id'].replace('tt', ''))
+            if ext.get('tvdb_id') and (override or not self.tvdb_id):
+                self.tvdb_id = ext['tvdb_id']
 
     def tvdb_search(self) -> dict | None:
         tvdb = TVDB(category=self.category)
@@ -499,11 +533,13 @@ class DbOnline(TmdbAPI):
             else:
                 result = self.search_id(video_id=user_id)
                 if result:
+                    # The TVDB search may have missed: take the IMDB ID from TMDB
+                    self.add_external_ids(user_id, override=True)
                     # Request trailer and keywords
                     trailer_key = self.trailer(user_id)
                     keywords_list = self.keywords(user_id) if trailer_key else ''
                     search_results = MediaResult(result=result, video_id=user_id, imdb_id=self.imdb_id,
-                                                 trailer_key=trailer_key,
+                                                 tvdb_id=self.tvdb_id, trailer_key=trailer_key,
                                                  keywords_list=keywords_list)
                     self.print_results(results=search_results)
                     return search_results

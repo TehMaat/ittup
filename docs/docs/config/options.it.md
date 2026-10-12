@@ -79,6 +79,7 @@ L'**ordine** con cui i tag compongono il titolo del torrent, per film e serie. P
 
 ```json
 "WATCHER_INTERVAL": 60,
+"WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
 ```
@@ -86,6 +87,7 @@ L'**ordine** con cui i tag compongono il titolo del torrent, per film e serie. P
 | Chiave | Effetto |
 |---|---|
 | `WATCHER_INTERVAL` | Ogni quanti **secondi** il watcher controlla la cartella |
+| `WATCHER_TIMEOUT` | **Secondi** massimi per processare un singolo file o cartella: se è ancora in corso viene fermato e saltato. `0` = nessun limite |
 | `WATCHER_PATH` | Cartella monitorata (es. dove scarica il tuo client) |
 | `WATCHER_DESTINATION_PATH` | Cartella dove i file vengono spostati e poi caricati |
 

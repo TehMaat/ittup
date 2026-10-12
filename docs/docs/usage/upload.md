@@ -45,6 +45,17 @@ They combine with `-u`, `-f` and `-scan`:
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
 
+## IDs in the name
+
+If the file or folder name carries an ID in braces, the bot uses it instead of searching TMDB by title:
+
+```text
+The Matrix (1999) {imdb-tt0133093}.mkv
+The Matrix (1999) {tmdb-603}.mkv
+```
+
+The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
+
 ## Full example
 
 ```bash

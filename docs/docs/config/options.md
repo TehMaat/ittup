@@ -79,6 +79,7 @@ The **order** in which tags build the torrent title, for movies and TV shows. Yo
 
 ```json
 "WATCHER_INTERVAL": 60,
+"WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
 ```
@@ -86,6 +87,7 @@ The **order** in which tags build the torrent title, for movies and TV shows. Yo
 | Key | Effect |
 |---|---|
 | `WATCHER_INTERVAL` | How many **seconds** between watcher checks |
+| `WATCHER_TIMEOUT` | Maximum **seconds** to process a single file or folder: if it's still running, it's stopped and skipped. `0` = no limit |
 | `WATCHER_PATH` | Watched folder (e.g. where your client downloads) |
 | `WATCHER_DESTINATION_PATH` | Folder where files are moved and then uploaded |
 

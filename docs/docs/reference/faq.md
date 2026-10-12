@@ -81,7 +81,7 @@ Into `TORRENT_ARCHIVE_PATH`, in the `ITT` subfolder: `<archive>/ITT/name.torrent
 
 ### Does the bot work on a seedbox without sudo?
 
-Yes, with pyenv: [ultra.cc seedbox](../install/seedbox.md) guide.
+Yes, with uv, which also brings a Python that already includes sqlite3: [ultra.cc seedbox](../install/seedbox.md) guide.
 
 ### How do I upgrade?
 

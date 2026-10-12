@@ -52,10 +52,10 @@ def main():
                 f"Tracker '{cli.args.tracker}' not found. Please update your configuration file")
             exit()
 
+        tracker_name_list = [cli.args.tracker.upper()]
         tracker = pvtTracker.Unit3d(tracker_name=cli.args.tracker)
         if tracker.get_alive(alive=True, perPage=1):
             custom_console.bot_log(f"Tracker -> '{cli.args.tracker.upper()}' Online")
-            tracker_name_list = [cli.args.tracker.upper()]
 
     # Send content to the multi_tracker list
     if cli.args.mt:

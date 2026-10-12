@@ -50,7 +50,7 @@ class UploadBot:
             exit(_message['message'])
 
         elif tracker_response.status_code == 403:
-            custom_console.bot_error_log(f"{self.__class__.__name__} HTTP 403 Upload right disabled\n")
+            error_message = f"{self.__class__.__name__} HTTP 403 Upload right disabled"
             custom_console.bot_error_log(self.content.file_name)
 
         elif tracker_response.status_code == 404:
@@ -131,7 +131,7 @@ class UploadBot:
         self.tracker.data["anonymous"] = int(config_settings.user_preferences.ANON)
         self.tracker.data["description"] = igdb.description + self.sign if igdb else "Sorry, there is no valid IGDB"
         self.tracker.data["type_id"] = self.tracker_data.type_id.get(igdb_platform) if igdb_platform else 1
-        self.tracker.data["igdb"] = igdb.id if igdb else 1,  # need zero not one ( fix tracker)
+        self.tracker.data["igdb"] = igdb.id if igdb else 1  # need zero not one ( fix tracker)
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
         return self.tracker

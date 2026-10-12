@@ -71,11 +71,6 @@ class Bot:
             custom_console.bot_error_log(f"Path not found: {self.path}")
             return False
 
-        # Exists
-        if not os.path.exists(self.path):
-            custom_console.bot_error_log("Path doesn't exist")
-            return False
-
         # Get a Files list with basic attributes and create a content object for each
         self.content_manager: ContentManager = ContentManager(path=self.path, mode=self.mode, cli=self.cli,
                                                               include_paths=include_paths)
@@ -85,15 +80,6 @@ class Bot:
         if not contents:
             custom_console.bot_error_log("There are no Media to process")
             return False
-
-        # we got a handled exception
-        if contents is None:
-            exit(1)
-
-        # -f requires at least one file
-        if not contents:
-            custom_console.bot_error_log(f"There are no Files to process. Try using -scan")
-            exit(1)
 
         # Print the list of files being processed
         custom_console.bot_process_table_log(contents)

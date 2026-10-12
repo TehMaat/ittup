@@ -16,7 +16,7 @@ class MyHttp:
 
     def __init__(self, headers: dict, cache_dir: str = "http_cache"):
         self.session = httpx.Client(
-            timeout=httpx.Timeout(30), headers=headers, verify=False
+            timeout=httpx.Timeout(30), headers=headers
         )
         self.headers = headers
         self.cache = dc.Cache(cache_dir)

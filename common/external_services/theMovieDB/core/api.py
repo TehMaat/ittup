@@ -69,6 +69,10 @@ class MovieEndpoint:
         return {'url': f'{base_url}/movie/{movie_id}/keywords', 'datatype': Keyword, 'query': '',
                 'results': 'keywords'}
 
+    @staticmethod
+    def external_ids(movie_id: int) -> dict:
+        return {'url': f'{base_url}/movie/{movie_id}/external_ids', 'datatype': dict, 'query': ''}
+
 
 class TvEndpoint:
     @staticmethod
@@ -102,6 +106,10 @@ class TvEndpoint:
     def keywords(serie_id: int) -> dict:
         return {'url': f'{base_url}/tv/{serie_id}/keywords', 'datatype': Keyword, 'query': '',
                 'results': 'results'}
+
+    @staticmethod
+    def external_ids(serie_id: int) -> dict:
+        return {'url': f'{base_url}/tv/{serie_id}/external_ids', 'datatype': dict, 'query': ''}
 
 
 class TmdbAPI(MyHttp):
@@ -214,6 +222,14 @@ class TmdbAPI(MyHttp):
             print(f"Endpoint for category '{category}' not found.")
             return []
 
+    def external_ids(self, video_id: int, category: str) -> dict | None:
+        if endpoint_class := self.ENDPOINTS.get(category):
+            request = endpoint_class.external_ids(video_id)
+            response = self.request(endpoint=request)
+            if response:
+                return response[0]  # è un singolo dict, non una lista
+        return None
+
     def request(self, endpoint: dict) -> list[T] | None:
         """
         Sends a request to the API and returns a list of instances of the specified 'datatype'.
@@ -269,6 +285,19 @@ class DbOnline(TmdbAPI):
         if results:
             # Search for in the tile or original_name
             for result in results:
+                custom_console.bot_warning_log(f"TMDB title: '{result.get_title()}' score: {ManageTitles.fuzzyit(str1=ManageTitles.clean_text(self.query), str2=ManageTitles.clean_text(result.get_title()))}")
+                custom_console.bot_warning_log(f"TMDB original: '{result.get_original()}' score: {ManageTitles.fuzzyit(str1=ManageTitles.clean_text(self.query), str2=ManageTitles.clean_text(result.get_original()))}")
+                alt = self.alternative(media_id=result.id, category=self.category)
+                if alt:
+                    for a in alt:
+                        custom_console.bot_warning_log(f"Alt title: '{a.title}' score: {ManageTitles.fuzzyit(str1=self.query, str2=a.title)}")
+                trans = self.translations(media_id=result.id, category=self.category)
+                if trans:
+                    for t in trans:
+                        if t.data:
+                            title = t.data.name or t.data.title
+                            if title:
+                                custom_console.bot_warning_log(f"Translation: '{title}' score: {ManageTitles.fuzzyit(str1=self.query, str2=title)}")
                 # check date
                 if result.get_date() and self.media.guess_filename.guessit_year:
                     if not datetime.strptime(result.get_date(),
@@ -329,7 +358,6 @@ class DbOnline(TmdbAPI):
         Search for results based on a tmdb query
         season: True = search for a season. Title unknown
         """
-
         # Search in the cache first if cache is enabled
         if config_settings.user_preferences.CACHE_DBONLINE:
             search_results = self.load_cache(self.hash_key(self.query))
@@ -351,6 +379,15 @@ class DbOnline(TmdbAPI):
                 # Get the trailer
                 trailer_key = self.trailer(result.id)
                 keywords_list = self.keywords(result.id)
+
+                # TMDB external_ids as override: only override if the field is present
+                ext = self.external_ids(video_id=result.id, category=self.category)
+                if ext:
+                    if ext.get('imdb_id'):
+                        self.imdb_id = ext['imdb_id'].replace('tt', '')
+                    if ext.get('tvdb_id'):
+                        self.tvdb_id = ext['tvdb_id']
+
                 search_results = MediaResult(result, video_id=result.id, imdb_id=self.imdb_id, tvdb_id=self.tvdb_id,
                                              trailer_key=trailer_key, keywords_list=keywords_list)
 

@@ -47,12 +47,26 @@ Install and Upgrade
 
 - pip install --upgrade git+https://github.com/TehMaat/ittup
 
-If you had Unit3Dup installed, uninstall it first::
+Keeping Unit3Dup
+----------------
+You don't have to uninstall Unit3Dup: the two can be installed side by side.
+They have different commands (``unit3dup`` and ``ittup``), all of ittup's code lives in the single
+``ittup`` package (``ittup.core``, ``ittup.common``, ``ittup.view``), and each one has its own
+configuration folder.
 
-    pip uninstall unit3dup
+If you use both, keep in mind that:
 
-All of ittup's code lives in the single ``ittup`` package (``ittup.core``, ``ittup.common``, ``ittup.view``);
-removing Unit3Dup also removes the old top-level ``common``, ``view`` and ``unit3dup`` modules it left behind.
+- Custom paths copied from your Unit3Dup configuration (``WATCHER_PATH``, ``WATCHER_DESTINATION_PATH``,
+  ``CACHE_PATH``, ``TORRENT_ARCHIVE_PATH``) are shared by the two tools. Don't run both watchers on the
+  same folder, or the same files can be uploaded twice: give ittup its own folders in ``ittup.json``
+  (or set them to ``no_path`` to use the defaults inside ``ittup_config``).
+- If your Unit3Dup is older than 0.14.x, installing ittup in the same environment may upgrade libraries
+  Unit3Dup depends on. To keep them isolated, install ittup with pipx or in a virtualenv::
+
+    pipx install git+https://github.com/TehMaat/ittup
+
+When you no longer need Unit3Dup, you can remove it with ``pip uninstall unit3dup``: this also removes
+the old top-level ``common``, ``view`` and ``unit3dup`` modules it installed.
 
 
 Configuration

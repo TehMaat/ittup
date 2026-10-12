@@ -25,19 +25,13 @@ Le novità di ogni release sono nella pagina [Releases del progetto](https://git
 
 ittup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) ridotto alla sola ItaTorrents. Per passare a ittup:
 
-1. Disinstalla Unit3Dup — così vengono rimossi anche i vecchi moduli `common`, `view` e `unit3dup` che aveva installato:
-
-    ```bash
-    pip uninstall unit3dup
-    ```
-
-2. Installa ittup:
+1. Installa ittup:
 
     ```bash
     pip install git+https://github.com/TehMaat/ittup
     ```
 
-3. Avvialo una volta:
+2. Avvialo una volta:
 
     ```bash
     ittup
@@ -58,3 +52,22 @@ Le impostazioni dei tracker rimossi (`SIS_*`, `PTT_*`, `AST_*`) e `MULTI_TRACKER
 
 !!! note "I tuoi percorsi personalizzati restano"
     `TORRENT_ARCHIVE_PATH`, `CACHE_PATH` e i percorsi del watcher vengono copiati così come sono: se puntavano dentro `Unit3Dup_config`, continueranno a farlo. Impostali a `no_path` per usare i nuovi default dentro `ittup_config`.
+
+## Tenere anche Unit3Dup
+
+Non devi per forza disinstallare Unit3Dup: i due possono restare installati insieme. Hanno comandi diversi (`unit3dup` e `ittup`), tutto il codice di ittup sta nel solo pacchetto `ittup` e ognuno ha la sua cartella di configurazione.
+
+Se li usi tutti e due, tieni presente che:
+
+- I percorsi personalizzati copiati dalla configurazione di Unit3Dup (vedi la nota sopra) sono in comune tra i due. Non far girare i due watcher sulla stessa cartella, altrimenti gli stessi file possono essere caricati due volte: dai a ittup cartelle sue in `ittup.json`, oppure impostale a `no_path`.
+- Se il tuo Unit3Dup è più vecchio della 0.14.x, installare ittup nello stesso ambiente può aggiornare librerie che usa anche Unit3Dup. Per tenerli separati, installa ittup con pipx o in un virtualenv:
+
+    ```bash
+    pipx install git+https://github.com/TehMaat/ittup
+    ```
+
+Quando Unit3Dup non ti serve più, disinstallalo — così vengono rimossi anche i vecchi moduli `common`, `view` e `unit3dup` che aveva installato:
+
+```bash
+pip uninstall unit3dup
+```

@@ -61,14 +61,13 @@ class GameManager:
                 custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
                 continue
 
-            torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
-                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
-
-
-            # Skip if it is a duplicate
+            # Skip if it is a duplicate, before hashing the files
             if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
                     and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
                 continue
+
+            torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
+                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
 
             # Login to IGDB only when the first game needs it
             if not self.igdb_logged:

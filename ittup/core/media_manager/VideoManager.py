@@ -83,14 +83,15 @@ class VideoManager:
             # Filter contents based on the preferred language or duplicates
             if UserContent.is_preferred_language(content=content):
 
-                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
-                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
-
                 # Skip(S) if it is a duplicate or let the user choose to continue (C)
+                # Checked before hashing so a skipped duplicate doesn't cost a torrent file
                 if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
                         and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
                                                      cli=self.cli)):
                     continue
+
+                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
+                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Search for VIDEO ID
                 db_online = DbOnline(media=content, category=content.category, no_title=self.cli.notitle)

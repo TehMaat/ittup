@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.2](https://github.com/TehMaat/ittup/compare/1.2.1...1.2.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* remove leftover separator line from MY_TEXT_H in the default config ([315822c](https://github.com/TehMaat/ittup/commit/315822c76371904fb6d4fd88c24707d42ec31fa8))
+* remove leftover separator line from MY_TEXT_H in the default config ([66f67ac](https://github.com/TehMaat/ittup/commit/66f67ac7664eea9b9e8b44305a4d7b0fa75de7ca))
+* write the video codec from the release type in the title ([25d455d](https://github.com/TehMaat/ittup/commit/25d455df41601132675fceebbab3503cb73da288))
+* write the video codec from the release type in the title ([a1b9fc1](https://github.com/TehMaat/ittup/commit/a1b9fc13af405c2c3caaf2c8af7ca967dbff274e))
+
 ## [1.2.1](https://github.com/TehMaat/ittup/compare/1.2.0...1.2.1) (2026-10-12)
 
 

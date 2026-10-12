@@ -46,6 +46,12 @@ audio_translate = {
     "MPEG Audio": "MPEG",
 }
 
+# Audio codecs from the best to the worst: only the best ones go in the title
+audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
+# Only the audio tracks in these languages go in the title, at most MAX_AUDIO_CODECS codecs
+AUDIO_LANGUAGES = {"ITA", "ENG"}
+MAX_AUDIO_CODECS = 2
+
 # Codec family from the MediaInfo 'format' of the video track
 video_family = {
     "AVC": "264",
@@ -276,11 +282,32 @@ class SearchTags(object):
         new_title = self.build_title(tags_dict)
         return new_title, tags_dict
 
+    @staticmethod
+    def audio_language(audio: dict) -> str | None:
+        """
+        ISO alpha-3 language of an audio track, None when it is not tagged
+        """
+        for l in audio.get('other_language', []):
+            c = ManageTitles.convert_iso(l)
+            if c:
+                return c[0] if isinstance(c, list) else c
+        return None
+
+    @staticmethod
+    def audio_score(codec: str, atmos: bool, channel_s: int) -> tuple:
+        """
+        Sort key of an audio track: codec, then Atmos, then channels
+        """
+        rank = len(audio_rank) - audio_rank.index(codec) if codec in audio_rank else 0
+        return rank, atmos, channel_s
+
     def mediainfo_audio(self, category: str) -> dict:
         languages = []
-        audio_codecs = []
+        # [(score, label, language)]
+        tracks = []
         if self.mediafile.audio_track:
             for audio in self.mediafile.audio_track:
+                language = self.audio_language(audio)
                 other_format = audio.get('other_format', [])
                 if other_format:
                     codec_translated = audio_translate.get(other_format[0], '')
@@ -293,24 +320,25 @@ class SearchTags(object):
                     channel_s = audio.get('channel_s', 0)
                     # Add channels
                     ch = {2: "2.0", 6: "5.1", 8: "7.1"}.get(channel_s, "")
-                    if f"{codec_translated} {ch} {atmos}".strip() not in audio_codecs:
-                        audio_codecs.append(f"{codec_translated} {ch} {atmos}".strip())
+                    tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
+                                   f"{codec_translated} {ch} {atmos}".strip(), language))
 
                 # Add flags
-                for l in audio.get('other_language', []):
-                    c = ManageTitles.convert_iso(l)
-                    if c:
-                        if isinstance(c, list):
-                            languages.append(c[0])
-                        else:
-                            languages.append(c)
-                        break
+                if language:
+                    languages.append(language)
                 languages = list(dict.fromkeys(languages))
                 # Add multilanguage tag when languages > 2
                 if len(languages) > 2:
                     self.tags_dict.update({'multi': 'MULTI'})
 
-            audio_codecs.extend(languages)
+        # Keep the best codecs of the ITA/ENG tracks (all the tracks when none is tagged ITA/ENG)
+        selected = [track for track in tracks if track[2] in AUDIO_LANGUAGES] or tracks
+        audio_codecs = []
+        for _, label, _ in sorted(selected, key=lambda track: track[0], reverse=True):
+            if label not in audio_codecs:
+                audio_codecs.append(label)
+        audio_codecs = audio_codecs[:MAX_AUDIO_CODECS]
+        audio_codecs.extend(languages)
         return {category: audio_codecs}
 
     @staticmethod

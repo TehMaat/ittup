@@ -87,7 +87,7 @@ class VideoManager:
                                                        selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Skip(S) if it is a duplicate or let the user choose to continue (C)
-                if (self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON
+                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
                         and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
                                                      cli=self.cli)):
                     continue

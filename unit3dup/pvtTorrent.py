@@ -46,7 +46,6 @@ class Mytorrent:
         self.mytorr.private = True
         # self.mytorr.source= trackers_api_data[trackers_list[0]]['source']
         self.mytorr.source= trackers_api_data[self.tracker_name]['source']
-        self.mytorr.segments = 16 * 1024 * 1024
 
 
     def hash(self):

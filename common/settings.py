@@ -946,19 +946,21 @@ class JsonConfig:
             lines = file.readlines()
 
         # Test the line value
-        if line <= len(lines):
-            # Create a "context" around the error....
-            line_context1 = lines[line - 2].rstrip('\n')
-            line_context2 = lines[line + 1].rstrip('\n')
+        if 1 <= line <= len(lines):
+            # Create a "context" around the error.... ( 'line' is 1-based )
+            line_context1 = lines[line - 2].rstrip('\n') if line > 1 else None
+            line_context2 = lines[line].rstrip('\n') if line < len(lines) else None
 
             # Try to identify the position
             line_text = lines[line - 1].rstrip('\n')
-            print(f"{line_context1}")
+            if line_context1 is not None:
+                print(f"{line_context1}")
             print(f"{Ccolors.WARNING}>>> {line_text}{Ccolors.ENDC}")
 
             # Put the cursor under the error
             cursor = ' ' * (col - 1) + '^'
             print(f"{Ccolors.WARNING}    {cursor}{Ccolors.ENDC}")
-            print(f"{line_context2}")
+            if line_context2 is not None:
+                print(f"{line_context2}")
         else:
             print("Line number is out of range !")

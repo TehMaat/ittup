@@ -18,7 +18,8 @@ class Myhttp:
             exit(1)
 
         self.pass_key = pass_key
-        self.base_url = api_data['url']
+        # Trailing slash required by urljoin to keep any path in the base url
+        self.base_url = (api_data['url'] or '').rstrip('/') + '/'
         self.api_token = api_data['api_key']
 
         self.upload_url = urljoin(self.base_url, "api/torrents/upload")

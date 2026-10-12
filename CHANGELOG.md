@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.3](https://github.com/TehMaat/ittup/compare/1.2.2...1.2.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* check for duplicates before creating the torrent file ([cc42a5c](https://github.com/TehMaat/ittup/commit/cc42a5cb27f18cd0cac3c0b99d0b141df1fb113c))
+* check for duplicates before creating the torrent file ([81421aa](https://github.com/TehMaat/ittup/commit/81421aa976d284a1a530877bfe498792cf14d5bb))
+* stop the watcher from uploading each file twice and crashing on Python 3.14 ([7a3951c](https://github.com/TehMaat/ittup/commit/7a3951cf06117b978af266b68fe14ce7b6af0482))
+* stop the watcher from uploading each file twice and crashing on Python 3.14 ([5624470](https://github.com/TehMaat/ittup/commit/5624470f19de375010de0bc4db9889ae2f44e0aa))
+
 ## [1.2.2](https://github.com/TehMaat/ittup/compare/1.2.1...1.2.2) (2026-10-12)
 
 

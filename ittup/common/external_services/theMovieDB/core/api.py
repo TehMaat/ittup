@@ -306,10 +306,8 @@ class DbOnline(TmdbAPI):
                     self.debug_scores(result, get_alternatives(result.id), get_translations(result.id))
 
                 # check date
-                if result.get_date() and self.media.guess_filename.guessit_year:
-                    if not datetime.strptime(result.get_date(),
-                                             '%Y-%m-%d').year == self.media.guess_filename.guessit_year:
-                        continue
+                if not self.year_matches(result):
+                    continue
 
                 # Search for title
                 if ManageTitles.fuzzyit(str1=ManageTitles.clean_text(self.query),
@@ -337,7 +335,27 @@ class DbOnline(TmdbAPI):
                             if title:
                                 if ManageTitles.fuzzyit(self.query, title) > 95:
                                     return result
+
+            # Search for a mixed title: localized title plus words of the main title
+            # e.g. 'Hellboy Animated La Spada Maledetta'
+            for result in results:
+                if not self.year_matches(result):
+                    continue
+                main_titles = [result.get_title(), result.get_original()]
+                local_titles = [alt.title for alt in get_alternatives(result.id) or [] if alt.title]
+                for tr in get_translations(result.id) or []:
+                    if tr.data and (tr.data.name or tr.data.title):
+                        local_titles.append(tr.data.name or tr.data.title)
+                for title in local_titles:
+                    if ManageTitles.is_mixed_title(query=self.query, local_title=title, main_titles=main_titles):
+                        return result
         return False
+
+    def year_matches(self, result: T) -> bool:
+        """ False only when both years are known and they differ """
+        if result.get_date() and self.media.guess_filename.guessit_year:
+            return datetime.strptime(result.get_date(), '%Y-%m-%d').year == self.media.guess_filename.guessit_year
+        return True
 
     def debug_scores(self, result: T, alternatives: list[T] | None, translations: list[T] | None) -> None:
         """ Log the fuzzy score of every TMDB title candidate (TMDB_DEBUG) """

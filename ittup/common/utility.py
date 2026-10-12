@@ -235,6 +235,30 @@ class ManageTitles:
         return fuzz.ratio(ManageTitles.remove_accent(str1.lower()), ManageTitles.remove_accent(str2.lower()))
 
     @staticmethod
+    def title_tokens(title: str) -> set[str]:
+        """
+        Returns the set of normalized words of a title (same normalization as fuzzyit)
+        """
+        title = ManageTitles.clean(title.lower().replace("-", ""))
+        return set(ManageTitles.remove_accent(title).split())
+
+    @staticmethod
+    def is_mixed_title(query: str, local_title: str, main_titles: list[str]) -> bool:
+        """
+        True when the query mixes a localized title with words of the main title
+        e.g. 'Hellboy Animated La Spada Maledetta' = 'Hellboy: La spada maledetta' + 'Animated'
+        from 'Hellboy Animated: Sword of Storms'
+        """
+        query_tokens = ManageTitles.title_tokens(query)
+        local_tokens = ManageTitles.title_tokens(local_title)
+        # Every word of the localized title must be in the query, and it must not be a single word
+        if len(local_tokens) < 2 or not local_tokens < query_tokens:
+            return False
+        # The remaining words of the query must come from the main title
+        main_tokens = set().union(*(ManageTitles.title_tokens(t) for t in main_titles if t))
+        return (query_tokens - local_tokens) <= main_tokens
+
+    @staticmethod
     def normalize_filename(filename) -> str:
         # Remove spaces
         filename = filename.strip()

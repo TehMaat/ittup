@@ -41,6 +41,7 @@ Every key of `Unit3Dbot.json`, section by section. "Default" is the value in the
 | `QBIT_HOST` | string | `127.0.0.1` | if using qBittorrent | Client host |
 | `QBIT_PORT` | number | `8080` | if using qBittorrent | WebUI port |
 | `SHARED_QBIT_PATH` | string | `no_path` | no | Path as seen by the client when it runs elsewhere |
+| `QBIT_SKIP_CHECK` | boolean | `True` | no | Skip the hash check when adding the torrent |
 | `TRASM_USER` | string | `admin` | if using Transmission | Username |
 | `TRASM_PASS` | string | `no_pass` | if using Transmission | Password |
 | `TRASM_HOST` | string | `127.0.0.1` | if using Transmission | Host |

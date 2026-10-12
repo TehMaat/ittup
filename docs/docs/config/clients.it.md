@@ -23,9 +23,12 @@ Il client è **obbligatorio** per qualsiasi operazione di upload con seeding (`-
 "QBIT_HOST": "127.0.0.1",
 "QBIT_PORT": "8080",
 "SHARED_QBIT_PATH": "no_path",
+"QBIT_SKIP_CHECK": "True",
 ```
 
 Credenziali della **WebUI** (in qBittorrent: *Strumenti → Opzioni → WebUI*). `QBIT_HOST` accetta l'IP della macchina dove gira il client.
+
+`QBIT_SKIP_CHECK` (default `True`) aggiunge il torrent saltando il controllo hash, così il seeding parte subito: il bot ha appena creato il torrent da quegli stessi file. Impostalo a `False` per far verificare i dati a qBittorrent.
 
 ## Transmission
 

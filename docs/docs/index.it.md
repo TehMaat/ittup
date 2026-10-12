@@ -11,7 +11,7 @@ Gli dai un percorso — un file o una cartella — e lui fa il resto: analizza i
 - Estrae una serie di screenshot direttamente dal video e li carica su un image host
 - Cerca l'ID corrispondente su **TMDB**, **IMDB**, **TVDB**, **IGDB**
 - Aggiunge il trailer da TMDB o YouTube
-- Genera i tag del titolo: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`, `video_encoder`
+- Genera i tag del titolo: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`
 - Estrae la cover dai documenti PDF
 - Mette in seeding su **qBittorrent**, **Transmission** o **rTorrent**
 - Fa il reseed di uno o più torrent alla volta, anche tra OS diversi

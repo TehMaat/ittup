@@ -2,13 +2,29 @@
 
 The torrent title is made of the **media title** plus a set of **tags** derived from the file analysis: resolution, source, audio/video codec, language, HDR…
 
-Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`, `video_encoder`.
+Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`.
+
+`video_encoder` is still accepted in `TAGS_POSITION_*` and in `ban_list.json` so existing configurations keep working, but it no longer adds anything: the encoder is part of `vcodec`.
 
 ## How the title is built
 
 For every movie and TV show the bot **builds the title from scratch** using the technical analysis of the media (MediaInfo) and the file name, in the order defined by `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Advanced options](../config/options.md#tag-order-in-the-title)). It happens on every upload: there is no flag to turn on (the old Unit3Dup `-b` flag no longer exists).
 
 It **does not rename your file**: it only builds the torrent title shown on the tracker page.
+
+## Video codec
+
+The codec family (264, 265 or other) is read from the file name (`x264`, `x265`, `H264`, `H.265`, `AVC`, `HEVC`…) or, when missing, from MediaInfo. When the two don't agree MediaInfo wins and the bot shows a warning.
+
+The release type, read from the source/remux tags of the file name, decides how the codec is written:
+
+| Release type | Tags | Codec |
+|---|---|---|
+| Untouched | `REMUX`, `BDREMUX`, `BDMUX`, `VU`, `UNTOUCHED`, `DVDMUX`, `FULL DISC` | `AVC` / `HEVC` |
+| WEB-DL | `WEB-DL`, `WEB`, `WEBDL`, `WEB-DLMUX`, `WEBMUX`, `DLMUX`, `HDTV` | `H.264` / `H.265` |
+| Encode | `ENCODE`, `WEBRIP`, `BDRIP`, `BRRIP`, `DVDRIP`, `UHDRIP`, `FHDRIP`, `WEB-DLRIP` | `x264` / `x265` |
+
+With `BLURAY` alone, or no release type in the name, the bot looks at the encoder written by MediaInfo: `x264` / `x265` if it finds the x264/x265 signature, `H.264` / `H.265` otherwise. On an untouched release the x264/x265 signature only shows a "possible fake REMUX" warning. Other codecs (AV1, VP9, VC-1, MPEG-2, XviD…) are written as they are.
 
 ## The three customization files
 
@@ -35,12 +51,11 @@ Used when building the title: when the word appears in the file name, the value 
 
 Excludes entire **tag types** from the title rebuild: a tag listed here never ends up in the title built by the bot. Keys are the tag names (the same ones used in `TAGS_POSITION_*`); the value is just a placeholder.
 
-Example — never include the video codec nor the encoder in the title:
+Example — never include the video codec in the title:
 
 ```json
 {
-    "vcodec": "banned",
-    "video_encoder": "banned"
+    "vcodec": "banned"
 }
 ```
 

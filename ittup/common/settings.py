@@ -625,13 +625,11 @@ class Load:
                 "NUMBER_OF_SCREENSHOTS": 4,
                 "TAGS_POSITION_MOVIE": ["title", "year", "part", "version", "resolution", "uhd", "platform", "source",
                                         "remux",
-                                        "multi", "acodec", "channels", "flag", "subtitle", "hdr", "vcodec",
-                                        "video_encoder"],
+                                        "multi", "acodec", "channels", "flag", "subtitle", "hdr", "vcodec"],
 
                 "TAGS_POSITION_SERIE": ["title", "season", "version", "resolution", "uhd", "platform", "source",
                                         "remux",
-                                        "multi", "acodec", "channels", "flag", "subtitle", "hdr", "vcodec",
-                                        "video_encoder"],
+                                        "multi", "acodec", "channels", "flag", "subtitle", "hdr", "vcodec"],
 
                 "YOUTUBE_PREF_LANG": "IT",
                 "DUPLICATE_ON": "true",

@@ -11,7 +11,7 @@ Give it a path — a file or a folder — and it does the rest: it analyzes your
 - Extracts a series of screenshots straight from the video and uploads them to an image host
 - Looks up the matching ID on **TMDB**, **IMDB**, **TVDB**, **IGDB**
 - Adds the trailer from TMDB or YouTube
-- Generates the title tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`, `video_encoder`
+- Generates the title tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`
 - Extracts the cover from PDF documents
 - Seeds with **qBittorrent**, **Transmission** or **rTorrent**
 - Reseeds one or more torrents at a time, even across different OSes

@@ -33,9 +33,9 @@ class DocuManager:
             os.makedirs(archive, exist_ok=True)
             torrent_filepath = os.path.join(tracker_archive,selected_tracker, f"{content.torrent_name}.torrent")
 
-            if self.cli.watcher:
-                if os.path.exists(content.torrent_path):
-                    custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+            # Skip the old uploads
+            if self.cli.watcher and os.path.exists(torrent_filepath):
+                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
                 continue
 
             torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,

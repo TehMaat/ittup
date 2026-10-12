@@ -51,6 +51,16 @@ class VideoManager:
         # Tags list extracted used to build title ( -b flag)
         tags_dictionary = {}
         for content in self.contents:
+            # get the archive path
+            archive = os.path.join(tracker_archive, selected_tracker)
+            os.makedirs(archive, exist_ok=True)
+            torrent_filepath = os.path.join(tracker_archive, selected_tracker, f"{content.torrent_name}.torrent")
+
+            # Skip the old uploads before reading guessit, mediainfo and tags
+            if self.cli.watcher and os.path.exists(torrent_filepath):
+                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+                continue
+
             # /// User request to build the title; overwriting display_name
             guess_filename = title.Guessit(content.title_sanitize_tags)
             guess = guess_filename.guessit
@@ -70,19 +80,8 @@ class VideoManager:
                                      )
             content.display_name, tags_dictionary = search_tags.process()
 
-
-            # get the archive path
-            archive = os.path.join(tracker_archive, selected_tracker)
-            os.makedirs(archive, exist_ok=True)
-            torrent_filepath = os.path.join(tracker_archive, selected_tracker, f"{content.torrent_name}.torrent")
-
-            # Filter contents based on existing torrents or duplicates
+            # Filter contents based on the preferred language or duplicates
             if UserContent.is_preferred_language(content=content):
-
-                if self.cli.watcher:
-                    if os.path.exists(torrent_filepath):
-                        custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
-                        continue
 
                 torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
                                                        selected_tracker=selected_tracker, this_path=torrent_filepath)

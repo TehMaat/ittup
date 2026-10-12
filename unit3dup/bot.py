@@ -3,6 +3,7 @@
 from pathlib import Path
 import argparse
 import os
+import math
 import time
 import shutil
 
@@ -50,10 +51,13 @@ class Bot:
         self.mode = mode
 
 
-    def contents(self) -> bool | list[Media]:
+    def contents(self, include_paths: list[str] | None = None) -> bool | list[Media]:
         """
         Start the process of analyzing and processing media files
         This method retrieves media files
+
+        Args:
+            include_paths: if set, only the media with these paths are processed
         """
         custom_console.panel_message("Analyzing your media files... Please wait")
 
@@ -73,7 +77,8 @@ class Bot:
             return False
 
         # Get a Files list with basic attributes and create a content object for each
-        self.content_manager: ContentManager = ContentManager(path=self.path, mode=self.mode, cli=self.cli)
+        self.content_manager: ContentManager = ContentManager(path=self.path, mode=self.mode, cli=self.cli,
+                                                              include_paths=include_paths)
         contents = self.content_manager.process()
 
         # -u requires a single file
@@ -96,13 +101,16 @@ class Bot:
         return contents
 
 
-    def run(self) -> bool:
+    def run(self, include_paths: list[str] | None = None) -> bool:
         """
         processes the files using the TorrentManager and SeedManager
+
+        Args:
+            include_paths: if set, only the media with these paths are processed
         """
 
         # Get the user content
-        contents = self.contents()
+        contents = self.contents(include_paths=include_paths)
         if not contents:
             return False
 
@@ -126,72 +134,124 @@ class Bot:
         Monitors the watcher path for new files, moves them to the destination folder,
         then uploads them to the tracker
 
+        Each cycle takes a snapshot of the watcher folder, waits 'duration' seconds and takes a second one.
+        Only the entries whose size did not change between the two snapshots are moved (a file still
+        being copied is left for the next cycle) and only the moved entries are processed
+
         Args:
             duration (int): The time duration in seconds for the watchdog to wait before checking again
             watcher_path (str): The path to the folder being monitored for new files
             destination_path: The destination path for the new files
         """
         self.path = str(destination_path)
+        watcher_path = Path(watcher_path)
+        destination = Path(destination_path)
         try:
             # Watchdog loop
             while True:
-                start_time = time.perf_counter()
-                end_time = start_time + duration
-
                 # Return if the watcher path doesn't exist
-                if not os.path.exists(watcher_path):
+                if not watcher_path.exists():
                     custom_console.bot_error_log("Watcher path does not exist or is not configured\n")
                     return False
 
+                # First check
+                previous_snapshot = self._snapshot(watcher_path)
+
                 print()
                 # Counter
-                while time.perf_counter() < end_time:
-                    remaining_time = end_time - time.perf_counter()
+                end_time = time.perf_counter() + duration
+                while (remaining_time := end_time - time.perf_counter()) > 0:
                     custom_console.bot_counter_log(
-                        f"WATCHDOG: {remaining_time:.1f} seconds Ctrl-c to Exit "
+                        f"WATCHDOG: {math.ceil(remaining_time)} seconds Ctrl-c to Exit "
                     )
-                    time.sleep(0.01)
+                    time.sleep(min(1.0, remaining_time))
                 print()
 
+                # Second check
+                current_snapshot = self._snapshot(watcher_path)
+
                 # Skip if there are no files in the watcher folder
-                if not os.listdir(watcher_path):
+                if not current_snapshot:
                     custom_console.bot_log("The are no files in the Watcher folder\n")
                     continue
 
-                # Scan the source and move each file to the destination folder
-                for root, dirs, files in os.walk(watcher_path):
-                    dest_root = Path(root.replace(watcher_path, self.path))
-                    dest_root.mkdir(parents=True, exist_ok=True)
+                # Move only the entries whose size is unchanged since the previous check
+                moved_paths = []
+                for name, signature in current_snapshot.items():
+                    src = watcher_path / name
+                    if previous_snapshot.get(name) != signature:
+                        custom_console.bot_log(f"'{name}' is still being copied. Wait for the next cycle")
+                        continue
 
-                    for file_name in files:
-                        src_file = Path(root) / file_name
-                        dest_file = dest_root / file_name
+                    dest = destination / name
+                    # Limit the length of file paths printed
+                    limiter_src = '...' if len(str(src)) > 50 else ''
+                    limiter_dest = '...' if len(str(dest)) > 50 else ''
+                    custom_console.bot_log(
+                        f"{str(src)[:50]}{limiter_src} -> from 'watch folder' to 'destination folder'"
+                        f" -> {str(dest)[:50]}{limiter_dest}"
+                    )
+                    try:
+                        self._move(src, dest)
+                    except OSError as e:
+                        custom_console.bot_error_log(e)
+                        continue
+                    moved_paths.append(os.path.normpath(dest))
 
-                        # Limit the length of file paths printed
-                        limiter_src = '...' if len(str(src_file)) > 50 else ''
-                        limiter_dest = '...' if len(str(dest_file)) > 50 else ''
+                if not moved_paths:
+                    continue
 
-                        custom_console.bot_log(
-                            f"{str(src_file)[:50]}{limiter_src} -> from 'watch folder' to 'destination folder'"
-                            f" -> {str(dest_file)[:50]}{limiter_dest}"
-                        )
-                        shutil.move(str(src_file), str(dest_file))  # Move file to destination
-
-                    # Remove empty directories
-                    if root != watcher_path and not os.listdir(root):
-                        try:
-                            os.rmdir(root)
-                        except OSError as e:
-                            custom_console.bot_error_log(e)
-                            exit()
-
-                # Start uploading
+                # Start uploading only the new files
                 print()
-                self.run()
+                self.run(include_paths=moved_paths)
 
         except KeyboardInterrupt:
             custom_console.bot_log("Exiting...")
         return True
+
+    @staticmethod
+    def _snapshot(watcher_path: Path) -> dict[str, tuple]:
+        """
+        Returns a signature for each entry of the watcher folder: the file size or, for a folder,
+        the relative path and size of each file it contains
+        """
+        snapshot = {}
+        try:
+            entries = list(watcher_path.iterdir())
+        except OSError as e:
+            custom_console.bot_error_log(e)
+            return snapshot
+
+        for entry in entries:
+            try:
+                if entry.is_dir():
+                    snapshot[entry.name] = tuple(sorted(
+                        (str(file.relative_to(entry)), file.stat().st_size)
+                        for file in entry.rglob("*") if file.is_file()
+                    ))
+                else:
+                    snapshot[entry.name] = (entry.stat().st_size,)
+            except OSError:
+                # The entry changed while we were reading it: wait for the next cycle
+                continue
+        return snapshot
+
+    @staticmethod
+    def _move(src: Path, dest: Path) -> None:
+        """
+        Moves a file or a folder to dest. A folder is merged into dest if it already exists
+        """
+        if src.is_dir() and dest.is_dir():
+            for root, dirs, files in os.walk(src, topdown=False):
+                dest_root = dest / Path(root).relative_to(src)
+                dest_root.mkdir(parents=True, exist_ok=True)
+                for file_name in files:
+                    shutil.move(str(Path(root) / file_name), str(dest_root / file_name))
+                # Remove the empty source directory
+                os.rmdir(root)
+        else:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(src), str(dest))
 
 
     def ftp(self)-> None:

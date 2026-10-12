@@ -3,8 +3,6 @@
 from pathlib import Path
 import argparse
 import os
-import math
-import time
 import shutil
 
 from ittup.core.media import Media
@@ -124,6 +122,9 @@ class Bot:
         Only the entries whose size did not change between the two snapshots are moved (a file still
         being copied is left for the next cycle) and only the moved entries are processed
 
+        The waiting message is logged once when the watcher becomes idle, not on every cycle,
+        so an idle watcher doesn't fill the log
+
         Args:
             duration (int): The time duration in seconds for the watchdog to wait before checking again
             watcher_path (str): The path to the folder being monitored for new files
@@ -132,6 +133,8 @@ class Bot:
         self.path = str(destination_path)
         watcher_path = Path(watcher_path)
         destination = Path(destination_path)
+        # Log the waiting message only when the watcher becomes idle
+        announce_idle = True
         try:
             # Watchdog loop
             while True:
@@ -143,22 +146,20 @@ class Bot:
                 # First check
                 previous_snapshot = self._snapshot(watcher_path)
 
-                print()
-                # Counter
-                end_time = time.perf_counter() + duration
-                while (remaining_time := end_time - time.perf_counter()) > 0:
-                    custom_console.bot_counter_log(
-                        f"WATCHDOG: {math.ceil(remaining_time)} seconds Ctrl-c to Exit "
-                    )
-                    time.sleep(min(1.0, remaining_time))
-                print()
+                if announce_idle:
+                    if not previous_snapshot:
+                        custom_console.bot_log("There are no files in the Watcher folder")
+                    custom_console.bot_log(f"WATCHDOG: checking the Watcher folder every {duration} seconds."
+                                           f" Ctrl-c to Exit")
+                    announce_idle = False
+
+                custom_console.bot_countdown(duration)
 
                 # Second check
                 current_snapshot = self._snapshot(watcher_path)
 
                 # Skip if there are no files in the watcher folder
                 if not current_snapshot:
-                    custom_console.bot_log("The are no files in the Watcher folder\n")
                     continue
 
                 # Move only the entries whose size is unchanged since the previous check
@@ -190,6 +191,8 @@ class Bot:
                 # Start uploading only the new files
                 print()
                 self.run(include_paths=moved_paths)
+                print()
+                announce_idle = True
 
         except KeyboardInterrupt:
             custom_console.bot_log("Exiting...")

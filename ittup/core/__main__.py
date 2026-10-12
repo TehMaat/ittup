@@ -133,7 +133,8 @@ def main():
 
         bot.watcher(duration=config.user_preferences.WATCHER_INTERVAL,
                     watcher_path=config.user_preferences.WATCHER_PATH,
-                    destination_path=config.user_preferences.WATCHER_DESTINATION_PATH)
+                    destination_path=config.user_preferences.WATCHER_DESTINATION_PATH,
+                    timeout=config.user_preferences.WATCHER_TIMEOUT)
 
     # ftp and upload
     if cli.args.ftp:

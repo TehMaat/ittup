@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from argparse import Namespace
+from collections.abc import Callable
 import os
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
@@ -18,13 +19,15 @@ from ittup.view import custom_console
 
 class VideoManager:
 
-    def __init__(self, contents: list[Media], cli: Namespace, tags_list: dict, sign_list: dict, ban_list: dict):
+    def __init__(self, contents: list[Media], cli: Namespace, tags_list: dict, sign_list: dict, ban_list: dict,
+                 on_upload: Callable[[BittorrentData], None] | None = None):
         """
         Initialize the VideoManager with the given contents
 
         Args:
             contents (list): List of content media objects
             cli (argparse.Namespace): user flag Command line
+            on_upload: if set, called with each uploaded torrent right after the upload
         """
 
         self.torrent_found: bool = False
@@ -33,6 +36,7 @@ class VideoManager:
         self.tags_list: dict = tags_list
         self.sign_list: dict = sign_list
         self.ban_list: dict = ban_list
+        self.on_upload = on_upload
 
     def process(self, selected_tracker: str, tracker_name_list: list, tracker_archive: str) -> list[BittorrentData]:
         """
@@ -140,6 +144,10 @@ class VideoManager:
                         tracker_message=tracker_message,
                         archive_path=torrent_filepath,
                     ))
+
+                # Send the torrent to the client as soon as it is uploaded
+                if self.on_upload:
+                    self.on_upload(bittorrent_list[-1])
 
         # // end content
         return bittorrent_list

@@ -228,13 +228,15 @@ class UserContent:
         return client
 
     @staticmethod
-    def send_to_bittorrent(bittorrent_list: list[BittorrentData], message: str) -> None:
+    def send_to_bittorrent(bittorrent_list: list[BittorrentData], message: str,
+                           client: QbittorrentClient | TransmissionClient | RTorrentClient | None = None) -> None:
         """
         Sends a list of torrents to Bittorrent using threads
 
         Args:
             bittorrent_list (list[Bittorrent]): A list of Bittorrent objects to be sent to the client
             message: printed message
+            client: an already connected client. If None a new connection is opened
         """
 
         if not bittorrent_list:
@@ -244,7 +246,8 @@ class UserContent:
                                        f"{config_settings.torrent_client_config.TORRENT_CLIENT.upper()} client "
                                        f"... Please wait")
 
-        client = UserContent.get_client()
+        if client is None:
+            client = UserContent.get_client()
 
         with ThreadPoolExecutor(max_workers=20) as executor:
             # Submit the torrents

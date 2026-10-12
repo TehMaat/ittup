@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+from functools import partial
+
 from ittup.core.media_manager.VideoManager import VideoManager
 from ittup.core.media_manager.GameManager import GameManager
 from ittup.core.media_manager.DocuManager import DocuManager
@@ -30,6 +32,8 @@ class TorrentManager:
         self.games: list[Media] = []
         self.doc: list[Media] = []
         self.cli = cli
+        # Torrent client connection, opened at the first torrent sent during the uploads
+        self.client = None
         self.fast_load = config_settings.user_preferences.FAST_LOAD
         if self.fast_load < 1 or self.fast_load > 150:
             # full list
@@ -67,6 +71,18 @@ class TorrentManager:
             content for content in contents if content.category == System.category_list.get(System.DOCUMENTARY)
         ]
 
+    def send_now(self, bittorrent_data: BittorrentData, message: str) -> None:
+        """
+        Sends a single torrent to the torrent client right after its upload, reusing the same connection
+
+        Args:
+            bittorrent_data: the uploaded torrent
+            message: printed message
+        """
+        if self.client is None:
+            self.client = UserContent.get_client()
+        UserContent.send_to_bittorrent([bittorrent_data], message, client=self.client)
+
     def run(self, trackers_name_list: list):
         """
 
@@ -80,11 +96,16 @@ class TorrentManager:
         video_process_results: list[BittorrentData] = []
         docu_process_results: list[BittorrentData] = []
 
+        # Scan and watcher: send each torrent to the client as soon as it is uploaded,
+        # without waiting for the end of the cycle
+        seed_now = (bool(self.cli.scan) or self.cli.watcher) and not (self.cli.noseed or self.cli.noup)
+
         for selected_tracker in trackers_name_list:
             # Build the torrent file and upload each GAME to the tracker
             if self.games:
                 game_manager = GameManager(contents=self.games[:self.fast_load],
-                                           cli=self.cli)
+                                           cli=self.cli,
+                                           on_upload=partial(self.send_now, message='GAME') if seed_now else None)
                 game_process_results = game_manager.process(selected_tracker=selected_tracker,
                                                             tracker_name_list=trackers_name_list,
                                                             tracker_archive=self.tracker_archive)
@@ -94,7 +115,8 @@ class TorrentManager:
                 video_manager = VideoManager(contents=self.videos[:self.fast_load],
                                              cli=self.cli, tags_list=self.tags_list,
                                              sign_list=self.sign_list,
-                                             ban_list=self.ban_list)
+                                             ban_list=self.ban_list,
+                                             on_upload=partial(self.send_now, message='VIDEO') if seed_now else None)
                 video_process_results = video_manager.process(selected_tracker=selected_tracker,
                                                               tracker_name_list=trackers_name_list,
                                                               tracker_archive=self.tracker_archive)
@@ -102,7 +124,8 @@ class TorrentManager:
             # Build the torrent file and upload each DOC to the tracker
             if self.doc and not self.cli.reseed:
                 docu_manager = DocuManager(contents=self.doc[:self.fast_load],
-                                           cli=self.cli)
+                                           cli=self.cli,
+                                           on_upload=partial(self.send_now, message='DOCUMENTARY') if seed_now else None)
                 docu_process_results = docu_manager.process(selected_tracker=selected_tracker,
                                                             tracker_name_list=trackers_name_list,
                                                             tracker_archive=self.tracker_archive)
@@ -113,14 +136,16 @@ class TorrentManager:
                 custom_console.rule()
                 continue
 
-            if game_process_results:
-                UserContent.send_to_bittorrent(game_process_results, 'GAME')
+            # Otherwise send all the torrents at the end of the uploads
+            if not seed_now:
+                if game_process_results:
+                    UserContent.send_to_bittorrent(game_process_results, 'GAME')
 
-            if video_process_results:
-                UserContent.send_to_bittorrent(video_process_results, 'VIDEO')
+                if video_process_results:
+                    UserContent.send_to_bittorrent(video_process_results, 'VIDEO')
 
-            if docu_process_results:
-                UserContent.send_to_bittorrent(docu_process_results, 'DOCUMENTARY')
+                if docu_process_results:
+                    UserContent.send_to_bittorrent(docu_process_results, 'DOCUMENTARY')
             custom_console.bot_log(f"Tracker '{selected_tracker}' Done.")
             custom_console.rule()
 

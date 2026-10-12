@@ -2,7 +2,7 @@
 
 Sezione `tracker_config` di `ittup.json`.
 
-ittup carica solo su **ItaTorrents** (ITT): non c'è un tracker da scegliere né una lista multi-tracker.
+ITTup carica solo su **ItaTorrents** (ITT): non c'è un tracker da scegliere né una lista multi-tracker.
 
 ## Le tre chiavi di ITT
 

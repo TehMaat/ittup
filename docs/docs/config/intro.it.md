@@ -19,7 +19,7 @@ Contenuto della cartella:
 | `ban_list.json` | Tag da escludere dall'autobuild del titolo ([dettagli](../usage/tags.md)) |
 
 !!! note "Arrivi da Unit3Dup?"
-    Al primo avvio ittup copia `Unit3Dup_config/Unit3Dbot.json` e le tre liste in `ittup_config` (la vecchia cartella non viene toccata). Dettagli: [Aggiornamento](../install/upgrade.md#arrivi-da-unit3dup).
+    Al primo avvio ITTup copia `Unit3Dup_config/Unit3Dbot.json` e le tre liste in `ittup_config` (la vecchia cartella non viene toccata). Dettagli: [Aggiornamento](../install/upgrade.md#arrivi-da-unit3dup).
 
 Nella stessa cartella il bot crea anche le sottocartelle di default `torrent_archive_path` (dove archivia i `.torrent` generati), `cache_path`, `watcher_path` e `watcher_destination_path` — tutte personalizzabili (vedi [Opzioni avanzate](options.md)).
 

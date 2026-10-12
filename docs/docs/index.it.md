@@ -1,6 +1,6 @@
-# ittup
+# ITTup
 
-**ittup (ItaTorrents uploader) è un bot scritto in Python che genera e carica i tuoi torrent su [ItaTorrents](https://itatorrents.xyz).**
+**ITTup (ItaTorrents uploader) è un bot scritto in Python che genera e carica i tuoi torrent su [ItaTorrents](https://itatorrents.xyz).**
 
 Gli dai un percorso — un file o una cartella — e lui fa il resto: analizza i media, crea il torrent, prepara la pagina del tracker e mette tutto in seeding.
 
@@ -82,9 +82,9 @@ Come Documenti, con in più la proprietà `igdb`: l'ID del gioco sul database IG
 
 ## Tracker
 
-ittup carica su un solo tracker: **ITT** — [itatorrents.xyz](https://itatorrents.xyz).
+ITTup carica su un solo tracker: **ITT** — [itatorrents.xyz](https://itatorrents.xyz).
 
-ittup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) di 31December99, ridotto alla sola ItaTorrents. Arrivi da Unit3Dup? Vedi [Aggiornamento](install/upgrade.md#arrivi-da-unit3dup).
+ITTup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) di 31December99, ridotto alla sola ItaTorrents. Arrivi da Unit3Dup? Vedi [Aggiornamento](install/upgrade.md#arrivi-da-unit3dup).
 
 Codice sorgente: [github.com/TehMaat/ittup](https://github.com/TehMaat/ittup).
 

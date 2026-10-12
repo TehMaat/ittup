@@ -10,7 +10,7 @@ Normal: the bot has just created `ittup.json` and the support files with placeho
 
 A value in `ittup.json` is malformed (nonexistent color, non-numeric number, URL without scheme…). Open the file and fix the quoted field. The [Full config reference](config.md) lists the type and allowed values of every key.
 
-### `'-mt' has been removed: ittup uploads only to ItaTorrents`
+### `'-mt' has been removed: ITTup uploads only to ItaTorrents`
 
 `-mt` and `-tracker` came from Unit3Dup and no longer exist: every upload goes to ItaTorrents. Drop the flag from your command or script.
 

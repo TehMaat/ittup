@@ -5,7 +5,7 @@
 - **Python 3.10 o superiore** (consigliato: dalla 3.10 alla 3.12 — le versioni più recenti possono dare problemi con alcune librerie)
 - **FFmpeg** — usato per estrarre gli screenshot dai video
 - **Poppler** — solo se vuoi creare torrent di documenti PDF
-- **Git** — `pip` lo usa per installare ittup direttamente da GitHub: scaricalo da [git-scm.com](https://git-scm.com/download/win)
+- **Git** — `pip` lo usa per installare ITTup direttamente da GitHub: scaricalo da [git-scm.com](https://git-scm.com/download/win)
 
 ## 1. Installa FFmpeg
 
@@ -31,7 +31,7 @@ Serve soltanto se caricherai documenti PDF — il bot lo usa per estrarre la cov
 pdftocairo -v
 ```
 
-## 3. Installa ittup
+## 3. Installa ITTup
 
 ```bash
 pip install git+https://github.com/TehMaat/ittup

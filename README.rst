@@ -1,5 +1,5 @@
 
-ittup - ItaTorrents uploader
+ITTup - ItaTorrents uploader
 ===============================================
 |version| |online| |status| |python| |ubuntu| |debian| |windows|
 
@@ -14,12 +14,12 @@ ittup - ItaTorrents uploader
 Auto Torrent Generator and Uploader for ItaTorrents
 ===================================================
 
-**ittup** generates and uploads torrents to `ItaTorrents <https://itatorrents.xyz>`_ based on input provided
+**ITTup** generates and uploads torrents to `ItaTorrents <https://itatorrents.xyz>`_ based on input provided
 for movies or TV series and Games.
 
 Repository: https://github.com/TehMaat/ittup
 
-ittup is a fork of `Unit3Dup <https://github.com/31December99/Unit3Dup>`_ by 31December99,
+ITTup is a fork of `Unit3Dup <https://github.com/31December99/Unit3Dup>`_ by 31December99,
 reduced to the ItaTorrents tracker only.
 
 It performs the following tasks:
@@ -38,7 +38,7 @@ It performs the following tasks:
 - Generate various tags for titles: ``version``, ``resolution``, ``uhd``, ``platform``, ``source``, ``remux``, ``multi``, ``acodec``, ``channels``, ``flag``, ``subtitle``, ``vcodec``, ``hdr``, ``video_encoder``
 
 
-ittup can grab the first page, convert it to an image (using xpdf),
+ITTup can grab the first page, convert it to an image (using xpdf),
 and then the bot can upload it to an image host, then add the link to the torrent page description.
 
 
@@ -50,7 +50,7 @@ Install and Upgrade
 Keeping Unit3Dup
 ----------------
 You don't have to uninstall Unit3Dup: the two can be installed side by side.
-They have different commands (``unit3dup`` and ``ittup``), all of ittup's code lives in the single
+They have different commands (``unit3dup`` and ``ittup``), all of ITTup's code lives in the single
 ``ittup`` package (``ittup.core``, ``ittup.common``, ``ittup.view``), and each one has its own
 configuration folder.
 
@@ -58,10 +58,10 @@ If you use both, keep in mind that:
 
 - Custom paths copied from your Unit3Dup configuration (``WATCHER_PATH``, ``WATCHER_DESTINATION_PATH``,
   ``CACHE_PATH``, ``TORRENT_ARCHIVE_PATH``) are shared by the two tools. Don't run both watchers on the
-  same folder, or the same files can be uploaded twice: give ittup its own folders in ``ittup.json``
+  same folder, or the same files can be uploaded twice: give ITTup its own folders in ``ittup.json``
   (or set them to ``no_path`` to use the defaults inside ``ittup_config``).
-- If your Unit3Dup is older than 0.14.x, installing ittup in the same environment may upgrade libraries
-  Unit3Dup depends on. To keep them isolated, install ittup with pipx or in a virtualenv::
+- If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries
+  Unit3Dup depends on. To keep them isolated, install ITTup with pipx or in a virtualenv::
 
     pipx install git+https://github.com/TehMaat/ittup
 
@@ -76,7 +76,7 @@ The configuration is stored in ``~/ittup_config/ittup.json``
 ``tags_list.json``, ``sign_list.json`` and ``ban_list.json``.
 
 Coming from Unit3Dup? On the first run, if ``Unit3Dup_config`` exists and ``ittup_config`` does not,
-ittup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``), tags, sign and ban lists
+ITTup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``), tags, sign and ban lists
 into the new folder. The old folder is left untouched. Settings of the removed trackers
 (``SIS``, ``PTT``, ``AST``, ``MULTI_TRACKER``) are simply ignored.
 

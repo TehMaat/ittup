@@ -1,5 +1,5 @@
-site_name: ittup
-site_description: ittup documentation — torrent generator and uploader for ItaTorrents
+site_name: ITTup
+site_description: ITTup documentation — torrent generator and uploader for ItaTorrents
 site_url: https://tehmaat.github.io/ittup/
 repo_url: https://github.com/TehMaat/ittup
 repo_name: TehMaat/ittup
@@ -64,7 +64,7 @@ plugins:
         - locale: it
           name: Italiano
           build: true
-          site_description: Documentazione di ittup — generatore e uploader di torrent per ItaTorrents
+          site_description: Documentazione di ITTup — generatore e uploader di torrent per ItaTorrents
           nav_translations:
             Installation: Installazione
             Upgrade: Aggiornamento

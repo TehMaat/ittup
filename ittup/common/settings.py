@@ -29,7 +29,7 @@ version = __version__
 
 if os.name == "nt":
     CONFIG_DIR: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "ittup_config"
-    # Configuration folder used by Unit3Dup, the project ittup was forked from
+    # Configuration folder used by Unit3Dup, the project ITTup was forked from
     LEGACY_CONFIG_DIR: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config"
 else:
     CONFIG_DIR: Path = Path.home() / "ittup_config"
@@ -689,7 +689,7 @@ class Load:
     @staticmethod
     def migrate_legacy_config():
         """
-        Copy the Unit3Dup configuration into the ittup configuration folder on the first run.
+        Copy the Unit3Dup configuration into the ITTup configuration folder on the first run.
         The legacy folder is left untouched
         """
         if CONFIG_DIR.exists() or not LEGACY_CONFIG_DIR.is_dir():
@@ -705,7 +705,7 @@ class Load:
 
         if copied:
             print(f"{Ccolors.WARNING}-> Found a Unit3Dup configuration in '{LEGACY_CONFIG_DIR}'.{Ccolors.ENDC}")
-            print(f"{Ccolors.WARNING}-> Copied to the new ittup configuration folder '{CONFIG_DIR}':{Ccolors.ENDC}")
+            print(f"{Ccolors.WARNING}-> Copied to the new ITTup configuration folder '{CONFIG_DIR}':{Ccolors.ENDC}")
             for line in copied:
                 print(f"   {line}")
             print(f"{Ccolors.WARNING}-> The old folder has not been modified. "

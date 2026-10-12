@@ -9,7 +9,7 @@ pip install --upgrade git+https://github.com/TehMaat/ittup
 La versione installata è visibile all'avvio del bot:
 
 ```text
-ittup 1.1.0 Checking your configuration file..
+ITTup 1.1.0 Checking your configuration file..
 ```
 
 !!! tip "Dopo ogni aggiornamento"
@@ -23,9 +23,9 @@ Le novità di ogni release sono nella pagina [Releases del progetto](https://git
 
 ## Arrivi da Unit3Dup
 
-ittup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) ridotto alla sola ItaTorrents. Per passare a ittup:
+ITTup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) ridotto alla sola ItaTorrents. Per passare a ITTup:
 
-1. Installa ittup:
+1. Installa ITTup:
 
     ```bash
     pip install git+https://github.com/TehMaat/ittup
@@ -37,9 +37,9 @@ ittup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) ridotto
     ittup
     ```
 
-Al primo avvio, se esiste `Unit3Dup_config` e non esiste ancora `ittup_config`, ittup **copia** la tua configurazione nella nuova cartella:
+Al primo avvio, se esiste `Unit3Dup_config` e non esiste ancora `ittup_config`, ITTup **copia** la tua configurazione nella nuova cartella:
 
-| Unit3Dup | ittup |
+| Unit3Dup | ITTup |
 |---|---|
 | `Unit3Dup_config/Unit3Dbot.json` | `ittup_config/ittup.json` |
 | `Unit3Dup_config/tags_list.json` | `ittup_config/tags_list.json` |
@@ -55,12 +55,12 @@ Le impostazioni dei tracker rimossi (`SIS_*`, `PTT_*`, `AST_*`) e `MULTI_TRACKER
 
 ## Tenere anche Unit3Dup
 
-Non devi per forza disinstallare Unit3Dup: i due possono restare installati insieme. Hanno comandi diversi (`unit3dup` e `ittup`), tutto il codice di ittup sta nel solo pacchetto `ittup` e ognuno ha la sua cartella di configurazione.
+Non devi per forza disinstallare Unit3Dup: i due possono restare installati insieme. Hanno comandi diversi (`unit3dup` e `ittup`), tutto il codice di ITTup sta nel solo pacchetto `ittup` e ognuno ha la sua cartella di configurazione.
 
 Se li usi tutti e due, tieni presente che:
 
-- I percorsi personalizzati copiati dalla configurazione di Unit3Dup (vedi la nota sopra) sono in comune tra i due. Non far girare i due watcher sulla stessa cartella, altrimenti gli stessi file possono essere caricati due volte: dai a ittup cartelle sue in `ittup.json`, oppure impostale a `no_path`.
-- Se il tuo Unit3Dup è più vecchio della 0.14.x, installare ittup nello stesso ambiente può aggiornare librerie che usa anche Unit3Dup. Per tenerli separati, installa ittup con pipx o in un virtualenv:
+- I percorsi personalizzati copiati dalla configurazione di Unit3Dup (vedi la nota sopra) sono in comune tra i due. Non far girare i due watcher sulla stessa cartella, altrimenti gli stessi file possono essere caricati due volte: dai a ITTup cartelle sue in `ittup.json`, oppure impostale a `no_path`.
+- Se il tuo Unit3Dup è più vecchio della 0.14.x, installare ITTup nello stesso ambiente può aggiornare librerie che usa anche Unit3Dup. Per tenerli separati, installa ITTup con pipx o in un virtualenv:
 
     ```bash
     pipx install git+https://github.com/TehMaat/ittup

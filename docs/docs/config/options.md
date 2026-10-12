@@ -38,6 +38,7 @@
 "CACHE_PATH": "no_path",
 "CACHE_SCR": "False",
 "CACHE_DBONLINE": "False",
+"TMDB_DEBUG": "False",
 ```
 
 | Key | Effect |
@@ -45,6 +46,7 @@
 | `CACHE_PATH` | Cache folder (default: `Unit3Dup_config/cache_path`) |
 | `CACHE_SCR` | Reuses screenshots already extracted |
 | `CACHE_DBONLINE` | Caches TMDB results and online searches |
+| `TMDB_DEBUG` | Logs the TMDB title-matching scores (title, original, alternative titles, translations). Makes extra HTTP requests: keep it off unless you are debugging a wrong match |
 
 ## Language, anonymity and signature
 

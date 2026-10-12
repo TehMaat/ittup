@@ -38,6 +38,7 @@ Sezione `user_preferences` di `Unit3Dbot.json` (più `console_options` in fondo)
 "CACHE_PATH": "no_path",
 "CACHE_SCR": "False",
 "CACHE_DBONLINE": "False",
+"TMDB_DEBUG": "False",
 ```
 
 | Chiave | Effetto |
@@ -45,6 +46,7 @@ Sezione `user_preferences` di `Unit3Dbot.json` (più `console_options` in fondo)
 | `CACHE_PATH` | Cartella della cache (default: `Unit3Dup_config/cache_path`) |
 | `CACHE_SCR` | Riusa gli screenshot già estratti |
 | `CACHE_DBONLINE` | Mette in cache i risultati di TMDB e delle ricerche online |
+| `TMDB_DEBUG` | Mostra nel log i punteggi di confronto dei titoli TMDB (titolo, originale, titoli alternativi, traduzioni). Fa richieste HTTP extra: lascialo spento se non stai indagando un match sbagliato |
 
 ## Lingua, anonimato e firma
 

@@ -69,6 +69,10 @@ class MovieEndpoint:
         return {'url': f'{base_url}/movie/{movie_id}/keywords', 'datatype': Keyword, 'query': '',
                 'results': 'keywords'}
 
+    @staticmethod
+    def external_ids(movie_id: int) -> dict:
+        return {'url': f'{base_url}/movie/{movie_id}/external_ids', 'datatype': dict, 'query': ''}
+
 
 class TvEndpoint:
     @staticmethod
@@ -102,6 +106,10 @@ class TvEndpoint:
     def keywords(serie_id: int) -> dict:
         return {'url': f'{base_url}/tv/{serie_id}/keywords', 'datatype': Keyword, 'query': '',
                 'results': 'results'}
+
+    @staticmethod
+    def external_ids(serie_id: int) -> dict:
+        return {'url': f'{base_url}/tv/{serie_id}/external_ids', 'datatype': dict, 'query': ''}
 
 
 class TmdbAPI(MyHttp):
@@ -214,6 +222,14 @@ class TmdbAPI(MyHttp):
             print(f"Endpoint for category '{category}' not found.")
             return []
 
+    def external_ids(self, video_id: int, category: str) -> dict | None:
+        if endpoint_class := self.ENDPOINTS.get(category):
+            request = endpoint_class.external_ids(video_id)
+            response = self.request(endpoint=request)
+            if response:
+                return response[0]  # è un singolo dict, non una lista
+        return None
+
     def request(self, endpoint: dict) -> list[T] | None:
         """
         Sends a request to the API and returns a list of instances of the specified 'datatype'.
@@ -246,6 +262,7 @@ class DbOnline(TmdbAPI):
         self.tvdb_id = None
 
         # Load the cache file
+        self.cache = None
         if config_settings.user_preferences.CACHE_DBONLINE:
             self.cache = diskcache.Cache(str(os.path.join(config_settings.user_preferences.CACHE_PATH, "tmdb.cache")))
 
@@ -267,8 +284,27 @@ class DbOnline(TmdbAPI):
 
     def is_like(self, results: list[T]) -> T | bool:
         if results:
+            # Cache alternative_titles/translations per result id: one request each per search
+            alternatives_cache = {}
+            translations_cache = {}
+
+            def get_alternatives(media_id: int) -> list[T] | None:
+                if media_id not in alternatives_cache:
+                    alternatives_cache[media_id] = self.alternative(media_id=media_id, category=self.category)
+                return alternatives_cache[media_id]
+
+            def get_translations(media_id: int) -> list[T] | None:
+                if media_id not in translations_cache:
+                    translations_cache[media_id] = self.translations(media_id=media_id, category=self.category)
+                return translations_cache[media_id]
+
+            tmdb_debug = config_settings.user_preferences.TMDB_DEBUG
+
             # Search for in the tile or original_name
             for result in results:
+                if tmdb_debug:
+                    self.debug_scores(result, get_alternatives(result.id), get_translations(result.id))
+
                 # check date
                 if result.get_date() and self.media.guess_filename.guessit_year:
                     if not datetime.strptime(result.get_date(),
@@ -286,14 +322,14 @@ class DbOnline(TmdbAPI):
 
             # Search for alternative title
             for result in results:
-                alternative = self.alternative(media_id=result.id, category=self.category)
+                alternative = get_alternatives(result.id)
                 if alternative:
                     for alt in alternative:
                         if ManageTitles.fuzzyit(str1=self.query, str2=alt.title) > 95:
                             return result
 
             for result in results:
-                translations = self.translations(media_id=result.id, category=self.category)
+                translations = get_translations(result.id)
                 if translations:
                     for tr in translations:
                         if tr.data:
@@ -302,6 +338,25 @@ class DbOnline(TmdbAPI):
                                 if ManageTitles.fuzzyit(self.query, title) > 95:
                                     return result
         return False
+
+    def debug_scores(self, result: T, alternatives: list[T] | None, translations: list[T] | None) -> None:
+        """ Log the fuzzy score of every TMDB title candidate (TMDB_DEBUG) """
+        query = ManageTitles.clean_text(self.query)
+        custom_console.bot_warning_log(f"TMDB title: '{result.get_title()}' score: "
+                                       f"{ManageTitles.fuzzyit(str1=query, str2=ManageTitles.clean_text(result.get_title()))}")
+        custom_console.bot_warning_log(f"TMDB original: '{result.get_original()}' score: "
+                                       f"{ManageTitles.fuzzyit(str1=query, str2=ManageTitles.clean_text(result.get_original()))}")
+        if alternatives:
+            for a in alternatives:
+                custom_console.bot_warning_log(f"Alt title: '{a.title}' score: "
+                                               f"{ManageTitles.fuzzyit(str1=self.query, str2=a.title)}")
+        if translations:
+            for t in translations:
+                if t.data:
+                    title = t.data.name or t.data.title
+                    if title:
+                        custom_console.bot_warning_log(f"Translation: '{title}' score: "
+                                                       f"{ManageTitles.fuzzyit(str1=self.query, str2=title)}")
 
     def results_in_string(self, tmdb_id: int, imdb_id: int, tvdb_id: int) -> MediaResult:
         """
@@ -329,7 +384,6 @@ class DbOnline(TmdbAPI):
         Search for results based on a tmdb query
         season: True = search for a season. Title unknown
         """
-
         # Search in the cache first if cache is enabled
         if config_settings.user_preferences.CACHE_DBONLINE:
             search_results = self.load_cache(self.hash_key(self.query))
@@ -351,6 +405,15 @@ class DbOnline(TmdbAPI):
                 # Get the trailer
                 trailer_key = self.trailer(result.id)
                 keywords_list = self.keywords(result.id)
+
+                # TMDB external_ids as override: only override if the field is present
+                ext = self.external_ids(video_id=result.id, category=self.category)
+                if ext:
+                    if ext.get('imdb_id'):
+                        self.imdb_id = ext['imdb_id'].replace('tt', '')
+                    if ext.get('tvdb_id'):
+                        self.tvdb_id = ext['tvdb_id']
+
                 search_results = MediaResult(result, video_id=result.id, imdb_id=self.imdb_id, tvdb_id=self.tvdb_id,
                                              trailer_key=trailer_key, keywords_list=keywords_list)
 
@@ -379,7 +442,9 @@ class DbOnline(TmdbAPI):
 
         # Ask User TMDB ID
         search_results = self.manual_search()
-        self.cache[self.hash_key(self.query)] = search_results
+        # Don't cache a skipped result (TMDB ID 0): the next run should search again
+        if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
+            self.cache[self.hash_key(self.query)] = search_results
         return search_results
 
     def tvdb_search(self) -> dict | None:

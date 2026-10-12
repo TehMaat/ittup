@@ -148,6 +148,7 @@ class UserPreferences(BaseModel):
     WEBP_ENABLED: bool = False
     CACHE_SCR: bool = False
     CACHE_DBONLINE: bool = False
+    TMDB_DEBUG: bool = False
     PERSONAL_RELEASE: bool = False
     FAST_LOAD: int = 0
     MY_SIGN: str | None = None
@@ -477,8 +478,12 @@ class Config(BaseModel):
             else:
                 field = field.upper()
 
+                # New attribute added to an existing json file with an empty value: use the default
+                if field == 'TMDB_DEBUG' and section[field] == '':
+                    section[field] = 'False'
+
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
-                             'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'PERSONAL_RELEASE']:
+                             'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH', 'DEFAULT_TRACKER']:
@@ -670,6 +675,7 @@ class Load:
                 "WEBP_ENABLED": "False",
                 "CACHE_SCR": "False",
                 "CACHE_DBONLINE": "False",
+                "TMDB_DEBUG": "False",
                 "PERSONAL_RELEASE": "False",
                 "FAST_LOAD": "0",
                 "RELEASER_SIGN": "",

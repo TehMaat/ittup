@@ -88,6 +88,7 @@ Ogni chiave di `Unit3Dbot.json`, sezione per sezione. "Default" è il valore nel
 | `WEBP_ENABLED` | booleano | `False` | Webp animata nella descrizione |
 | `CACHE_SCR` | booleano | `False` | Cache degli screenshot |
 | `CACHE_DBONLINE` | booleano | `False` | Cache delle ricerche online |
+| `TMDB_DEBUG` | booleano | `False` | Log dei punteggi di confronto titoli TMDB (richieste HTTP extra) |
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
 | `FAST_LOAD` | numero | `0` | Limita i contenuti processati (1–150; 0 = tutti) |
 | `RELEASER_SIGN` | stringa | vuota | Firma releaser (max 20 caratteri) |

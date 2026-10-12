@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 dynamic = ["dependencies"]
 name = "ittup"
-version = "1.0.0"
+version = "1.1.0"
 description = "ItaTorrents uploader"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -24,11 +24,11 @@ Issues = "https://github.com/TehMaat/ittup/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["tests", "docs", "http_cache", "venv*"]
+include = ["ittup*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
 
 
 [project.scripts]
-ittup = "unit3dup.__main__:main"
+ittup = "ittup.core.__main__:main"

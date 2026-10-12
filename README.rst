@@ -47,8 +47,12 @@ Install and Upgrade
 
 - pip install --upgrade git+https://github.com/TehMaat/ittup
 
-If Unit3Dup is installed in the same environment, remove it first (``pip uninstall unit3dup``):
-both packages ship the same Python modules.
+If you had Unit3Dup installed, uninstall it first::
+
+    pip uninstall unit3dup
+
+All of ittup's code lives in the single ``ittup`` package (``ittup.core``, ``ittup.common``, ``ittup.view``);
+removing Unit3Dup also removes the old top-level ``common``, ``view`` and ``unit3dup`` modules it left behind.
 
 
 Configuration

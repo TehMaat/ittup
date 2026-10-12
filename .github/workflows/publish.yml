@@ -1,17 +1,38 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  # Keeps a release PR open with the next version and changelog; merging it creates the tag and the GitHub release.
+  # Build and publish run in this same workflow because a release created with GITHUB_TOKEN does not trigger other workflows.
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
   build:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - uses: actions/setup-python@v5
         with:
@@ -19,7 +40,7 @@ jobs:
 
       - name: Check release tag matches package version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
           version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
           if [ "${TAG#v}" != "$version" ]; then

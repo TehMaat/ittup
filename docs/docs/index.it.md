@@ -59,7 +59,7 @@ Creato per ogni file video incontrato:
 | `name` | Nome del torrent e titolo visualizzato sulla pagina del tracker |
 | `tmdb` | ID ottenuto interrogando TheMovieDatabase |
 | `tvdb` | ID ottenuto interrogando TheTVDB |
-| `imdb` | ID ricavato dal risultato di TVDB |
+| `imdb` | ID da TMDB (o TVDB, o dal tag `{imdb-tt…}` nel nome) |
 | `keywords` | Keywords ottenute dal risultato di TMDB |
 | `category_id` | Categoria del tracker: Movie o Serie |
 | `resolution_id` | Risoluzione riconosciuta dal tracker |

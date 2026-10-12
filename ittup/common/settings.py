@@ -131,6 +131,7 @@ class UserPreferences(BaseModel):
     SKIP_YOUTUBE: bool = False
     SIZE_TH: int = 50
     WATCHER_INTERVAL: int = 60
+    WATCHER_TIMEOUT: int = 3600
     WATCHER_PATH: str | None = None
     WATCHER_DESTINATION_PATH: str | None = None
     TORRENT_ARCHIVE_PATH: str | None = None
@@ -461,6 +462,8 @@ class Config(BaseModel):
                 # New attribute added to an existing json file with an empty value: use the default
                 if field == 'TMDB_DEBUG' and section[field] == '':
                     section[field] = 'False'
+                if field == 'WATCHER_TIMEOUT' and section[field] == '':
+                    section[field] = UserPreferences.model_fields['WATCHER_TIMEOUT'].default
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE']:
@@ -471,7 +474,7 @@ class Config(BaseModel):
 
                 if field in ['NUMBER_OF_SCREENSHOTS', 'COMPRESS_SCSHOT', 'IMGBB_PRIORITY', 'FREE_IMAGE_PRIORITY',
                              'LENSDUMP_PRIORITY', 'PASSIMA_PRIORITY', 'IMARIDE_PRIORITY', 'WATCHER_INTERVAL', 'SIZE_TH',
-                             'FAST_LOAD']:
+                             'FAST_LOAD', 'WATCHER_TIMEOUT']:
                     section[field] = Validate.integer(value=section[field], field_name=field)
 
                 if field in ['PREFERRED_LANG', 'YOUTUBE_PREF_LANG']:
@@ -637,6 +640,7 @@ class Load:
                 "SKIP_YOUTUBE": 'true',
                 "SIZE_TH": 10,
                 "WATCHER_INTERVAL": 60,
+                "WATCHER_TIMEOUT": 3600,
                 "WATCHER_PATH": "no_path",
                 "WATCHER_DESTINATION_PATH": "no_path",
                 "TORRENT_ARCHIVE_PATH": "no_path",

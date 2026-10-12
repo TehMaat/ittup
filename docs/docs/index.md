@@ -1,6 +1,6 @@
-# Unit3Dup
+# ittup
 
-**Unit3Dup is a Python bot that generates and uploads your torrents to UNIT3D-based trackers.**
+**ittup (ItaTorrents uploader) is a Python bot that generates and uploads your torrents to [ItaTorrents](https://itatorrents.xyz).**
 
 Give it a path — a file or a folder — and it does the rest: it analyzes your media, creates the torrent, prepares the tracker page and starts seeding.
 
@@ -21,19 +21,19 @@ Give it a path — a file or a folder — and it does the rest: it analyzes your
 Three commands cover most use cases:
 
 ```bash
-unit3dup -u "/home/ITT/upload/movie.mkv"
+ittup -u "/home/ITT/upload/movie.mkv"
 ```
 
 Uploads a **single file**: analysis, screenshots, upload, seeding.
 
 ```bash
-unit3dup -f "/home/ITT/upload/foldername"
+ittup -f "/home/ITT/upload/foldername"
 ```
 
 Uploads a **folder** as a single torrent (a movie, a full season…). The torrent takes the folder name.
 
 ```bash
-unit3dup -scan "/home/ITT/upload"
+ittup -scan "/home/ITT/upload"
 ```
 
 Processes **everything** inside the path: every file and every folder, all the way to seeding.
@@ -80,15 +80,14 @@ It has fewer properties than the video object: `name`, `tmdb`, `category_id`, `a
 
 Like Documents, plus the `igdb` property: the game ID on the IGDB database. It requires an IGDB account — see the [Games](guides/games.md) guide.
 
-## Supported trackers
+## Tracker
 
-| Tracker | Site |
-|---|---|
-| `ITT` | [itatorrents.xyz](https://itatorrents.xyz) |
-| `PTT` | [polishtorrent.top](https://polishtorrent.top) |
-| `AST` | [arabicsource.net](https://arabicsource.net) |
-| `SIS` | — |
+ittup uploads to a single tracker: **ITT** — [itatorrents.xyz](https://itatorrents.xyz).
+
+ittup is a fork of [Unit3Dup](https://github.com/31December99/Unit3Dup) by 31December99, reduced to ItaTorrents only. Coming from Unit3Dup? See [Upgrade](install/upgrade.md#coming-from-unit3dup).
+
+Source code: [github.com/TehMaat/ittup](https://github.com/TehMaat/ittup).
 
 ## Community
 
-Questions, reports, requests: [ITT Discord server](https://discord.gg/8RpwN2Khcz).
+Questions, reports, requests: [Discord server](https://discord.gg/VMYaVzq2AF).

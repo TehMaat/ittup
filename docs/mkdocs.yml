@@ -1,14 +1,19 @@
-site_name: Unit3Dup
-site_description: Unit3Dup documentation — torrent generator and uploader for UNIT3D trackers
-site_url: https://31december99.github.io/Unit3Dup/
-repo_url: https://github.com/31December99/Unit3Dup
-repo_name: 31December99/Unit3Dup
+site_name: ittup
+site_description: ittup documentation — torrent generator and uploader for ItaTorrents
+site_url: https://tehmaat.github.io/ittup/
+repo_url: https://github.com/TehMaat/ittup
+repo_name: TehMaat/ittup
+edit_uri: edit/main/docs/docs/
+
+validation:
+  anchors: warn
 
 theme:
   name: material
   language: en
-  logo: images/unit3dup.png
-  favicon: images/unit3dup.png
+  icon:
+    logo: material/upload
+    repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -59,13 +64,12 @@ plugins:
         - locale: it
           name: Italiano
           build: true
-          site_description: Documentazione di Unit3Dup — generatore e uploader di torrent per tracker UNIT3D
+          site_description: Documentazione di ittup — generatore e uploader di torrent per ItaTorrents
           nav_translations:
             Installation: Installazione
             Upgrade: Aggiornamento
             Configuration: Configurazione
             Getting started: Primi passi
-            Trackers: Tracker
             Image hosts: Image host
             Torrent clients: Client torrent
             Advanced options: Opzioni avanzate
@@ -90,7 +94,7 @@ nav:
       - Upgrade: install/upgrade.md
   - Configuration:
       - Getting started: config/intro.md
-      - Trackers: config/trackers.md
+      - Tracker: config/trackers.md
       - Metadata: config/metadata.md
       - Image hosts: config/imagehosts.md
       - Torrent clients: config/clients.md
@@ -98,7 +102,6 @@ nav:
   - Usage:
       - Basic upload: usage/upload.md
       - Tags and titles: usage/tags.md
-      - Multi-tracker: usage/multitracker.md
       - Reseed: usage/reseed.md
       - Watcher: usage/watcher.md
       - Search: usage/search.md

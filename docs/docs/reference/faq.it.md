@@ -4,27 +4,19 @@
 
 ### Messaggi rossi al primo avvio
 
-Normale: il bot ha appena creato `Unit3Dbot.json` e i file di supporto con i valori segnaposto, e ti avvisa che mancano le chiavi. Segui i [Primi passi](../config/intro.md).
+Normale: il bot ha appena creato `ittup.json` e i file di supporto con i valori segnaposto, e ti avvisa che mancano le chiavi. Segui i [Primi passi](../config/intro.md).
 
 ### `-> Please Fix 'CAMPO' ['valore'] in settings.json`
 
-Un valore in `Unit3Dbot.json` è malformato (colore inesistente, numero non numerico, URL senza schema…). Apri il file e correggi il campo indicato tra apici. La [Config completa](config.md) elenca tipo e valori ammessi di ogni chiave.
+Un valore in `ittup.json` è malformato (colore inesistente, numero non numerico, URL senza schema…). Apri il file e correggi il campo indicato tra apici. La [Config completa](config.md) elenca tipo e valori ammessi di ogni chiave.
 
-### `No tracker name provided. Please update your configuration file`
+### `'-mt' has been removed: ittup uploads only to ItaTorrents`
 
-`MULTI_TRACKER` è vuoto. Serve almeno un tracker: `"MULTI_TRACKER": ["itt"]`.
+`-mt` e `-tracker` arrivano da Unit3Dup e non esistono più: ogni upload va su ItaTorrents. Togli il flag dal comando o dallo script.
 
-### `Tracker 'xyz' not found. Please update your configuration file`
+### `-> No PID value for ITT_PID`
 
-Il nome passato a `-tracker` non è nella lista `MULTI_TRACKER` (o non è tra i tracker supportati: `itt`, `sis`, `ptt`, `ast`).
-
-### `Invalid multi-tracker list. Please remove duplicates`
-
-Lo stesso tracker compare due volte in `MULTI_TRACKER`.
-
-### `-> No PID value for XXX_PID`
-
-Manca la passkey di un tracker presente in `MULTI_TRACKER`: o la configuri, o togli quel tracker dalla lista. Vedi [Tracker](../config/trackers.md).
+`ITT_PID` contiene ancora un segnaposto: inserisci la tua passkey ITT. Vedi [Tracker](../config/trackers.md).
 
 ## Client torrent
 
@@ -67,17 +59,17 @@ Le categorie valide per `-force` sono: `movie`, `tv`, `game`, `edicola`.
 
 Mancano `IGDB_CLIENT_ID` / `IGDB_ID_SECRET`: i giochi vengono saltati, il resto prosegue. Vedi [Giochi](../guides/games.md).
 
-### `User tags file ... not found` (con `-b`)
+### `User tags file ... not found`
 
 Manca `tags_list.json` nella cartella di configurazione. Viene creato al primo avvio: se l'hai cancellato, rilancia il bot senza argomenti. Vedi [Tag e titoli](../usage/tags.md).
 
 ### Il titolo viene riconosciuto male
 
-Usa `-notitle "Titolo Corretto"` per forzare la ricerca TMDB, e `-b` per ricostruire i tag. Vedi [Tag e titoli](../usage/tags.md).
+Usa `-notitle "Titolo Corretto"` per forzare la ricerca TMDB; ritocca `tags_list.json` e `ban_list.json` per correggere i tag. Vedi [Tag e titoli](../usage/tags.md).
 
 ### Dove finiscono i `.torrent` creati?
 
-In `TORRENT_ARCHIVE_PATH`, organizzati per tracker: `<archivio>/ITT/nome.torrent`. Default: `Unit3Dup_config/torrent_archive_path/`.
+In `TORRENT_ARCHIVE_PATH`, nella sottocartella `ITT`: `<archivio>/ITT/nome.torrent`. Default: `ittup_config/torrent_archive_path/`.
 
 ## Watcher
 
@@ -93,8 +85,8 @@ Sì, con pyenv: guida [Seedbox ultra.cc](../install/seedbox.md).
 
 ### Come aggiorno?
 
-`pip install unit3dup --upgrade` — [Aggiornamento](../install/upgrade.md).
+`pip install --upgrade git+https://github.com/TehMaat/ittup` — [Aggiornamento](../install/upgrade.md).
 
 ### Dove chiedo aiuto?
 
-Sul [Discord di ITT](https://discord.gg/8RpwN2Khcz) o aprendo una [issue su GitHub](https://github.com/31December99/Unit3Dup/issues).
+Sul [Discord](https://discord.gg/VMYaVzq2AF) o aprendo una [issue su GitHub](https://github.com/TehMaat/ittup/issues).

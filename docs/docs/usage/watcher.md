@@ -5,10 +5,10 @@ The watcher is the **automatic** mode: the bot monitors a folder and uploads to 
 ## Start
 
 ```bash
-unit3dup -watcher
+ittup -watcher
 ```
 
-The flag takes no parameters: everything is configured in `Unit3Dbot.json`.
+The flag takes no parameters: everything is configured in `ittup.json`.
 
 ## Configuration
 

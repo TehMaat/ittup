@@ -1,6 +1,6 @@
 # Ricerca sul tracker
 
-Oltre a caricare, il bot interroga il tracker dal terminale: ricerche, dettagli, filtri. Tutti i comandi operano sul **tracker di default** (il primo di `MULTI_TRACKER`) oppure su quello indicato con `-tracker <NOME>`.
+Oltre a caricare, il bot interroga il tracker dal terminale: ricerche, dettagli, filtri. Tutti i comandi operano su ItaTorrents.
 
 ## Ricerche di base
 
@@ -16,9 +16,8 @@ Oltre a caricare, il bot interroga il tracker dal terminale: ricerche, dettagli,
 | `-db` | Aggiunto a una ricerca, **salva i risultati** nel database locale |
 
 ```bash
-unit3dup -sch "nome del film"
-unit3dup -tracker ptt -sch "nome del film"
-unit3dup -up "NomeUploader" -db
+ittup -sch "nome del film"
+ittup -up "NomeUploader" -db
 ```
 
 ## Filtri
@@ -38,7 +37,7 @@ unit3dup -up "NomeUploader" -db
 Combo utile — un titolo TMDB a una risoluzione precisa:
 
 ```bash
-unit3dup -tmdb 603 -res 1080p
+ittup -tmdb 603 -res 1080p
 ```
 
 ## Viste speciali
@@ -57,7 +56,7 @@ Elenchi per attributo del torrent:
 | `-pr` | Personal release |
 
 ```bash
-unit3dup -fe
+ittup -fe
 ```
 
 La tabella completa di ogni flag: [Tutti i comandi](../reference/commands.md).

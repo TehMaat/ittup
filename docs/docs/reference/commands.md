@@ -3,10 +3,10 @@
 Synopsis:
 
 ```text
-unit3dup [options]
+ittup [options]
 ```
 
-Upload flags combine with each other (e.g. `-mt -b -u "<file>"`); search flags combine with the filters. Every flag also has a long form (`-u` / `--upload`).
+Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags combine with the filters. Every flag also has a long form (`-u` / `--upload`).
 
 ## Configuration
 
@@ -21,18 +21,18 @@ Upload flags combine with each other (e.g. `-mt -b -u "<file>"`); search flags c
 | `-u`, `--upload` | file path | Uploads a [single file](../usage/upload.md#-u-a-single-file) |
 | `-f`, `--folder` | folder path | Uploads a [folder](../usage/upload.md#-f-a-folder) as a single torrent |
 | `-scan` | path | Processes [everything](../usage/upload.md#-scan-everything-inside-a-path) inside the path |
-| `-b`, `--buildtags` | — | [Rebuilds title and tags](../usage/tags.md#-b-rebuild-the-title) from the media analysis |
 | `-reseed` | — | [Reseed](../usage/reseed.md): downloads from the tracker the torrents of your local content |
 | `-watcher` | — | Starts the [watcher](../usage/watcher.md) (monitored folder) |
 | `-notitle` | "title" | [Manual title](../usage/tags.md#manual-title) for the TMDB search |
-| `-tracker` | tracker name | [Destination tracker](../usage/multitracker.md#-tracker-one-specific-tracker) (default: the first in `MULTI_TRACKER`) |
-| `-mt` | — | Upload to [all configured trackers](../usage/multitracker.md#-mt-all-trackers) |
 | `-force` | category | Forces the category: `movie`, `tv`, `game`, `edicola` (no argument: `movie`) |
 | `-noseed` | — | Upload without handing the torrent to the client (no seeding) |
 | `-noup` | — | Creates the `.torrent` in the archive only, no upload |
 | `-dup`, `--duplicate` | — | Checks the tracker for duplicates before uploading |
 | `-personal` | — | Marks as personal release |
 | `-ftp` | — | [Interactive FTP browser](../usage/ftp.md): download from the remote server and upload |
+
+!!! note "Removed Unit3Dup flags"
+    `-tracker` and `-mt` no longer exist: every upload goes to ItaTorrents, and passing them stops the bot with an error. `-b` is gone too: the title is always built automatically ([Tags and titles](../usage/tags.md)).
 
 ## Search
 

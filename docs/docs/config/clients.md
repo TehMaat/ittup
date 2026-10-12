@@ -1,6 +1,6 @@
 # Torrent clients
 
-`torrent_client_config` section of `Unit3Dbot.json`. After the upload, the bot hands the torrent to your client for **seeding**.
+`torrent_client_config` section of `ittup.json`. After the upload, the bot hands the torrent to your client for **seeding**.
 
 ## Pick your client
 

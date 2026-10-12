@@ -5,18 +5,16 @@
 ## Come funziona
 
 ```bash
-unit3dup -reseed -f "/percorso/cartella"
-unit3dup -reseed -scan "/percorso/libreria"
+ittup -reseed -f "/percorso/cartella"
+ittup -reseed -scan "/percorso/libreria"
 ```
 
 Per ogni contenuto video trovato nel percorso:
 
 1. Il bot identifica il titolo (ricerca TMDB, come per un upload)
 2. Cerca sul tracker un torrent **corrispondente** al tuo file
-3. Se lo trova, **scarica il `.torrent` dal tracker** nell'[archivio](../config/options.md#percorsi) (`<archivio>/<TRACKER>/`)
+3. Se lo trova, **scarica il `.torrent` dal tracker** nell'[archivio](../config/options.md#percorsi) (`<archivio>/ITT/`)
 4. Lo consegna al client torrent, che riprende il seeding usando i tuoi file locali
-
-Con più tracker (lista `MULTI_TRACKER` o `-mt`) il giro viene ripetuto per ognuno.
 
 ## A cosa serve
 

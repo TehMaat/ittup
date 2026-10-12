@@ -1,6 +1,6 @@
 # Advanced options
 
-`user_preferences` section of `Unit3Dbot.json` (plus `console_options` at the bottom). None of these options is required: the defaults are fine to start with.
+`user_preferences` section of `ittup.json` (plus `console_options` at the bottom). None of these options is required: the defaults are fine to start with.
 
 ## Screenshots
 
@@ -43,7 +43,7 @@
 
 | Key | Effect |
 |---|---|
-| `CACHE_PATH` | Cache folder (default: `Unit3Dup_config/cache_path`) |
+| `CACHE_PATH` | Cache folder (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Reuses screenshots already extracted |
 | `CACHE_DBONLINE` | Caches TMDB results and online searches |
 | `TMDB_DEBUG` | Logs the TMDB title-matching scores (title, original, alternative titles, translations). Makes extra HTTP requests: keep it off unless you are debugging a wrong match |
@@ -97,21 +97,19 @@ How it works: [Watcher](../usage/watcher.md).
 "TORRENT_ARCHIVE_PATH": "no_path",
 ```
 
-Folder where the bot archives the generated `.torrent` files, organized in per-tracker subfolders (`<archive>/ITT/...`). With `no_path` it uses the default inside `Unit3Dup_config`.
+Folder where the bot archives the generated `.torrent` files, inside the `ITT` subfolder (`<archive>/ITT/...`). With `no_path` it uses the default inside `ittup_config`.
 
 ## YouTube
 
 ```json
-"YOUTUBE_FAV_CHANNEL_ID": "UC...",
-"YOUTUBE_CHANNEL_ENABLE": "False",
+"YOUTUBE_PREF_LANG": "IT",
 "SKIP_YOUTUBE": "true",
 "SKIP_TMDB": "false",
 ```
 
 | Key | Effect |
 |---|---|
-| `YOUTUBE_FAV_CHANNEL_ID` | Favorite channel to pick trailers from |
-| `YOUTUBE_CHANNEL_ENABLE` | Enables trailer search on the favorite channel |
+| `YOUTUBE_PREF_LANG` | Country/language code (ISO 3166, e.g. `IT`) used to search trailers on YouTube |
 | `SKIP_YOUTUBE` | Skips the YouTube trailer search entirely |
 | `SKIP_TMDB` | Skips the TMDB lookup (not recommended for videos) |
 

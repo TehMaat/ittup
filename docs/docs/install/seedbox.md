@@ -66,16 +66,14 @@ pyenv global 3.12.0
 ## 3. Install and test the bot
 
 ```bash
-pip install unit3dup
+pip install git+https://github.com/TehMaat/ittup
 ```
 
 Launch the bot as a first test:
 
 ```bash
-unit3dup
+ittup
 ```
-
-![startup](../images/unit3dup.png)
 
 The red messages warn you that the bot is not configured yet: continue with the [minimal configuration](../config/intro.md).
 

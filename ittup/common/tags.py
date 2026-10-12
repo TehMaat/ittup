@@ -46,17 +46,27 @@ audio_translate = {
     "MPEG Audio": "MPEG",
 }
 
-video_translate = {
-    "AVC": "H.264",
-    "HEVC": "H.265",
-    "H265": "H.265",
-    "H264": "H.264",
+# Codec family from the MediaInfo 'format' of the video track
+video_family = {
+    "AVC": "264",
+    "HEVC": "265",
 }
 
-video_encoder_translate = {
-    "X265": "x.265",
-    "X264": "x.264",
+# Release type from the source/remux tags of the file name. Each tag is mapped on its own:
+# DLMUX is in the "remux" category but it is a WEB-DL
+UNTOUCHED_TAGS = {"REMUX", "BDREMUX", "BDMUX", "VU", "UNTOUCHED", "DVDMUX", "FULL DISC"}
+WEB_TAGS = {"WEB-DL", "WEB", "WEBDL", "WEB-DLMUX", "WEBDLMUX", "WEB-MUX", "WEBMUX", "DLMUX", "HDTV"}
+ENCODE_TAGS = {"ENCODE", "WEBRIP", "BDRIP", "BRRIP", "DVDRIP", "UHDRIP", "FHDRIP", "WEB-DLRIP", "WEBDLRIP"}
+
+# How each release type writes the 264/265 codec
+video_codec_labels = {
+    "untouched": {"264": "AVC", "265": "HEVC"},
+    "web": {"264": "H.264", "265": "H.265"},
+    "encode": {"264": "x264", "265": "x265"},
 }
+
+# x264, x.264, H264, H.265, AVC, HEVC... in the file name
+NAME_CODEC_PATTERN = re.compile(r'(?<![a-z0-9])(?:[xh][._ -]?26([45])|(avc)|(hevc))(?![a-z0-9])', re.IGNORECASE)
 
 TAG_NORMALIZE = {
     "BLURAY": "BluRay",
@@ -85,6 +95,8 @@ class SearchTags(object):
         self.title = title
         self.year = year
         self.tags_dict = {}
+        self.release_type: str | None = None
+        self.name_family: str | None = None
 
         self.TAG_TYPES: dict = tags_list
         self.SIGNS_LIST: dict = sign_list
@@ -187,6 +199,14 @@ class SearchTags(object):
         if self.tags_dict.get("source", None):
             self.tags_dict["source"] = list(dict.fromkeys(self.tags_dict["source"]))
 
+        # x264/x265 from the file name only tell the codec family: the codec is written by vcodec
+        name_encoders = self.tags_dict.pop('video_encoder', [])
+        self.name_family = self.codec_family_from_name(self.filename, name_encoders)
+        # Read the release type before 'remux' gets the REMUX tag appended below
+        self.release_type = self.detect_release_type(
+            self.tags_dict.get('source', []) + self.tags_dict.get('remux', [])
+        )
+
         if norm:
             # Skip if it is part of title es: "Wicked.Parte.2.2025.iTA" Title = Wicked Parte 2
             if not any(t in self.title.lower() for t in ['part', 'parte']):
@@ -207,10 +227,6 @@ class SearchTags(object):
 
             elif category == "vcodec":
                 updated_category = self.mediainfo_video(category=category)
-
-            elif category == "video_encoder":
-                if self.tags_dict.get('video_encoder', None):
-                    self.tags_dict['video_encoder'][0] = self.tags_dict['video_encoder'][0].lower()
 
             elif category == "hdr":
                 updated_category = self.mediainfo_hdr(category=category)
@@ -297,16 +313,103 @@ class SearchTags(object):
             audio_codecs.extend(languages)
         return {category: audio_codecs}
 
-    def mediainfo_video(self, category: str) -> dict:
-        codec_translated = {}
-        if self.mediafile.video_track:
-            for video in self.mediafile.video_track:
-                video_format = video.get('format', "")
-                codec_translated = video_translate.get(video_format, video_format)
-        if codec_translated:
-            return {category: codec_translated}
-        return codec_translated
+    @staticmethod
+    def detect_release_type(tags: list) -> str | None:
+        """
+        Release type from the source/remux tags: 'encode', 'untouched', 'web' or None when uncertain
+        (es. BLURAY alone or no tags)
+        """
+        tags = {str(tag).upper() for tag in tags}
+        if tags & ENCODE_TAGS:
+            return "encode"
+        if tags & UNTOUCHED_TAGS:
+            return "untouched"
+        if tags & WEB_TAGS:
+            return "web"
+        return None
 
+    @staticmethod
+    def codec_family_from_name(filename: str, name_encoders: list) -> str | None:
+        """
+        Codec family ('264' or '265') written in the file name, None if missing or ambiguous
+        """
+        families = {str(tag)[-3:] for tag in name_encoders}
+        for match in NAME_CODEC_PATTERN.finditer(filename):
+            if match.group(1):
+                families.add(f"26{match.group(1)}")
+            elif match.group(2):
+                families.add("264")
+            else:
+                families.add("265")
+        families &= {"264", "265"}
+        return families.pop() if len(families) == 1 else None
+
+    @staticmethod
+    def encoder_signature(video: dict) -> str | None:
+        """
+        x264/x265 signature left by the encoder in the video track ('264', '265' or None)
+        """
+        library = str(video.get('writing_library') or '').lower()
+        for family in ("264", "265"):
+            if f"x{family}" in library:
+                return family
+        settings = str(video.get('encoding_settings') or '').lower()
+        if "cabac=" in settings:
+            return "264"
+        if "cpuid=" in settings or "ctu=" in settings:
+            return "265"
+        return None
+
+    @staticmethod
+    def normalize_other_codec(video: dict, filename: str) -> str:
+        """
+        Codecs other than 264/265 (AV1, VP9, VC-1, MPEG-2, XviD...)
+        """
+        video_format = str(video.get('format') or '')
+        if video_format == "MPEG Video":
+            version = re.search(r'\d', str(video.get('format_version') or ''))
+            return f"MPEG-{version.group(0)}" if version else "MPEG"
+        if video_format == "MPEG-4 Visual":
+            hint = f"{video.get('codec_id') or ''} {video.get('writing_library') or ''} {filename}".upper()
+            if "XVID" in hint:
+                return "XviD"
+            if "DIVX" in hint or "DX50" in hint:
+                return "DivX"
+            return "MPEG-4"
+        return video_format
+
+    def mediainfo_video(self, category: str) -> dict:
+        video = self.mediafile.video_track[0] if self.mediafile.video_track else {}
+        video_format = str(video.get('format') or '')
+        mediainfo_family = video_family.get(video_format)
+
+        # The file name tells the family, MediaInfo wins when they don't agree
+        family = self.name_family
+        if video_format:
+            if self.name_family and self.name_family != mediainfo_family:
+                custom_console.bot_warning_log(
+                    f"<> Video codec warning: the file name says {self.name_family} but MediaInfo says"
+                    f" '{video_format}'. Using MediaInfo")
+            family = mediainfo_family
+
+        if not family:
+            if video_format:
+                return {category: self.normalize_other_codec(video, self.filename)}
+            return {}
+
+        # The encoder in MediaInfo is only a check: it is never read on a WEB-DL
+        if self.release_type == "untouched":
+            if self.encoder_signature(video):
+                custom_console.bot_warning_log(
+                    f"<> Warning: possible fake REMUX, the video track was encoded with"
+                    f" '{video.get('writing_library') or 'x' + family}'")
+            label = "untouched"
+        elif self.release_type in ("encode", "web"):
+            label = self.release_type
+        else:
+            label = "encode" if self.encoder_signature(video) else "web"
+
+        return {category: video_codec_labels[label][family]}
 
     def mediainfo_hdr(self, category: str) -> dict:
         if self.mediafile.video_track:

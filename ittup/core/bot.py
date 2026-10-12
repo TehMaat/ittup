@@ -198,11 +198,10 @@ class Bot:
 
                 # Start uploading only the new files, one at a time
                 print()
-                self.run(include_paths=moved_paths)
-                print()
-                announce_idle = True
                 for moved_path in moved_paths:
                     self._run_isolated(include_path=moved_path, timeout=timeout)
+                print()
+                announce_idle = True
 
         except KeyboardInterrupt:
             custom_console.bot_log("Exiting...")
@@ -216,8 +215,15 @@ class Bot:
         Returns:
             True if the child process ended without errors
         """
+        # The child must be a fork of the watcher: it shares the loaded config and the console (the questions
+        # are answered on stdin), and the Bot can't be pickled for 'spawn' or 'forkserver' (the default
+        # since Python 3.14). Where fork isn't available or safe (Windows, macOS) the entry runs in the watcher
+        if "fork" not in multiprocessing.get_all_start_methods() or sys.platform == "darwin":
+            return self.run(include_paths=[include_path])
+
         name = os.path.basename(include_path)
-        process = multiprocessing.Process(target=_run_worker, args=(self, include_path), daemon=True)
+        process = multiprocessing.get_context("fork").Process(target=_run_worker, args=(self, include_path),
+                                                              daemon=True)
         process.start()
         try:
             process.join(timeout if timeout > 0 else None)

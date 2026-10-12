@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import hashlib
 import os
 import stat
 import time
-import bencode2
 import requests
 from requests import Response
 from rtorrent_rpc import RTorrent
@@ -73,8 +71,8 @@ class TransmissionClient(TorrClient):
 
     def send_to_client(self, tracker_data_response: str, torrent: Mytorrent, content: Media, archive_path: str):
         # "Translate" files location to shared_path if necessary
-        if config_settings.torrent_client_config.SHARED_QBIT_PATH:
-            torr_location = config_settings.torrent_client_config.SHARED_QBIT_PATH
+        if config_settings.torrent_client_config.SHARED_TRASM_PATH:
+            torr_location = config_settings.torrent_client_config.SHARED_TRASM_PATH
         else:
             # If no shared_path is specified set it to the path specified in the CLI commands (path)
             torr_location = os.path.dirname(content.torrent_path)
@@ -150,31 +148,25 @@ class QbittorrentClient(TorrClient):
                 f"{self.__class__.__name__} Please verify your configuration"
             )
 
-    def _add_torrent_and_tag(self, torrent_bytes: bytes, save_path: str, info_hash: str, category: str) -> None:
-
-        self.client.torrents_add(torrent_files=torrent_bytes, save_path=save_path)
-
-        # wait for torrent to be registered
-        for _ in range(20):
-            try:
-                torrents = self.client.torrents_info(torrent_hashes=info_hash)
-                if torrents:
-                    break
-            except Exception:
-                pass
-            time.sleep(0.25)
+    def _add_torrent_and_tag(self, torrent_bytes: bytes, save_path: str, category: str) -> None:
 
         if category == 'movie':
             category = config_settings.torrent_client_config.CATEGORY_MOVIE
         if category == 'tv':
-            category = config_settings.torrent_client_config.CATEGORY_MOVIE
+            category = config_settings.torrent_client_config.CATEGORY_TV
 
+        # Category and tags are applied in the same request: no need to wait for the torrent to be registered
         try:
-            self.client.torrents_set_category(category=category, torrent_hashes=info_hash)
-        except qbittorrentapi.APIError:
-            custom_console.bot_warning_log(f"<> qbittorrent Category '{category}' does not exist")
+            result = self.client.torrents_add(torrent_files=torrent_bytes, save_path=save_path,
+                                              is_skip_checking=config_settings.torrent_client_config.QBIT_SKIP_CHECK,
+                                              category=category or None,
+                                              tags=config_settings.torrent_client_config.TAG)
+        except qbittorrentapi.Conflict409Error:
+            custom_console.bot_warning_log("<> qbittorrent: torrent already added")
+            return
 
-        self.client.torrents_add_tags(tags=config_settings.torrent_client_config.TAG, torrent_hashes=info_hash)
+        if result == "Fails.":
+            custom_console.bot_warning_log("<> qbittorrent failed to add the torrent")
 
     @staticmethod
     def _get_category(content: Media) -> str:
@@ -202,16 +194,9 @@ class QbittorrentClient(TorrClient):
             # otherwise set torr_location using the cli path
             torr_location = os.path.dirname(content.torrent_path)
 
-        # We have to read the info_hash from the downloaded torrent file
-        # because the tracker randomizes it so it's not the same as the torf instance
         with open(archive_path, "rb") as file_buffer:
-            torrent_data = file_buffer.read()
-
-            info = bencode2.bdecode(torrent_data)[b"info"]
-            info_hash = hashlib.sha1(bencode2.bencode(info)).hexdigest()
-            file_buffer.seek(0)
             self._add_torrent_and_tag(torrent_bytes=file_buffer.read(), save_path=str(torr_location),
-                                      info_hash=info_hash, category=category)
+                                      category=category)
 
 
 class RTorrentClient(TorrClient):

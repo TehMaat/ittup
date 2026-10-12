@@ -662,7 +662,7 @@ class Load:
                 "MY_TEXT_1": "",
                 "MY_TEXT_2": "",
                 "MY_TEXT_3": "",
-                "MY_TEXT_H": "[center]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/center]"
+                "MY_TEXT_H": ""
             },
             "options": {
                 "FTPX_USER": "user",

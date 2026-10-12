@@ -26,6 +26,12 @@ The release type, read from the source/remux tags of the file name, decides how 
 
 With `BLURAY` alone, or no release type in the name, the bot looks at the encoder written by MediaInfo: `x264` / `x265` if it finds the x264/x265 signature, `H.264` / `H.265` otherwise. On an untouched release the x264/x265 signature only shows a "possible fake REMUX" warning. Other codecs (AV1, VP9, VC-1, MPEG-2, XviD…) are written as they are.
 
+## Audio codec
+
+The title keeps at most two audio codecs: the **best ITA codec** and the **best codec in the original language** of the movie or show (read from TMDB, English when TMDB doesn't know it). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once.
+
+The languages follow the codecs: `ITA`, the original language, then the other languages of the file, which only get their flag and no codec. Example with Italian, English and Japanese tracks of a Japanese movie: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
+
 ## The three customization files
 
 They live in the configuration folder (`ittup_config`) and are created on first run with default values. They are plain JSON, editable with any text editor.

@@ -235,6 +235,15 @@ class TmdbAPI(MyHttp):
                 return results[0].get('id')
         return None
 
+    def original_language(self, video_id: int, category: str) -> str | None:
+        """ Original language (ISO 639-1) of the movie or tv show """
+        if endpoint_class := self.ENDPOINTS.get(category):
+            request = {**endpoint_class.details(video_id), 'datatype': dict}
+            response = self.request(endpoint=request)
+            if response:
+                return response[0].get('original_language') or None
+        return None
+
     def external_ids(self, video_id: int, category: str) -> dict | None:
         if endpoint_class := self.ENDPOINTS.get(category):
             request = endpoint_class.external_ids(video_id)
@@ -406,7 +415,9 @@ class DbOnline(TmdbAPI):
             if not tmdb_id:
                 custom_console.bot_warning_log(f"TMDB ID not found for IMDB ID '{imdb_id}'")
 
+        original_language = None
         if tmdb_id > 0:
+            original_language = self.original_language(video_id=tmdb_id, category=self.category)
             # Fill the IDs missing from the title string
             self.add_external_ids(tmdb_id)
             # Request trailer and keywords
@@ -414,7 +425,8 @@ class DbOnline(TmdbAPI):
             keywords_list = self.keywords(tmdb_id) if trailer_key else ''
 
         search_results = MediaResult(video_id=tmdb_id, imdb_id=self.imdb_id, tvdb_id=self.tvdb_id,
-                                     trailer_key=trailer_key, keywords_list=keywords_list)
+                                     trailer_key=trailer_key, keywords_list=keywords_list,
+                                     original_language=original_language)
         self.print_results(results=search_results)
         return search_results
 

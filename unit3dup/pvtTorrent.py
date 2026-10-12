@@ -6,6 +6,7 @@ import torf
 from tqdm import tqdm
 
 from common.trackers.data import trackers_api_data
+from common.about import APP_NAME, REPO_URL, __version__
 from unit3dup.media import Media
 from unit3dup import config_settings
 
@@ -42,7 +43,7 @@ class Mytorrent:
         self.mytorr = torf.Torrent(path=contents.torrent_path, trackers=announce)
         self.mytorr.comment = config_settings.user_preferences.TORRENT_COMMENT
         self.mytorr.name = contents.torrent_name
-        self.mytorr.created_by = "https://github.com/31December99/Unit3Dup"
+        self.mytorr.created_by = f"{APP_NAME} {__version__} {REPO_URL}"
         self.mytorr.private = True
         # self.mytorr.source= trackers_api_data[trackers_list[0]]['source']
         self.mytorr.source= trackers_api_data[self.tracker_name]['source']

@@ -42,10 +42,6 @@ class VideoManager:
                list: List of Bittorrent objects created for each content
         """
 
-        # -multi : no announce_list . One announce for multi tracker
-        if self.cli.mt:
-            tracker_name_list = [selected_tracker.upper()]
-
         #  Init the torrent list
         bittorrent_list = []
         # Tags list extracted used to build title ( -b flag)

@@ -4,6 +4,8 @@ import json
 from common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
 from common.command import CommandLine
 from common.settings import Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH, version
+from common.trackers import TRACKER_NAME
+from common.about import APP_NAME
 
 from unit3dup.torrent import View
 from unit3dup import pvtTracker
@@ -18,7 +20,7 @@ def main():
     """
 
     custom_console.welcome_message()
-    custom_console.bot_question_log(f"Unit3Dup {version} Checking your configuration file.. \n")
+    custom_console.bot_question_log(f"{APP_NAME} {version} Checking your configuration file.. \n")
 
     # Load user configuration data
     config = Load().config
@@ -40,30 +42,11 @@ def main():
     else:
         tracker_archive = '.'
 
-    # /// Load the list of the registered trackers
-    if not config.tracker_config.MULTI_TRACKER:
-        custom_console.bot_error_log(f"No tracker name provided. Please update your configuration file")
-        exit(1)
-
-    # Check if the tracker name exists
-    if cli.args.tracker:
-        if not any(cli.args.tracker.upper() in tracker.upper() for tracker in config.tracker_config.MULTI_TRACKER):
-            custom_console.bot_error_log(
-                f"Tracker '{cli.args.tracker}' not found. Please update your configuration file")
-            exit()
-
-        tracker_name_list = [cli.args.tracker.upper()]
-        tracker = pvtTracker.Unit3d(tracker_name=cli.args.tracker)
-        if tracker.get_alive(alive=True, perPage=1):
-            custom_console.bot_log(f"Tracker -> '{cli.args.tracker.upper()}' Online")
-
-    # Send content to the multi_tracker list
-    if cli.args.mt:
-        tracker_name_list = config.tracker_config.MULTI_TRACKER
-        for tracker_data in tracker_name_list[1:]:
-            tracker = pvtTracker.Unit3d(tracker_name=tracker_data)
-            if tracker.get_alive(alive=True, perPage=1):
-                custom_console.bot_log(f"Tracker -> '{tracker_data.upper()}' Online")
+    # ItaTorrents is the only tracker
+    tracker_name_list = [TRACKER_NAME]
+    tracker = pvtTracker.Unit3d(tracker_name=TRACKER_NAME)
+    if tracker.get_alive(alive=True, perPage=1):
+        custom_console.bot_log(f"Tracker -> '{TRACKER_NAME}' Online")
 
     # Test both clients only if used
     if cli.args.noseed is False and cli.args.noup is False or cli.args.reseed is True:
@@ -158,10 +141,7 @@ def main():
         bot.ftp()
 
     # Commands list: commands not necessary for upload but may be useful
-    if not cli.args.tracker:
-        return
-
-    torrent_info = View(tracker_name=cli.args.tracker)
+    torrent_info = View(tracker_name=TRACKER_NAME)
 
     ############################ Filter 'Combo' ##########################
     if cli.args.tmdb_id and cli.args.resolution:

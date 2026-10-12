@@ -21,10 +21,6 @@ class DocuManager:
 
     def process(self, selected_tracker: str, tracker_name_list: list, tracker_archive: str) -> list[BittorrentData]:
 
-        # -multi : no announce_list . One announce for multi tracker
-        if self.cli.mt:
-            tracker_name_list = [selected_tracker.upper()]
-
         #  Init the torrent list
         bittorrent_list = []
         for content in self.contents:

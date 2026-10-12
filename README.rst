@@ -1,9 +1,9 @@
 
-**Hi !**
+ittup - ItaTorrents uploader
 ===============================================
 |version| |online| |status| |python| |ubuntu| |debian| |windows|
 
-.. |version| image:: https://img.shields.io/pypi/v/unit3dup.svg
+.. |version| image:: https://img.shields.io/github/v/tag/TehMaat/ittup?label=version
 .. |online| image:: https://img.shields.io/badge/Online-green
 .. |status| image:: https://img.shields.io/badge/Status-Active-brightgreen
 .. |python| image:: https://img.shields.io/badge/Python-3.10+-blue
@@ -11,10 +11,16 @@
 .. |debian| image:: https://img.shields.io/badge/Debian-12-blue
 .. |windows| image:: https://img.shields.io/badge/Windows-10-blue
 
-Auto Torrent Generator and Uploader
-===================================
+Auto Torrent Generator and Uploader for ItaTorrents
+===================================================
 
-This Python script generates and uploads torrents based on input provided for movies or TV series and Games.
+**ittup** generates and uploads torrents to `ItaTorrents <https://itatorrents.xyz>`_ based on input provided
+for movies or TV series and Games.
+
+Repository: https://github.com/TehMaat/ittup
+
+ittup is a fork of `Unit3Dup <https://github.com/31December99/Unit3Dup>`_ by 31December99,
+reduced to the ItaTorrents tracker only.
 
 It performs the following tasks:
 
@@ -32,14 +38,29 @@ It performs the following tasks:
 - Generate various tags for titles: ``version``, ``resolution``, ``uhd``, ``platform``, ``source``, ``remux``, ``multi``, ``acodec``, ``channels``, ``flag``, ``subtitle``, ``vcodec``, ``hdr``, ``video_encoder``
 
 
-unit3dup can grab the first page, convert it to an image (using xpdf),
+ittup can grab the first page, convert it to an image (using xpdf),
 and then the bot can upload it to an image host, then add the link to the torrent page description.
 
 
 Install and Upgrade
 ===================
 
-- pip install unit3dup --upgrade
+- pip install --upgrade git+https://github.com/TehMaat/ittup
+
+If Unit3Dup is installed in the same environment, remove it first (``pip uninstall unit3dup``):
+both packages ship the same Python modules.
+
+
+Configuration
+-------------
+The configuration is stored in ``~/ittup_config/ittup.json``
+(Windows: ``%LOCALAPPDATA%\ittup_config\ittup.json``) together with
+``tags_list.json``, ``sign_list.json`` and ``ban_list.json``.
+
+Coming from Unit3Dup? On the first run, if ``Unit3Dup_config`` exists and ``ittup_config`` does not,
+ittup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``), tags, sign and ban lists
+into the new folder. The old folder is left untouched. Settings of the removed trackers
+(``SIS``, ``PTT``, ``AST``, ``MULTI_TRACKER``) are simply ignored.
 
 Windows Dependencies
 --------------------
@@ -69,18 +90,20 @@ RUN
 
 .. code-block:: python
 
-   unit3dup -u <filepath>
-   unit3dup -f <folderpath>
-   unit3dup -scan <folderpath>
+   ittup -u <filepath>
+   ittup -f <folderpath>
+   ittup -scan <folderpath>
+
+Every upload goes to ItaTorrents: the ``-tracker`` and ``-mt`` options no longer exist.
+Run ``ittup -h`` for the full list of commands.
 
 
 
 DOC
 ===
 
-Full documentation `Unit3Dup Docs <https://31december99.github.io/Unit3Dup/>`_
-
-Commands list `Unit3Dup <https://31december99.github.io/Unit3Dup/reference/commands/>`_
+Most of the original `Unit3Dup Docs <https://31december99.github.io/Unit3Dup/>`_ still applies:
+replace the ``unit3dup`` command with ``ittup`` and ignore the multi-tracker options.
 
 
 ImageHost
@@ -116,10 +139,6 @@ united by a shared passion for torrents and more
 | **Trackers**     | **Description**            |
 +==================+============================+
 | ``ITT``          | https://itatorrents.xyz    |
-|                  |                            |
-| ``PTT``          | https://polishtorrent.top  |
-|                  |                            |
-| ``AST``          | https://arabicsource.net   |
 +------------------+----------------------------+
 
 .. image:: https://img.shields.io/discord/1214696147600408698?label=Discord&logo=discord&style=flat

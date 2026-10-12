@@ -25,6 +25,7 @@ class GameManager:
         self.contents: list[Media] = contents
         self.cli: Namespace = cli
         self.igdb = IGDBClient()
+        self.igdb_logged: bool = False
 
     def process(self, selected_tracker: str, tracker_name_list: list,  tracker_archive: str) -> list[BittorrentData]:
         """
@@ -34,9 +35,9 @@ class GameManager:
             list: List of Bittorrent objects created for each content
         """
 
-        login = self.igdb.connect()
-        if not login:
-            exit(1)
+        # No games, no IGDB login
+        if not self.contents:
+            return []
 
         # -multi : no announce_list . One announce for multi tracker
         if self.cli.mt:
@@ -55,10 +56,9 @@ class GameManager:
             os.makedirs(archive, exist_ok=True)
             torrent_filepath = os.path.join(tracker_archive,selected_tracker, f"{content.torrent_name}.torrent")
 
-            # Filter contents based on existing torrents or duplicates
-            if self.cli.watcher:
-                if os.path.exists(content.torrent_path):
-                    custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+            # Skip the old uploads
+            if self.cli.watcher and os.path.exists(torrent_filepath):
+                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
                 continue
 
             torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
@@ -69,6 +69,12 @@ class GameManager:
             if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
                     and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
                 continue
+
+            # Login to IGDB only when the first game needs it
+            if not self.igdb_logged:
+                if not self.igdb.connect():
+                    exit(1)
+                self.igdb_logged = True
 
             # Search for the game on IGDB using the content's title and platform tags
             game_data_results = self.igdb.game(content=content)

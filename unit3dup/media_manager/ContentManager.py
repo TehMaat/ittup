@@ -9,11 +9,12 @@ from unit3dup.automode import Auto
 from unit3dup.media import Media
 
 class ContentManager:
-    def __init__(self, path: str, mode: str, cli: argparse.Namespace):
+    def __init__(self, path: str, mode: str, cli: argparse.Namespace, include_paths: list[str] | None = None):
         """
         Args:
             path (str): The path to the media files or directories
             mode (str):  mode 'manual' or 'automatic'
+            include_paths (list): if set, keep only the media with these paths (watcher)
         """
         self.path = path
         self.mode = mode
@@ -41,6 +42,10 @@ class ContentManager:
         self.path: str = os.path.normpath(path)
         self.auto = Auto(path=self.path, mode=self.mode)
         self.media_list = self.auto.upload() if self.mode in ["man", "folder"] else self.auto.scan()
+        if include_paths is not None:
+            include = {os.path.normpath(p) for p in include_paths}
+            self.media_list = [media for media in self.media_list
+                               if os.path.normpath(media.torrent_path) in include]
 
     def process(self)-> list[Media]:
         contents = []

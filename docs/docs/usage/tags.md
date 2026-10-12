@@ -28,7 +28,9 @@ With `BLURAY` alone, or no release type in the name, the bot looks at the encode
 
 ## Audio codec
 
-Only the Italian (`ITA`) and English (`ENG`) audio tracks go in the title: the **best ITA codec** and the **best ENG codec**. When there is room left (at most two codecs), it is filled with the best tracks with no language. Tracks in other languages are left out. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once. The languages of all the tracks are still written after the codecs.
+The title keeps at most two audio codecs: the **best ITA codec** and the **best codec in the original language** of the movie or show (read from TMDB, English when TMDB doesn't know it). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once.
+
+The languages follow the codecs: `ITA`, the original language, then the other languages of the file, which only get their flag and no codec. Example with Italian, English and Japanese tracks of a Japanese movie: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
 
 ## The three customization files
 

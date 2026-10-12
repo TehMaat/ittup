@@ -28,7 +28,9 @@ Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder 
 
 ## Codec audio
 
-Nel titolo vanno solo le tracce audio in italiano (`ITA`) e inglese (`ENG`): il **miglior codec ITA** e il **miglior codec ENG**. Se resta posto (al massimo due codec), viene riempito con le migliori tracce senza lingua. Le tracce in altre lingue vengono escluse. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Le lingue di tutte le tracce vengono comunque scritte dopo i codec.
+Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola.
+
+Dopo i codec vengono le lingue: `ITA`, la lingua originale, poi le altre lingue del file, che hanno solo la bandiera e nessun codec. Esempio con tracce italiana, inglese e giapponese di un film giapponese: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
 
 ## I tre file di personalizzazione
 

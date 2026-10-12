@@ -101,6 +101,9 @@ class VideoManager:
                 if not db:
                     continue
 
+                # The audio tags need the original language from TMDB
+                content.display_name, tags_dictionary = search_tags.set_original_language(db.original_language)
+
                 # Get meta from the media video
                 video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)
                 video_info.build_info()

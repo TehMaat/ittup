@@ -48,10 +48,11 @@ audio_translate = {
 
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
-# The title keeps the best codec of each of these languages, then fills up to MAX_AUDIO_CODECS
-# with the tracks with no language. Tracks in other languages are left out
-AUDIO_LANGUAGES = ["ITA", "ENG"]
+# The title keeps the best ITA codec and the best codec in the original language, then fills up to
+# MAX_AUDIO_CODECS with the tracks with no language. Tracks in other languages only add their flag
 MAX_AUDIO_CODECS = 2
+# Original language (TMDB ISO 639-1) when it is not known yet
+DEFAULT_ORIGINAL_LANGUAGE = "en"
 
 # Codec family from the MediaInfo 'format' of the video track
 video_family = {
@@ -104,6 +105,7 @@ class SearchTags(object):
         self.tags_dict = {}
         self.release_type: str | None = None
         self.name_family: str | None = None
+        self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
 
         self.TAG_TYPES: dict = tags_list
         self.SIGNS_LIST: dict = sign_list
@@ -274,6 +276,18 @@ class SearchTags(object):
             # try to detect a known sign from SIGN_LIST
             self.releaser_sign = self.detect_releaser(self.filename, self.SIGNS_LIST)
 
+        return self.ordered_title()
+
+    def set_original_language(self, original_language: str | None) -> tuple[str, dict]:
+        """
+        Rebuild the audio tags of the title processed before with the original language from TMDB (es. 'ja')
+        """
+        self.original_language = (original_language or DEFAULT_ORIGINAL_LANGUAGE).lower()
+        if "acodec" in self.tags_position:
+            self.tags_dict.update(self.mediainfo_audio(category="acodec"))
+        return self.ordered_title()
+
+    def ordered_title(self) -> tuple[str, dict]:
         # /// Order according to tag position
         tags_dict = {
             k: self.tags_dict[k]
@@ -302,13 +316,19 @@ class SearchTags(object):
         rank = len(audio_rank) - audio_rank.index(codec) if codec in audio_rank else 0
         return rank, atmos, channel_s
 
+    def is_original_language(self, audio: dict) -> bool:
+        codes = [str(code).lower() for code in audio.get('other_language', []) + [audio.get('language') or '']]
+        return self.original_language in codes
+
     def mediainfo_audio(self, category: str) -> dict:
         languages = []
-        # [(score, label, language)]
+        original_languages = []
+        # [(score, label, language, original language)]
         tracks = []
         if self.mediafile.audio_track:
             for audio in self.mediafile.audio_track:
                 language = self.audio_language(audio)
+                original = self.is_original_language(audio)
                 other_format = audio.get('other_format', [])
                 if other_format:
                     codec_translated = audio_translate.get(other_format[0], '')
@@ -322,27 +342,31 @@ class SearchTags(object):
                     # Add channels
                     ch = {2: "2.0", 6: "5.1", 8: "7.1"}.get(channel_s, "")
                     tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
-                                   f"{codec_translated} {ch} {atmos}".strip(), language))
+                                   f"{codec_translated} {ch} {atmos}".strip(), language, original))
 
                 # Add flags
                 if language:
                     languages.append(language)
+                    if original:
+                        original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
                 # Add multilanguage tag when languages > 2
                 if len(languages) > 2:
                     self.tags_dict.update({'multi': 'MULTI'})
 
-        # Best ITA codec + best ENG codec, then the tracks with no language up to MAX_AUDIO_CODECS
+        # Best ITA codec + best original language codec, then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
-        picked = []
-        for language in AUDIO_LANGUAGES:
-            picked += [track for track in best_first if track[2] == language][:1]
+        picked = [track for track in best_first if track[2] == "ITA"][:1]
+        picked += [track for track in best_first if track[3]][:1]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
-        for _, label, _ in picked:
+        for _, label, _, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
-        audio_codecs.extend(languages)
+
+        # Flags: ITA, the original language, then the other languages with no codec
+        first = [language for language in ["ITA"] + original_languages[:1] if language in languages]
+        audio_codecs.extend(dict.fromkeys(first + languages))
         return {category: audio_codecs}
 
     @staticmethod

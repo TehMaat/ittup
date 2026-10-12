@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/TehMaat/ittup/compare/1.2.3...1.3.0) (2026-10-12)
+
+
+### Features
+
+* keep only the two best ITA/ENG audio codecs in the title ([6d77b9b](https://github.com/TehMaat/ittup/commit/6d77b9b659d3d5f49f368a5a28d72b74fa021f18))
+* write only the ITA and original language audio codecs in the title ([cd9e0bd](https://github.com/TehMaat/ittup/commit/cd9e0bdf20cd59d0e274d42347ed9ea1924b9e80))
+* write the best ITA and the best ENG audio codec in the title ([b8b5f06](https://github.com/TehMaat/ittup/commit/b8b5f06cdab43f31b5c8956c6ce78ac67a264fc2))
+* write the ITA and original language audio codecs, other languages only as flags ([ac2a71f](https://github.com/TehMaat/ittup/commit/ac2a71f81db8c958e70870bddf3cc53c0bd7188a))
+
 ## [1.2.3](https://github.com/TehMaat/ittup/compare/1.2.2...1.2.3) (2026-10-12)
 
 

@@ -25,19 +25,13 @@ Release notes are on the [project Releases page](https://github.com/TehMaat/ittu
 
 ittup is a fork of [Unit3Dup](https://github.com/31December99/Unit3Dup) reduced to ItaTorrents only. To switch:
 
-1. Uninstall Unit3Dup — this also removes the old top-level `common`, `view` and `unit3dup` modules it left behind:
-
-    ```bash
-    pip uninstall unit3dup
-    ```
-
-2. Install ittup:
+1. Install ittup:
 
     ```bash
     pip install git+https://github.com/TehMaat/ittup
     ```
 
-3. Launch it once:
+2. Launch it once:
 
     ```bash
     ittup
@@ -58,3 +52,22 @@ Settings of the removed trackers (`SIS_*`, `PTT_*`, `AST_*`) and `MULTI_TRACKER`
 
 !!! note "Your custom paths are kept"
     `TORRENT_ARCHIVE_PATH`, `CACHE_PATH` and the watcher paths are copied as they are: if they pointed inside `Unit3Dup_config`, they keep doing so. Set them to `no_path` to use the new defaults inside `ittup_config`.
+
+## Keeping Unit3Dup
+
+You don't have to uninstall Unit3Dup: the two can be installed side by side. They have different commands (`unit3dup` and `ittup`), all of ittup's code lives in the single `ittup` package, and each one has its own configuration folder.
+
+If you use both, keep in mind that:
+
+- The custom paths copied from your Unit3Dup configuration (see the note above) are shared by the two tools. Don't run both watchers on the same folder, or the same files can be uploaded twice: give ittup its own folders in `ittup.json`, or set them to `no_path`.
+- If your Unit3Dup is older than 0.14.x, installing ittup in the same environment may upgrade libraries Unit3Dup depends on. To keep them isolated, install ittup with pipx or in a virtualenv:
+
+    ```bash
+    pipx install git+https://github.com/TehMaat/ittup
+    ```
+
+When you no longer need Unit3Dup, remove it — this also removes the old top-level `common`, `view` and `unit3dup` modules it installed:
+
+```bash
+pip uninstall unit3dup
+```

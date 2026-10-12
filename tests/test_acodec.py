@@ -23,10 +23,10 @@ def acodec(*audio_track: dict) -> list:
     return tags_dict["acodec"]
 
 
-def test_keeps_the_two_best_codecs():
-    assert acodec(track("AC-3", 6, "ITA"), track("DTS XLL", 6, "ITA"), track("E-AC-3", 6, "ENG"),
-                  track("MLP FBA 16-ch", 8, "ENG", "Dolby TrueHD with Dolby Atmos")) == [
-        "TrueHD 7.1 Atmos", "DTS-HD MA 5.1", "ITA", "ENG"]
+def test_best_ita_and_best_eng():
+    assert acodec(track("MLP FBA 16-ch", 8, "ITA", "Dolby TrueHD with Dolby Atmos"), track("DTS XLL", 6, "ITA"),
+                  track("AC-3", 6, "ENG"), track("E-AC-3", 6, "ENG")) == [
+        "TrueHD 7.1 Atmos", "DD+ 5.1", "ITA", "ENG"]
 
 
 def test_ignores_other_languages():
@@ -34,14 +34,26 @@ def test_ignores_other_languages():
                   track("AAC LC", 2, "ENG")) == ["DD 5.1", "AAC 2.0", "ITA", "FRA", "GER", "ENG"]
 
 
+def test_channels_break_ties():
+    assert acodec(track("AC-3", 2, "ITA"), track("AC-3", 6, "ITA")) == ["DD 5.1", "ITA"]
+
+
 def test_same_codec_is_written_once():
     assert acodec(track("AC-3", 6, "ITA"), track("AC-3", 6, "ENG")) == ["DD 5.1", "ITA", "ENG"]
 
 
-def test_channels_break_ties():
-    assert acodec(track("AC-3", 2, "ITA"), track("AC-3", 6, "ITA"), track("AAC LC", 2, "ENG")) == [
-        "DD 5.1", "DD 2.0", "ITA", "ENG"]
+def test_untagged_tracks_fill_up_to_two():
+    assert acodec(track("AC-3", 6, "ITA"), track("AAC LC", 2), track("DTS XLL", 6)) == [
+        "DD 5.1", "DTS-HD MA 5.1", "ITA"]
+    assert acodec(track("AC-3", 6, "ITA"), track("AAC LC", 2, "ENG"), track("DTS XLL", 6)) == [
+        "DD 5.1", "AAC 2.0", "ITA", "ENG"]
+    assert acodec(track("AC-3", 6, "ITA"), track("AC-3", 6, "ENG"), track("DTS XLL", 6)) == [
+        "DD 5.1", "DTS-HD MA 5.1", "ITA", "ENG"]
 
 
-def test_untagged_tracks_are_used_when_no_ita_eng():
-    assert acodec(track("AC-3", 6), track("E-AC-3", 6)) == ["DD+ 5.1", "DD 5.1"]
+def test_untagged_tracks_only():
+    assert acodec(track("AC-3", 6), track("AAC LC", 2), track("E-AC-3", 6)) == ["DD+ 5.1", "DD 5.1"]
+
+
+def test_other_languages_only():
+    assert acodec(track("AC-3", 6, "FRA")) == ["FRA"]

@@ -48,8 +48,9 @@ audio_translate = {
 
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
-# Only the audio tracks in these languages go in the title, at most MAX_AUDIO_CODECS codecs
-AUDIO_LANGUAGES = {"ITA", "ENG"}
+# The title keeps the best codec of each of these languages, then fills up to MAX_AUDIO_CODECS
+# with the tracks with no language. Tracks in other languages are left out
+AUDIO_LANGUAGES = ["ITA", "ENG"]
 MAX_AUDIO_CODECS = 2
 
 # Codec family from the MediaInfo 'format' of the video track
@@ -331,13 +332,16 @@ class SearchTags(object):
                 if len(languages) > 2:
                     self.tags_dict.update({'multi': 'MULTI'})
 
-        # Keep the best codecs of the ITA/ENG tracks (all the tracks when none is tagged ITA/ENG)
-        selected = [track for track in tracks if track[2] in AUDIO_LANGUAGES] or tracks
+        # Best ITA codec + best ENG codec, then the tracks with no language up to MAX_AUDIO_CODECS
+        best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
+        picked = []
+        for language in AUDIO_LANGUAGES:
+            picked += [track for track in best_first if track[2] == language][:1]
+        picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
-        for _, label, _ in sorted(selected, key=lambda track: track[0], reverse=True):
-            if label not in audio_codecs:
+        for _, label, _ in picked:
+            if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
-        audio_codecs = audio_codecs[:MAX_AUDIO_CODECS]
         audio_codecs.extend(languages)
         return {category: audio_codecs}
 

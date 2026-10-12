@@ -136,18 +136,14 @@ class VideoManager:
                 tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath)
 
                 # Store response for the torrent clients
-                bittorrent_data = BittorrentData(
-                    tracker_response=tracker_response,
-                    torrent_response=torrent_response,
-                    content=content,
-                    tracker_message=tracker_message,
-                    archive_path=torrent_filepath,
-                )
-                bittorrent_list.append(bittorrent_data)
-
-                # Seed it right away, without waiting for the other contents
-                if not self.cli.noseed:
-                    UserContent.send_to_bittorrent([bittorrent_data], 'VIDEO')
+                bittorrent_list.append(
+                    BittorrentData(
+                        tracker_response=tracker_response,
+                        torrent_response=torrent_response,
+                        content=content,
+                        tracker_message=tracker_message,
+                        archive_path=torrent_filepath,
+                    ))
 
                 # Send the torrent to the client as soon as it is uploaded
                 if self.on_upload:

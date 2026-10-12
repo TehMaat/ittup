@@ -17,35 +17,40 @@ from common.trackers.ban_list import BAN_LIST
 from common.trackers import tracker_list
 
 from common.utility import ManageTitles
-from common import trackers
 
-config_file = "Unit3Dbot.json"
+from common.about import __version__
+
+config_file = "ittup.json"
 user_tags_file = "tags_list.json"
 user_sign_file = "sign_list.json"
 bane_file = "ban_list.json"
 
-version = "0.14.12"
+version = __version__
 
 if os.name == "nt":
-    WATCHER_DESTINATION_PATH: Path = Path(
-        os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / "watcher_destination_path"
-    WATCHER_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / "watcher_path"
-    CACHE_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / "cache_path"
-    TORRENT_ARCHIVE_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / "torrent_archive_path"
-    DEFAULT_JSON_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / f"{config_file}"
-    USER_TAGS_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / f"{user_tags_file}"
-    USER_SIGN_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / f"{user_sign_file}"
-    BAN_TAGS_PATH: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config" / f"{bane_file}"
-
+    CONFIG_DIR: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "ittup_config"
+    # Configuration folder used by Unit3Dup, the project ittup was forked from
+    LEGACY_CONFIG_DIR: Path = Path(os.getenv("LOCALAPPDATA", ".")) / "Unit3Dup_config"
 else:
-    WATCHER_DESTINATION_PATH: Path = Path.home() / "Unit3Dup_config" / "watcher_destination_path"
-    WATCHER_PATH: Path = Path.home() / "Unit3Dup_config" / "watcher_path"
-    CACHE_PATH: Path = Path.home() / "Unit3Dup_config" / "cache_path"
-    TORRENT_ARCHIVE_PATH: Path = Path.home() / "Unit3Dup_config" / "torrent_archive_path"
-    DEFAULT_JSON_PATH: Path = Path.home() / "Unit3Dup_config" / f"{config_file}"
-    USER_TAGS_PATH: Path = Path.home() / "Unit3Dup_config" / f"{user_tags_file}"
-    USER_SIGN_PATH: Path = Path.home() / "Unit3Dup_config" / f"{user_sign_file}"
-    BAN_TAGS_PATH: Path = Path.home() / "Unit3Dup_config" / f"{bane_file}"
+    CONFIG_DIR: Path = Path.home() / "ittup_config"
+    LEGACY_CONFIG_DIR: Path = Path.home() / "Unit3Dup_config"
+
+WATCHER_DESTINATION_PATH: Path = CONFIG_DIR / "watcher_destination_path"
+WATCHER_PATH: Path = CONFIG_DIR / "watcher_path"
+CACHE_PATH: Path = CONFIG_DIR / "cache_path"
+TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
+DEFAULT_JSON_PATH: Path = CONFIG_DIR / f"{config_file}"
+USER_TAGS_PATH: Path = CONFIG_DIR / f"{user_tags_file}"
+USER_SIGN_PATH: Path = CONFIG_DIR / f"{user_sign_file}"
+BAN_TAGS_PATH: Path = CONFIG_DIR / f"{bane_file}"
+
+# Legacy file name -> new path
+LEGACY_CONFIG_FILES: dict[str, Path] = {
+    "Unit3Dbot.json": DEFAULT_JSON_PATH,
+    user_tags_file: USER_TAGS_PATH,
+    user_sign_file: USER_SIGN_PATH,
+    bane_file: BAN_TAGS_PATH,
+}
 
 
 def get_default_path(field: str) -> str:
@@ -70,16 +75,6 @@ class TrackerConfig(BaseModel):
     ITT_URL: str
     ITT_APIKEY: str | None = None
     ITT_PID: str | None = None
-    SIS_URL: str
-    SIS_APIKEY: str | None = None
-    SIS_PID: str | None = None
-    PTT_URL: str
-    PTT_APIKEY: str | None = None
-    PTT_PID: str | None = None
-    AST_URL: str
-    AST_APIKEY: str | None = None
-    AST_PID: str | None = None
-    MULTI_TRACKER: list[str] | None = None
     TMDB_APIKEY: str | None = None
     TVDB_APIKEY: str | None = None
     IMGBB_KEY: str | None = None
@@ -194,16 +189,14 @@ class Validate:
         return value
 
     @staticmethod
-    def pid(value: str, field_name: str, multi_trackers: list) -> str:
+    def pid(value: str, field_name: str) -> str:
         """
         Validates pid
         """
         # If pid is unset
         if 'no_pid' in value.lower():
-            # Check if the tracker is requested in the multitracker_list
-            if field_name[:-4].lower() in multi_trackers:
-                print(f"->  No PID value for {field_name} '{value}'")
-                exit(1)
+            print(f"->  No PID value for {field_name} '{value}'")
+            exit(1)
         return value
 
     @staticmethod
@@ -217,17 +210,6 @@ class Validate:
         # Dont exit if the field_name is a tracker name
         tracker_from_field_name = field_name.split('_')[0]
         if tracker_from_field_name in tracker_list:
-            return value
-        print(f"-> Please Fix '{field_name}' ['{value}'] in settings.json")
-        exit(1)
-
-    @staticmethod
-    def dict(value: list | None, field_name: str) -> list | None:
-        """
-        Validates list of dicts
-        """
-
-        if isinstance(value, list):
             return value
         print(f"-> Please Fix '{field_name}' ['{value}'] in settings.json")
         exit(1)
@@ -258,23 +240,6 @@ class Validate:
         except ValueError:
             # not a valid path
             return None
-
-    @staticmethod
-    def validate_multi_tracker(multi_tracker_list: list) -> list | None:
-
-        if not multi_tracker_list:
-            print(f"-> Invalid multi-tracker list. The list is empty !")
-            exit(1)
-
-        if len(multi_tracker_list) != len(set(multi_tracker_list)):
-            print(f"-> Invalid multi-tracker list. Please remove duplicates from your list in the configuration file")
-            return None
-
-        for tracker in multi_tracker_list:
-            if tracker.upper() not in trackers.tracker_list:
-                print(f"-> Invalid Multi Tracker '{tracker}'. Please fix your configuration file")
-                exit(1)
-        return multi_tracker_list
 
     @staticmethod
     def validate_tags_position(position_list: list) -> list | None:
@@ -423,6 +388,9 @@ class Config(BaseModel):
 
         section = v['tracker_config']
         for field, value in section.items():
+            # Obsolete keys left in the user's json file are ignored
+            if field.upper() not in TrackerConfig.model_fields:
+                continue
             if value is None:
                 print(f"Please fix the '{field}' value")
                 exit(1)
@@ -433,13 +401,7 @@ class Config(BaseModel):
                     section[field] = Validate.url(value=section[field], field_name=field)
 
                 if field in ['ITT_PID']:
-                    section[field] = Validate.pid(value=section[field], field_name=field,
-                                                  multi_trackers=section['MULTI_TRACKER'])
-
-                elif field in ['ITT', 'SIS', 'PTT', 'AST']:
-                    section[field] = Validate.dict(value=section[field], field_name=field)
-                elif field in ['MULTI_TRACKER']:
-                    section[field] = Validate.validate_multi_tracker(multi_tracker_list=section[field])
+                    section[field] = Validate.pid(value=section[field], field_name=field)
                 else:
                     section[field] = Validate.string(value=section[field], field_name=field)
         return v
@@ -449,6 +411,9 @@ class Config(BaseModel):
 
         section = v['torrent_client_config']
         for field, value in section.items():
+            # Obsolete keys left in the user's json file are ignored
+            if field.upper() not in TorrentClientConfig.model_fields:
+                continue
             if value is None:
                 print(f"Please fix the '{field}' value")
                 exit(1)
@@ -481,6 +446,9 @@ class Config(BaseModel):
         section = v['user_preferences']
 
         for field, value in section.items():
+            # Obsolete keys left in the user's json file are ignored
+            if field.upper() not in UserPreferences.model_fields:
+                continue
             if value is None:
                 print(f"Please fix the '{field}' value")
                 exit(1)
@@ -495,7 +463,7 @@ class Config(BaseModel):
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
-                if field in ['TORRENT_COMMENT', 'WATCHER_PATH', 'DEFAULT_TRACKER']:
+                if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
                     section[field] = Validate.string(value=section[field], field_name=field)
 
                 if field in ['NUMBER_OF_SCREENSHOTS', 'COMPRESS_SCSHOT', 'IMGBB_PRIORITY', 'FREE_IMAGE_PRIORITY',
@@ -538,6 +506,9 @@ class Config(BaseModel):
         section = v['console_options']
 
         for field, value in section.items():
+            # Obsolete keys left in the user's json file are ignored
+            if field.upper() not in ConsoleOptions.model_fields:
+                continue
             if value is None:
                 print(f"Please fix the '{field}' value")
                 exit(1)
@@ -602,16 +573,6 @@ class Load:
                 "ITT_URL": "https://itatorrents.xyz",
                 "ITT_APIKEY": "no_key",
                 "ITT_PID": "no_key",
-                "SIS_URL": "https://no_tracker.xyz",
-                "SIS_APIKEY": "no_key",
-                "SIS_PID": "no_key",
-                "PTT_URL": "https://polishtorrent.top",
-                "PTT_APIKEY": "no_key",
-                "PTT_PID": "no_key",
-                "AST_URL": "https://arabicsource.net",
-                "AST_APIKEY": "no_key",
-                "AST_PID": "no_key",
-                "MULTI_TRACKER": ["itt","sis","ptt","ast"],
                 "TMDB_APIKEY": "no_key",
                 "TVDB_APIKEY": "no_key",
                 "IMGBB_KEY": "no_key",
@@ -723,7 +684,34 @@ class Load:
             json.dump(default_content, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
+    def migrate_legacy_config():
+        """
+        Copy the Unit3Dup configuration into the ittup configuration folder on the first run.
+        The legacy folder is left untouched
+        """
+        if CONFIG_DIR.exists() or not LEGACY_CONFIG_DIR.is_dir():
+            return
+
+        copied = []
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        for legacy_name, new_path in LEGACY_CONFIG_FILES.items():
+            legacy_path = LEGACY_CONFIG_DIR / legacy_name
+            if legacy_path.is_file():
+                shutil.copy2(legacy_path, new_path)
+                copied.append(f"{legacy_path} -> {new_path}")
+
+        if copied:
+            print(f"{Ccolors.WARNING}-> Found a Unit3Dup configuration in '{LEGACY_CONFIG_DIR}'.{Ccolors.ENDC}")
+            print(f"{Ccolors.WARNING}-> Copied to the new ittup configuration folder '{CONFIG_DIR}':{Ccolors.ENDC}")
+            for line in copied:
+                print(f"   {line}")
+            print(f"{Ccolors.WARNING}-> The old folder has not been modified. "
+                  f"From now on edit only the files in '{CONFIG_DIR}'{Ccolors.ENDC}\n")
+
+    @staticmethod
     def load_config():
+
+        Load.migrate_legacy_config()
 
         if not WATCHER_DESTINATION_PATH.exists():
             print(f"Create default destination watcher path: {WATCHER_DESTINATION_PATH}")
@@ -795,24 +783,19 @@ class JsonConfig:
         self.console_options_config = self.file_config_data["console_options"]
 
         # New tracker attribute
-        self.tracker_diff_keys = self.tracker_config.keys() ^ TrackerConfig.__annotations__.keys() \
-            if not self.tracker_config.keys() == TrackerConfig.__annotations__.keys() else None
+        self.tracker_diff_keys = TrackerConfig.model_fields.keys() - self.tracker_config.keys()
 
         # New torrent attribute
-        self.torrent_diff_keys = self.torrent_config.keys() ^ TorrentClientConfig.__annotations__.keys() \
-            if not self.torrent_config.keys() == TorrentClientConfig.__annotations__.keys() else None
+        self.torrent_diff_keys = TorrentClientConfig.model_fields.keys() - self.torrent_config.keys()
 
         # New user preferences attribute
-        self.user_preferences_diff_keys = self.user_preferences_config.keys() ^ UserPreferences.__annotations__.keys() \
-            if not self.user_preferences_config.keys() == UserPreferences.__annotations__.keys() else None
+        self.user_preferences_diff_keys = UserPreferences.model_fields.keys() - self.user_preferences_config.keys()
 
         # New options attribute
-        self.options_diff_keys = self.options_config.keys() ^ Options.__annotations__.keys() \
-            if not self.options_config.keys() == Options.__annotations__.keys() else None
+        self.options_diff_keys = Options.model_fields.keys() - self.options_config.keys()
 
         # New console options attribute
-        self.console_options_diff_keys = self.console_options_config.keys() ^ ConsoleOptions.__annotations__.keys() \
-            if not self.console_options_config.keys() == ConsoleOptions.__annotations__.keys() else None
+        self.console_options_diff_keys = ConsoleOptions.model_fields.keys() - self.console_options_config.keys()
 
     def update_tracker_config(self):
         # Add the new attributes in 'tracker config'

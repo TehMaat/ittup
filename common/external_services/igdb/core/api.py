@@ -3,6 +3,7 @@
 from urllib.parse import urljoin
 from common.external_services.sessions.session import MyHttp
 from common import config_settings
+from common.about import USER_AGENT
 from view import custom_console
 
 class IGDBapi:
@@ -32,7 +33,7 @@ class IGDBapi:
             return False
 
         self.http_client = MyHttp({
-            "User-Agent": "Unit3D-up/0.0 (Linux 5.10.0-23-amd64)",
+            "User-Agent": USER_AGENT,
             "Accept": "application/json",
         })
 

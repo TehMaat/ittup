@@ -5,6 +5,7 @@ import json
 
 from common.external_services.igdb.core.models.search import Game
 from common.trackers.trackers import TRACKData
+from common.about import APP_NAME, REPO_URL
 
 from unit3dup.pvtTracker import Unit3d
 from unit3dup.pvtDocu import PdfImages
@@ -23,7 +24,7 @@ class UploadBot:
         self.tracker_data = TRACKData.load_from_module(tracker_name=tracker_name)
         self.tracker = Unit3d(tracker_name=tracker_name)
         self.sign = (
-            f"[quote][url=https://github.com/31December99/Unit3Dup][color=#00BFFF][size=14]Uploaded with Unit3Dup"
+            f"[quote][url={REPO_URL}][color=#00BFFF][size=14]Uploaded with {APP_NAME}"
             f" {Load.version}[/size][/color][/url][/quote]")
 
     def message(self, tracker_response: requests.Response, torrent_archive: str):

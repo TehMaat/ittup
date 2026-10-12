@@ -3,7 +3,12 @@ import os
 import argparse
 
 from common.utility import System
-from common.settings import Load
+from common.about import APP_DESCRIPTION, APP_NAME
+
+
+class RemovedFlag(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.error(f"'{option_string}' has been removed: {APP_NAME} uploads only to ItaTorrents")
 
 
 class CommandLine:
@@ -13,14 +18,12 @@ class CommandLine:
 
     def __init__(self):
 
-        # Load config
-        config = Load().config
-
         # /////////////////////////
         # Main parser
         # /////////////////////////
         parser = argparse.ArgumentParser(
-            description="Manage torrents, uploads, searches and config checks",
+            prog=APP_NAME,
+            description=f"{APP_DESCRIPTION}: manage torrents, uploads, searches and config checks",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
 
@@ -53,15 +56,6 @@ class CommandLine:
         upload_group.add_argument("-notitle", "--notitle", type=str, help="Manual title")
 
         upload_group.add_argument(
-            "-tracker", "--tracker",
-            type=str,
-            default=config.tracker_config.MULTI_TRACKER[0],
-            help="Single tracker"
-        )
-
-        upload_group.add_argument("-mt", "--mt", action="store_true", help="Multi tracker")
-
-        upload_group.add_argument(
             "-force",
             nargs='?',
             const="movie",
@@ -75,6 +69,10 @@ class CommandLine:
         upload_group.add_argument("-dup", "--duplicate", action="store_true", help="Check duplicates")
         upload_group.add_argument("-personal", "--personal", action="store_true", help="Personal release")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
+
+        # Removed flags: ittup uploads only to ItaTorrents. Without this '-mt' would be parsed as '-m t'
+        upload_group.add_argument("-mt", "--mt", "-tracker", "--tracker", nargs='?', action=RemovedFlag,
+                                  help=argparse.SUPPRESS)
 
         # /////////////////////////
         # Search Commands

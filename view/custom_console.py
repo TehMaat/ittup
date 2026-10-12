@@ -6,6 +6,7 @@ from rich.text import Text
 from rich.table import Table
 
 from common import config_settings
+from common.about import APP_DESCRIPTION, APP_NAME
 
 class CustomConsole(Console):
     def __init__(self):
@@ -13,7 +14,7 @@ class CustomConsole(Console):
 
     def welcome_message(self):
         title_panel = Panel(
-            Text(f"UNIT3Dup - An uploader for the Unit3D torrent tracker -\n{config_settings.console_options.WELCOME_MESSAGE}",
+            Text(f"{APP_NAME} - {APP_DESCRIPTION} -\n{config_settings.console_options.WELCOME_MESSAGE}",
                  style=config_settings.console_options.WELCOME_MESSAGE_COLOR, justify="center"),
             border_style=config_settings.console_options.WELCOME_MESSAGE_BORDER_COLOR,
             title_align="center",

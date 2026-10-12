@@ -4,19 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 dynamic = ["dependencies"]
-name = "Unit3Dup"
-version = "0.14.12"
-description = "An uploader for the Unit3D torrent tracker"
+name = "ittup"
+version = "1.0.0"
+description = "ItaTorrents uploader"
 readme = "README.rst"
 requires-python = ">=3.10"
 license = "MIT"
 
 authors = [
-    { name = "Parzival" }
-  
+    { name = "Parzival" },
+    { name = "TehMaat" }
 ]
+
 [project.urls]
-Homepage = "https://github.com/31December99/Unit3Dup"
+Homepage = "https://github.com/TehMaat/ittup"
+Repository = "https://github.com/TehMaat/ittup"
+Issues = "https://github.com/TehMaat/ittup/issues"
 
 
 [tool.setuptools.packages.find]
@@ -28,6 +31,4 @@ dependencies = { file = ["requirements.txt"] }
 
 
 [project.scripts]
-unit3dup = "unit3dup.__main__:main"
-
-
+ittup = "unit3dup.__main__:main"

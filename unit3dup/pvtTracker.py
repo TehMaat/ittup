@@ -6,6 +6,7 @@ import requests
 from urllib.parse import urljoin
 from view import custom_console
 from common.trackers.data import trackers_api_data
+from common.about import USER_AGENT
 
 
 class Myhttp:
@@ -14,7 +15,7 @@ class Myhttp:
         api_data = trackers_api_data[tracker_name.upper()] if tracker_name else None
         if not api_data:
             custom_console.bot_error_log(
-                f"Tracker '{tracker_name}' not found. Please check your configuration or set it using the '-t' flag.")
+                f"Tracker '{tracker_name}' not found. Please check your configuration.")
             exit(1)
 
         self.pass_key = pass_key
@@ -28,7 +29,7 @@ class Myhttp:
         self.tracker_announce_url = urljoin(self.base_url, f"announce/{pass_key}")
 
         self.headers = {
-            "User-Agent": "Unit3D-up/0.0 (Linux 5.10.0-23-amd64)",
+            "User-Agent": USER_AGENT,
             "Accept": "application/json",
             "Authorization": f"Bearer {self.api_token}"
         }

@@ -39,10 +39,6 @@ class GameManager:
         if not self.contents:
             return []
 
-        # -multi : no announce_list . One announce for multi tracker
-        if self.cli.mt:
-            tracker_name_list = [selected_tracker.upper()]
-
         if self.cli.upload:
             custom_console.bot_error_log("Game upload works only with the '-f' flag.You need to specify a folder name.")
             return []

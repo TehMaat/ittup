@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
+import sys
+
+# Python builds without sqlite3 (e.g. pyenv on a seedbox without libsqlite3-dev) would
+# otherwise crash with a bare "No module named '_sqlite3'" while importing the modules below
+try:
+    import sqlite3  # noqa: F401
+except ImportError:
+    sys.exit("ITTup: this Python was built without sqlite3, which ITTup needs for its cache.\n"
+             "Install a Python that includes it, e.g. with uv: "
+             "https://tehmaat.github.io/ittup/install/seedbox/")
 
 from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
 from ittup.common.command import CommandLine

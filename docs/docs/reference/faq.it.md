@@ -81,7 +81,7 @@ In `TORRENT_ARCHIVE_PATH`, nella sottocartella `ITT`: `<archivio>/ITT/nome.torre
 
 ### Il bot funziona su seedbox senza sudo?
 
-Sì, con pyenv: guida [Seedbox ultra.cc](../install/seedbox.md).
+Sì, con uv, che porta anche un Python con sqlite3 già incluso: guida [Seedbox ultra.cc](../install/seedbox.md).
 
 ### Come aggiorno?
 

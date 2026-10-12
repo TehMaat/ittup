@@ -6,6 +6,12 @@ Quando esce una nuova versione:
 pip install --upgrade git+https://github.com/TehMaat/ittup
 ```
 
+Se l'hai installato con uv (come nella guida [Seedbox ultra.cc](seedbox.md)):
+
+```bash
+uv tool upgrade ittup
+```
+
 La versione installata è visibile all'avvio del bot:
 
 ```text

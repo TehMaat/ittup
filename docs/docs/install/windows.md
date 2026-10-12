@@ -5,6 +5,7 @@
 - **Python 3.10 or newer** (recommended: 3.10 to 3.12 — newer versions may have issues with some libraries)
 - **FFmpeg** — used to extract screenshots from videos
 - **Poppler** — only if you want to create torrents for PDF documents
+- **Git** — `pip` uses it to install ittup straight from GitHub: download it from [git-scm.com](https://git-scm.com/download/win)
 
 ## 1. Install FFmpeg
 
@@ -30,17 +31,17 @@ Needed only if you upload PDF documents — the bot uses it to extract the cover
 pdftocairo -v
 ```
 
-## 3. Install Unit3Dup
+## 3. Install ittup
 
 ```bash
-pip install unit3dup
+pip install git+https://github.com/TehMaat/ittup
 ```
 
 ## 4. First run
 
 ```bash
-unit3dup
+ittup
 ```
 
 !!! note "Red messages on first run?"
-    That's expected: the bot is telling you it's not configured yet. On first run it creates the configuration folder and the `Unit3Dbot.json` file. Continue with the [Configuration](../config/intro.md).
+    That's expected: the bot is telling you it's not configured yet. On first run it creates the configuration folder and the `ittup.json` file. Continue with the [Configuration](../config/intro.md).

@@ -4,7 +4,7 @@ With `-ftp` the bot connects to a remote FTP server, lets you **browse and pick 
 
 ## Configuration
 
-`options` section of `Unit3Dbot.json`:
+`options` section of `ittup.json`:
 
 ```json
 "options": {
@@ -29,7 +29,7 @@ With `-ftp` the bot connects to a remote FTP server, lets you **browse and pick 
 ## Usage
 
 ```bash
-unit3dup -ftp
+ittup -ftp
 ```
 
 1. The bot connects and shows the remote folder contents as a **numbered table**

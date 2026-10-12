@@ -20,8 +20,8 @@ pdftocairo -v
 Identico ai video:
 
 ```bash
-unit3dup -u "/percorso/rivista.pdf"
-unit3dup -scan "/percorso/cartella/riviste"
+ittup -u "/percorso/rivista.pdf"
+ittup -scan "/percorso/cartella/riviste"
 ```
 
 Cosa fa il bot:
@@ -34,7 +34,7 @@ Cosa fa il bot:
 Se la categoria non viene riconosciuta dal nome del file, forzala:
 
 ```bash
-unit3dup -force edicola -u "/percorso/file.pdf"
+ittup -force edicola -u "/percorso/file.pdf"
 ```
 
 ## Le proprietà dell'oggetto Documenti

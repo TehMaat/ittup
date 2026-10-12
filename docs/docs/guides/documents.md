@@ -20,8 +20,8 @@ pdftocairo -v
 Same as for videos:
 
 ```bash
-unit3dup -u "/path/magazine.pdf"
-unit3dup -scan "/path/magazines/folder"
+ittup -u "/path/magazine.pdf"
+ittup -scan "/path/magazines/folder"
 ```
 
 What the bot does:
@@ -34,7 +34,7 @@ What the bot does:
 If the category isn't recognized from the file name, force it:
 
 ```bash
-unit3dup -force edicola -u "/path/file.pdf"
+ittup -force edicola -u "/path/file.pdf"
 ```
 
 ## Document object properties

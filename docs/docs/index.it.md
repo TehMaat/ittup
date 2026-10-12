@@ -1,6 +1,6 @@
-# Unit3Dup
+# ittup
 
-**Unit3Dup è un bot scritto in Python che genera e carica i tuoi torrent sui tracker basati su UNIT3D.**
+**ittup (ItaTorrents uploader) è un bot scritto in Python che genera e carica i tuoi torrent su [ItaTorrents](https://itatorrents.xyz).**
 
 Gli dai un percorso — un file o una cartella — e lui fa il resto: analizza i media, crea il torrent, prepara la pagina del tracker e mette tutto in seeding.
 
@@ -21,19 +21,19 @@ Gli dai un percorso — un file o una cartella — e lui fa il resto: analizza i
 Tre comandi coprono la maggior parte dei casi:
 
 ```bash
-unit3dup -u "/home/ITT/upload/film.mkv"
+ittup -u "/home/ITT/upload/film.mkv"
 ```
 
 Carica un **singolo file**: analisi, screenshot, upload, seeding.
 
 ```bash
-unit3dup -f "/home/ITT/upload/nomecartella"
+ittup -f "/home/ITT/upload/nomecartella"
 ```
 
 Carica una **cartella** come unico torrent (un film, una stagione completa…). Il torrent prende il nome della cartella.
 
 ```bash
-unit3dup -scan "/home/ITT/upload"
+ittup -scan "/home/ITT/upload"
 ```
 
 Processa **tutto il contenuto** del percorso: ogni file e ogni cartella, fino al seeding.
@@ -80,15 +80,14 @@ Ha meno proprietà del video: `name`, `tmdb`, `category_id`, `anonymous`, `descr
 
 Come Documenti, con in più la proprietà `igdb`: l'ID del gioco sul database IGDB. Richiede un account IGDB — vedi la guida [Giochi](guides/games.md).
 
-## Tracker supportati
+## Tracker
 
-| Tracker | Sito |
-|---|---|
-| `ITT` | [itatorrents.xyz](https://itatorrents.xyz) |
-| `PTT` | [polishtorrent.top](https://polishtorrent.top) |
-| `AST` | [arabicsource.net](https://arabicsource.net) |
-| `SIS` | — |
+ittup carica su un solo tracker: **ITT** — [itatorrents.xyz](https://itatorrents.xyz).
+
+ittup è un fork di [Unit3Dup](https://github.com/31December99/Unit3Dup) di 31December99, ridotto alla sola ItaTorrents. Arrivi da Unit3Dup? Vedi [Aggiornamento](install/upgrade.md#arrivi-da-unit3dup).
+
+Codice sorgente: [github.com/TehMaat/ittup](https://github.com/TehMaat/ittup).
 
 ## Community
 
-Domande, segnalazioni, richieste: [server Discord di ITT](https://discord.gg/8RpwN2Khcz).
+Domande, segnalazioni, richieste: [server Discord](https://discord.gg/VMYaVzq2AF).

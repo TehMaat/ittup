@@ -1,6 +1,6 @@
 # Metadata
 
-Sezione `tracker_config` di `Unit3Dbot.json` — le chiavi dei servizi esterni che il bot interroga per identificare i tuoi contenuti.
+Sezione `tracker_config` di `ittup.json` — le chiavi dei servizi esterni che il bot interroga per identificare i tuoi contenuti.
 
 ## TMDB_APIKEY
 
@@ -28,7 +28,7 @@ Chiave gratuita: registrati su [themoviedb.org](https://www.themoviedb.org/), po
 
 Usata per cercare il **trailer** su YouTube quando TMDB non lo fornisce. Chiave API da [Google Cloud Console](https://console.cloud.google.com/) (YouTube Data API v3).
 
-Vedi anche `SKIP_YOUTUBE`, `YOUTUBE_FAV_CHANNEL_ID` e `YOUTUBE_CHANNEL_ENABLE` nelle [Opzioni avanzate](options.md).
+Vedi anche `SKIP_YOUTUBE` e `YOUTUBE_PREF_LANG` nelle [Opzioni avanzate](options.md).
 
 ## IGDB_CLIENT_ID e IGDB_ID_SECRET
 

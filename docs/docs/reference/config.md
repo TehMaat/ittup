@@ -1,24 +1,14 @@
 # Full config reference
 
-Every key of `Unit3Dbot.json`, section by section. "Default" is the value in the file generated on first run; the `no_key` / `no_pass` / `no_path` placeholders mean "not configured".
+Every key of `ittup.json`, section by section. "Default" is the value in the file generated on first run; the `no_key` / `no_pass` / `no_path` placeholders mean "not configured".
 
 ## `tracker_config`
 
 | Key | Type | Default | Required | Description |
 |---|---|---|---|---|
-| `ITT_URL` | string | `https://itatorrents.xyz` | to use ITT | ITT tracker URL |
-| `ITT_APIKEY` | string | `no_key` | to use ITT | Your ITT profile API key |
-| `ITT_PID` | string | `no_key` | if `itt` is in `MULTI_TRACKER` | ITT passkey |
-| `SIS_URL` | string | `https://no_tracker.xyz` | to use SIS | SIS tracker URL |
-| `SIS_APIKEY` | string | `no_key` | to use SIS | SIS API key |
-| `SIS_PID` | string | `no_key` | if `sis` is in `MULTI_TRACKER` | SIS passkey |
-| `PTT_URL` | string | `https://polishtorrent.top` | to use PTT | PTT tracker URL |
-| `PTT_APIKEY` | string | `no_key` | to use PTT | PTT API key |
-| `PTT_PID` | string | `no_key` | if `ptt` is in `MULTI_TRACKER` | PTT passkey |
-| `AST_URL` | string | `https://arabicsource.net` | to use AST | AST tracker URL |
-| `AST_APIKEY` | string | `no_key` | to use AST | AST API key |
-| `AST_PID` | string | `no_key` | if `ast` is in `MULTI_TRACKER` | AST passkey |
-| `MULTI_TRACKER` | list | `["itt","sis","ptt","ast"]` | yes (non-empty) | Active trackers; the first is the default. No duplicates |
+| `ITT_URL` | string | `https://itatorrents.xyz` | yes | ITT tracker URL |
+| `ITT_APIKEY` | string | `no_key` | yes | Your ITT profile API key |
+| `ITT_PID` | string | `no_key` | yes | ITT passkey (used in the announce URL) |
 | `TMDB_APIKEY` | string | `no_key` | for videos | TheMovieDB key |
 | `TVDB_APIKEY` | string | `no_key` | recommended for TV shows | TheTVDB key |
 | `IMGBB_KEY` | string | `no_key` | at least one host | ImgBB key |
@@ -69,8 +59,7 @@ Every key of `Unit3Dbot.json`, section by section. "Default" is the value in the
 | `NUMBER_OF_SCREENSHOTS` | number | `4` | Screenshots extracted from the video (2–10) |
 | `TAGS_POSITION_MOVIE` | list | see [Options](../config/options.md#tag-order-in-the-title) | Tag order in movie titles (5–17 entries) |
 | `TAGS_POSITION_SERIE` | list | see [Options](../config/options.md#tag-order-in-the-title) | Tag order in TV show titles |
-| `YOUTUBE_FAV_CHANNEL_ID` | string | ITT channel | Favorite YouTube channel for trailers |
-| `YOUTUBE_CHANNEL_ENABLE` | boolean | `False` | Enables the favorite-channel search |
+| `YOUTUBE_PREF_LANG` | string | `IT` | Country/language code (ISO 3166) for the YouTube trailer search |
 | `DUPLICATE_ON` | boolean | `true` | Duplicate check on every upload |
 | `SKIP_DUPLICATE` | boolean | `false` | Skips duplicate content without asking |
 | `SKIP_TMDB` | boolean | `false` | Skips the TMDB lookup |

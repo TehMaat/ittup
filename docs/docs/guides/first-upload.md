@@ -9,14 +9,14 @@ Follow the page for your system: [Windows](../install/windows.md) · [Linux](../
 Then launch the bot once so it creates its configuration files:
 
 ```bash
-unit3dup
+ittup
 ```
 
 Red messages are expected: the bot isn't configured yet.
 
 ## 2. Configure the bare minimum
 
-Open `Unit3Dbot.json` (Windows: `%LOCALAPPDATA%\Unit3Dup_config\` — Linux: `~/Unit3Dup_config/`) and fill in these fields:
+Open `ittup.json` (Windows: `%LOCALAPPDATA%\ittup_config\` — Linux: `~/ittup_config/`) and fill in these fields:
 
 ```json
 {
@@ -24,7 +24,6 @@ Open `Unit3Dbot.json` (Windows: `%LOCALAPPDATA%\Unit3Dup_config\` — Linux: `~/
         "ITT_URL": "https://itatorrents.xyz",
         "ITT_APIKEY": "your_api_key",
         "ITT_PID": "your_passkey",
-        "MULTI_TRACKER": ["itt"],
         "TMDB_APIKEY": "your_tmdb_key",
         "IMGBB_KEY": "your_imgbb_key",
         "FREE_IMAGE_KEY": "your_freeimage_key"
@@ -48,13 +47,10 @@ Where to find each value:
 - **Image hosts** → sign up at [imgbb.com](https://imgbb.com) and [freeimage.host](https://freeimage.host), generate the keys ([details](../config/imagehosts.md))
 - **qBittorrent** → WebUI credentials ([details](../config/clients.md))
 
-!!! tip "Trimmed MULTI_TRACKER"
-    `"MULTI_TRACKER": ["itt"]` with just your tracker: you avoid PID errors for trackers you don't use.
-
 ## 3. Check
 
 ```bash
-unit3dup -check
+ittup -check
 ```
 
 If something is wrong, the bot tells you which field to fix.
@@ -64,7 +60,7 @@ If something is wrong, the bot tells you which field to fix.
 Pick a test video file that follows the tracker rules, then:
 
 ```bash
-unit3dup -u "/path/to/movie.mkv"
+ittup -u "/path/to/movie.mkv"
 ```
 
 What happens, in order:
@@ -81,4 +77,4 @@ What happens, in order:
 - The torrent page on the tracker: title, tags, screenshots, mediainfo
 - qBittorrent: the torrent must be seeding with the label set in `TAG`
 
-All good? Done. Next steps: [Basic upload](../usage/upload.md) for `-f` and `-scan`, [Tags and titles](../usage/tags.md) to polish your titles, [Multi-tracker](../usage/multitracker.md) to upload everywhere.
+All good? Done. Next steps: [Basic upload](../usage/upload.md) for `-f` and `-scan`, [Tags and titles](../usage/tags.md) to polish your titles, [Watcher](../usage/watcher.md) to upload automatically.

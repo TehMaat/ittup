@@ -1,6 +1,6 @@
 # Tracker search
 
-Besides uploading, the bot queries the tracker from the terminal: searches, details, filters. Every command runs against the **default tracker** (the first in `MULTI_TRACKER`) or the one given with `-tracker <NAME>`.
+Besides uploading, the bot queries the tracker from the terminal: searches, details, filters. Every command runs against ItaTorrents.
 
 ## Basic searches
 
@@ -16,9 +16,8 @@ Besides uploading, the bot queries the tracker from the terminal: searches, deta
 | `-db` | Added to a search, **saves the results** to the local database |
 
 ```bash
-unit3dup -sch "movie title"
-unit3dup -tracker ptt -sch "movie title"
-unit3dup -up "UploaderName" -db
+ittup -sch "movie title"
+ittup -up "UploaderName" -db
 ```
 
 ## Filters
@@ -38,7 +37,7 @@ unit3dup -up "UploaderName" -db
 Useful combo — one TMDB title at a specific resolution:
 
 ```bash
-unit3dup -tmdb 603 -res 1080p
+ittup -tmdb 603 -res 1080p
 ```
 
 ## Special views
@@ -57,7 +56,7 @@ Lists by torrent attribute:
 | `-pr` | Personal release |
 
 ```bash
-unit3dup -fe
+ittup -fe
 ```
 
 The full table of every flag: [All commands](../reference/commands.md).

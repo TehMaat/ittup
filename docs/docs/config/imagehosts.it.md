@@ -14,7 +14,7 @@ Il bot estrae gli screenshot dal video e li carica su un servizio di hosting imm
 | PassIMA | [passtheima.ge](https://passtheima.ge) | `PASSIMA_KEY` |
 | ImaRide | [imageride.net](https://www.imageride.net) | `IMARIDE_KEY` |
 
-Per ogni host: registrati sul sito, genera la API key, incollala in `Unit3Dbot.json`:
+Per ogni host: registrati sul sito, genera la API key, incollala in `ittup.json`:
 
 ```json
 "IMGBB_KEY": "la_tua_chiave",

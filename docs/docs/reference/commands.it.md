@@ -3,10 +3,10 @@
 Sinossi:
 
 ```text
-unit3dup [opzioni]
+ittup [opzioni]
 ```
 
-I flag di upload si combinano tra loro (es. `-mt -b -u "<file>"`); i flag di ricerca si combinano con i filtri. Ogni flag esiste anche in forma lunga (`-u` / `--upload`).
+I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricerca si combinano con i filtri. Ogni flag esiste anche in forma lunga (`-u` / `--upload`).
 
 ## Configurazione
 
@@ -21,18 +21,18 @@ I flag di upload si combinano tra loro (es. `-mt -b -u "<file>"`); i flag di ric
 | `-u`, `--upload` | percorso file | Carica un [singolo file](../usage/upload.md#-u-un-singolo-file) |
 | `-f`, `--folder` | percorso cartella | Carica una [cartella](../usage/upload.md#-f-una-cartella) come unico torrent |
 | `-scan` | percorso | Processa [tutto il contenuto](../usage/upload.md#-scan-tutto-il-contenuto-di-un-percorso) del percorso |
-| `-b`, `--buildtags` | — | [Ricostruisce titolo e tag](../usage/tags.md#-b-ricostruisci-il-titolo) dall'analisi del media |
 | `-reseed` | — | [Reseed](../usage/reseed.md): scarica dal tracker i torrent dei tuoi contenuti locali |
 | `-watcher` | — | Avvia il [watcher](../usage/watcher.md) (cartella monitorata) |
 | `-notitle` | "titolo" | [Titolo manuale](../usage/tags.md#titolo-manuale) per la ricerca TMDB |
-| `-tracker` | nome tracker | [Tracker di destinazione](../usage/multitracker.md#-tracker-un-tracker-specifico) (default: il primo di `MULTI_TRACKER`) |
-| `-mt` | — | Upload su [tutti i tracker](../usage/multitracker.md#-mt-tutti-i-tracker) configurati |
 | `-force` | categoria | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-noseed` | — | Upload senza consegnare il torrent al client (niente seeding) |
 | `-noup` | — | Crea solo il `.torrent` nell'archivio, niente upload |
 | `-dup`, `--duplicate` | — | Controlla i duplicati sul tracker prima dell'upload |
 | `-personal` | — | Marca come personal release |
 | `-ftp` | — | [Browser FTP interattivo](../usage/ftp.md): scarica dal server remoto e carica |
+
+!!! note "Flag di Unit3Dup rimossi"
+    `-tracker` e `-mt` non esistono più: ogni upload va su ItaTorrents, e se li passi il bot si ferma con un errore. Anche `-b` è stato rimosso: il titolo viene sempre costruito in automatico ([Tag e titoli](../usage/tags.md)).
 
 ## Ricerca
 

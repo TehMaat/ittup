@@ -13,7 +13,7 @@ IGDB belongs to Twitch: API access is enabled from the Twitch developer console.
 
 ## 2. Configure the bot
 
-In the `tracker_config` section of `Unit3Dbot.json`:
+In the `tracker_config` section of `ittup.json`:
 
 ```json
 "IGDB_CLIENT_ID": "your_client_id",
@@ -26,8 +26,8 @@ In the `tracker_config` section of `Unit3Dbot.json`:
 ## 3. Upload
 
 ```bash
-unit3dup -f "/path/Game.Name.v1.0.REPACK"
-unit3dup -force game -f "/path/game_folder"
+ittup -f "/path/Game.Name.v1.0.REPACK"
+ittup -force game -f "/path/game_folder"
 ```
 
 The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`igdb`) and detects the **platform** (PC, console…) for the matching tag. The other properties (`name`, `category_id`, `description`…) work [like for videos](../index.md#game-object), with `tmdb` set to a neutral value.

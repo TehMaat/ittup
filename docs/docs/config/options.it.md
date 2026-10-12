@@ -1,6 +1,6 @@
 # Opzioni avanzate
 
-Sezione `user_preferences` di `Unit3Dbot.json` (più `console_options` in fondo). Nessuna di queste opzioni è obbligatoria: i default vanno bene per iniziare.
+Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Nessuna di queste opzioni è obbligatoria: i default vanno bene per iniziare.
 
 ## Screenshot
 
@@ -43,7 +43,7 @@ Sezione `user_preferences` di `Unit3Dbot.json` (più `console_options` in fondo)
 
 | Chiave | Effetto |
 |---|---|
-| `CACHE_PATH` | Cartella della cache (default: `Unit3Dup_config/cache_path`) |
+| `CACHE_PATH` | Cartella della cache (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Riusa gli screenshot già estratti |
 | `CACHE_DBONLINE` | Mette in cache i risultati di TMDB e delle ricerche online |
 | `TMDB_DEBUG` | Mostra nel log i punteggi di confronto dei titoli TMDB (titolo, originale, titoli alternativi, traduzioni). Fa richieste HTTP extra: lascialo spento se non stai indagando un match sbagliato |
@@ -97,21 +97,19 @@ Come funziona: [Watcher](../usage/watcher.md).
 "TORRENT_ARCHIVE_PATH": "no_path",
 ```
 
-Cartella dove il bot archivia i `.torrent` generati, organizzati in sottocartelle per tracker (`<archivio>/ITT/...`). Con `no_path` usa il default dentro `Unit3Dup_config`.
+Cartella dove il bot archivia i `.torrent` generati, dentro la sottocartella `ITT` (`<archivio>/ITT/...`). Con `no_path` usa il default dentro `ittup_config`.
 
 ## YouTube
 
 ```json
-"YOUTUBE_FAV_CHANNEL_ID": "UC...",
-"YOUTUBE_CHANNEL_ENABLE": "False",
+"YOUTUBE_PREF_LANG": "IT",
 "SKIP_YOUTUBE": "true",
 "SKIP_TMDB": "false",
 ```
 
 | Chiave | Effetto |
 |---|---|
-| `YOUTUBE_FAV_CHANNEL_ID` | Canale preferito da cui pescare i trailer |
-| `YOUTUBE_CHANNEL_ENABLE` | Abilita la ricerca trailer sul canale preferito |
+| `YOUTUBE_PREF_LANG` | Codice paese/lingua (ISO 3166, es. `IT`) usato per cercare i trailer su YouTube |
 | `SKIP_YOUTUBE` | Salta del tutto la ricerca trailer su YouTube |
 | `SKIP_TMDB` | Salta l'interrogazione di TMDB (sconsigliato per i video) |
 

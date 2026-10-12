@@ -106,8 +106,7 @@ Run ``ittup -h`` for the full list of commands.
 DOC
 ===
 
-Most of the original `Unit3Dup Docs <https://31december99.github.io/Unit3Dup/>`_ still applies:
-replace the ``unit3dup`` command with ``ittup`` and ignore the multi-tracker options.
+The documentation (English and Italian) is at https://tehmaat.github.io/ittup/
 
 
 ImageHost
@@ -145,20 +144,6 @@ united by a shared passion for torrents and more
 | ``ITT``          | https://itatorrents.xyz    |
 +------------------+----------------------------+
 
-.. image:: https://img.shields.io/discord/1214696147600408698?label=Discord&logo=discord&style=flat
-   :target: https://discord.gg/8RpwN2Khcz
+.. image:: https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white&style=flat
+   :target: https://discord.gg/VMYaVzq2AF
    :alt: Discord Server
-
-
-# AstraeLabs
-======================
-
- `GitHub Project <https://github.com/AstraeLabs/VibraVid>`_
-
-An open-source script for downloading movies, TV shows, and anime from various websites,
-built by a community of people with a shared interest in programming.
-
-.. image:: https://img.shields.io/badge/AstraeLabs-blue.svg
-   :target: https://github.com/AstraeLabs/VibraVid
-   :alt: AstraeLabs Badge
-

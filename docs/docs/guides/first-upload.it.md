@@ -9,14 +9,14 @@ Segui la pagina per il tuo sistema: [Windows](../install/windows.md) · [Linux](
 Poi lancia una volta il bot per fargli creare i file di configurazione:
 
 ```bash
-unit3dup
+ittup
 ```
 
 I messaggi rossi sono attesi: il bot non è ancora configurato.
 
 ## 2. Configura il minimo indispensabile
 
-Apri `Unit3Dbot.json` (Windows: `%LOCALAPPDATA%\Unit3Dup_config\` — Linux: `~/Unit3Dup_config/`) e compila questi campi:
+Apri `ittup.json` (Windows: `%LOCALAPPDATA%\ittup_config\` — Linux: `~/ittup_config/`) e compila questi campi:
 
 ```json
 {
@@ -24,7 +24,6 @@ Apri `Unit3Dbot.json` (Windows: `%LOCALAPPDATA%\Unit3Dup_config\` — Linux: `~/
         "ITT_URL": "https://itatorrents.xyz",
         "ITT_APIKEY": "la_tua_api_key",
         "ITT_PID": "la_tua_passkey",
-        "MULTI_TRACKER": ["itt"],
         "TMDB_APIKEY": "la_tua_chiave_tmdb",
         "IMGBB_KEY": "la_tua_chiave_imgbb",
         "FREE_IMAGE_KEY": "la_tua_chiave_freeimage"
@@ -48,13 +47,10 @@ Dove trovare ogni valore:
 - **Image host** → registrati su [imgbb.com](https://imgbb.com) e [freeimage.host](https://freeimage.host), genera le chiavi ([dettagli](../config/imagehosts.md))
 - **qBittorrent** → credenziali della WebUI ([dettagli](../config/clients.md))
 
-!!! tip "MULTI_TRACKER ridotto"
-    `"MULTI_TRACKER": ["itt"]` con solo il tuo tracker: eviti errori di PID per tracker che non usi.
-
 ## 3. Verifica
 
 ```bash
-unit3dup -check
+ittup -check
 ```
 
 Se qualcosa non va, il bot ti dice quale campo correggere.
@@ -64,7 +60,7 @@ Se qualcosa non va, il bot ti dice quale campo correggere.
 Scegli un file video di prova che rispetti le regole del tracker, poi:
 
 ```bash
-unit3dup -u "/percorso/del/film.mkv"
+ittup -u "/percorso/del/film.mkv"
 ```
 
 Cosa succede, nell'ordine:
@@ -81,4 +77,4 @@ Cosa succede, nell'ordine:
 - La pagina del torrent sul tracker: titolo, tag, screenshot, mediainfo
 - qBittorrent: il torrent dev'essere in seeding con l'etichetta configurata in `TAG`
 
-Se tutto torna: fatto. Prossimi passi: [Upload base](../usage/upload.md) per `-f` e `-scan`, [Tag e titoli](../usage/tags.md) per rifinire i titoli, [Multi-tracker](../usage/multitracker.md) per caricare ovunque.
+Se tutto torna: fatto. Prossimi passi: [Upload base](../usage/upload.md) per `-f` e `-scan`, [Tag e titoli](../usage/tags.md) per rifinire i titoli, [Watcher](../usage/watcher.md) per caricare in automatico.

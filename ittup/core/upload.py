@@ -25,7 +25,7 @@ class UploadBot:
         self.tracker = Unit3d(tracker_name=tracker_name)
         self.sign = (
             f"[quote][url={REPO_URL}][color=#00BFFF][size=14]Uploaded with {APP_NAME}"
-            f" {Load.version}[/size][/color][/url][/quote]")
+            f" v{Load.version}[/size][/color][/url][/quote]")
 
     def message(self, tracker_response: requests.Response, torrent_archive: str):
 

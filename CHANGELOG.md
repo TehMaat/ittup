@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.4.0](https://github.com/TehMaat/ittup/compare/1.3.0...1.4.0) (2026-10-14)
+
+
+### Features
+
+* add RENAME_FILES to rename the original files as the tracker title ([968cbfe](https://github.com/TehMaat/ittup/commit/968cbfeff442ab8399bca7324b6c2a0e62b64d45)), closes [#38](https://github.com/TehMaat/ittup/issues/38)
+* add the -fl25, -fl50, -fl75 and -fl100 freeleech upload flags ([7f90807](https://github.com/TehMaat/ittup/commit/7f908073c85f37556d3dafa067a667098db23131)), closes [#42](https://github.com/TehMaat/ittup/issues/42)
+* Italian TMDB titles, freeleech flags, file renaming and title/type fixes ([1915578](https://github.com/TehMaat/ittup/commit/1915578a45af746d468da7452eaa7552cb3df125))
+* print the generated display name on a single line ([6ef5001](https://github.com/TehMaat/ittup/commit/6ef50018c591d0dc246b9c34436699d0198ac138)), closes [#37](https://github.com/TehMaat/ittup/issues/37)
+* upload the -scan and -watcher contents in alphanumeric order ([66a9392](https://github.com/TehMaat/ittup/commit/66a93929c703a3cb4e9dd2f491f55cce5fe3a56c)), closes [#33](https://github.com/TehMaat/ittup/issues/33)
+* write NFRip and the other platform rips as the platform plus WEBRip ([325e92f](https://github.com/TehMaat/ittup/commit/325e92f7fa141063c8e90c21157dd00bef03ef06)), closes [#34](https://github.com/TehMaat/ittup/issues/34)
+* write the Italian title from TMDB in the torrent name ([e300216](https://github.com/TehMaat/ittup/commit/e30021690e15a9f59ca0c3a0b3bdd2609f0b1b8b)), closes [#31](https://github.com/TehMaat/ittup/issues/31)
+
+
+### Bug Fixes
+
+* find the TMDB ID of the titles with brackets and of more ID formats ([c52b1ce](https://github.com/TehMaat/ittup/commit/c52b1ce78f5ce6ba27f8ecea3fe94109a1fa6e58)), closes [#35](https://github.com/TehMaat/ittup/issues/35)
+* keep the special characters of the title written in the name ([6e9eaee](https://github.com/TehMaat/ittup/commit/6e9eaee4cb24cc04fb4961d39cf4e51e802eceaa)), closes [#40](https://github.com/TehMaat/ittup/issues/40)
+* pick the tracker type from the source written in the release name ([f8e77ba](https://github.com/TehMaat/ittup/commit/f8e77ba624c104e903c8afdd6c115a172c86e5a6)), closes [#36](https://github.com/TehMaat/ittup/issues/36)
+* read the episode packs written as Sxx Exx-xx ([593be56](https://github.com/TehMaat/ittup/commit/593be56f9183523e8ff3cf12cbc6ce9d350107eb)), closes [#32](https://github.com/TehMaat/ittup/issues/32)
+* read the lower case season packs and not DTS5.1 as a season ([0cb3b01](https://github.com/TehMaat/ittup/commit/0cb3b01f0ead36ad2dbbc2ba0596167ab50eb96a)), closes [#32](https://github.com/TehMaat/ittup/issues/32)
+* rename the files with characters refused by the tracker before the upload ([e6a963b](https://github.com/TehMaat/ittup/commit/e6a963b0166b9531f0110f6a1f04ef4d62f10374)), closes [#41](https://github.com/TehMaat/ittup/issues/41)
+
+
+### Documentation
+
+* install with pipx on Linux ([a3fdeab](https://github.com/TehMaat/ittup/commit/a3fdeab10e707231413d3fb95970cefa3fe36f4f))
+* install with pipx on Linux ([a415c36](https://github.com/TehMaat/ittup/commit/a415c364031ae088b70df76eda15c2ce770e9632))
+
 ## [1.3.0](https://github.com/TehMaat/ittup/compare/1.2.3...1.3.0) (2026-10-12)
 
 

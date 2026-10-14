@@ -6,6 +6,12 @@ Quando esce una nuova versione:
 pip install --upgrade git+https://github.com/TehMaat/ittup
 ```
 
+Se l'hai installato con pipx (come nella guida [Linux](linux.md)):
+
+```bash
+pipx upgrade ittup
+```
+
 Se l'hai installato con uv (come nella guida [Seedbox ultra.cc](seedbox.md)):
 
 ```bash

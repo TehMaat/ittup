@@ -75,6 +75,19 @@ Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Ne
 
 L'**ordine** con cui i tag compongono il titolo del torrent, per film e serie. Puoi riordinare o togliere voci (minimo 5); i nomi devono restare tra quelli ammessi. Dettagli: [Tag e titoli](../usage/tags.md).
 
+## Rinomina i file come il titolo
+
+```json
+"RENAME_FILES": "False",
+```
+
+Con `True` il bot **rinomina su disco i file originali** come il titolo mostrato sul tracker, con i punti al posto degli spazi, prima di creare il torrent: `film.2021.1080p.web-dl.mkv` diventa `Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DD+.5.1.ITA.ENG.H.264.mkv`. Vale per `-u`, `-f`, `-scan` e `-watcher`, per film e serie.
+
+Per una cartella, la cartella prende il titolo; lo prende anche il file video di una cartella con un film, e in un pack di stagione ogni episodio prende il titolo con il suo `SxxExx`. Una cartella con più film mantiene i nomi dei file. I caratteri non validi nel nome di un file (`:` `?` `*`…) vengono tolti.
+
+!!! warning "File in seed altrove"
+    Un file rinominato non viene più trovato dai client che lo stavano già seedando con il vecchio nome.
+
 ## Watcher
 
 ```json

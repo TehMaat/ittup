@@ -75,6 +75,19 @@
 
 The **order** in which tags build the torrent title, for movies and TV shows. You can reorder or remove entries (minimum 5); names must stay within the allowed set. Details: [Tags and titles](../usage/tags.md).
 
+## Rename the files as the title
+
+```json
+"RENAME_FILES": "False",
+```
+
+With `True` the bot **renames the original files on disk** as the title shown on the tracker, with dots instead of spaces, before creating the torrent: `movie.2021.1080p.web-dl.mkv` becomes `Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DD+.5.1.ITA.ENG.H.264.mkv`. It works with `-u`, `-f`, `-scan` and `-watcher`, for movies and TV shows.
+
+For a folder, the folder takes the title; the video file of a movie folder takes it too, and in a season pack each episode takes the title with its own `SxxExx`. A folder with more movies keeps the file names. Characters that are not valid in a file name (`:` `?` `*`…) are removed.
+
+!!! warning "Files seeded elsewhere"
+    A renamed file is no longer found by the clients that were already seeding it with its old name.
+
 ## Watcher
 
 ```json

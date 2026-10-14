@@ -147,6 +147,7 @@ class UserPreferences(BaseModel):
     CACHE_DBONLINE: bool = False
     TMDB_DEBUG: bool = False
     PERSONAL_RELEASE: bool = False
+    RENAME_FILES: bool = False
     FAST_LOAD: int = 0
     MY_SIGN: str | None = None
     MY_URL: str | None = None
@@ -460,13 +461,14 @@ class Config(BaseModel):
                 field = field.upper()
 
                 # New attribute added to an existing json file with an empty value: use the default
-                if field == 'TMDB_DEBUG' and section[field] == '':
+                if field in ['TMDB_DEBUG', 'RENAME_FILES'] and section[field] == '':
                     section[field] = 'False'
                 if field == 'WATCHER_TIMEOUT' and section[field] == '':
                     section[field] = UserPreferences.model_fields['WATCHER_TIMEOUT'].default
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
-                             'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE']:
+                             'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
+                             'RENAME_FILES']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
@@ -653,6 +655,7 @@ class Load:
                 "CACHE_DBONLINE": "False",
                 "TMDB_DEBUG": "False",
                 "PERSONAL_RELEASE": "False",
+                "RENAME_FILES": "False",
                 "FAST_LOAD": "0",
                 "RELEASER_SIGN": "",
                 "MY_SIGN": "",

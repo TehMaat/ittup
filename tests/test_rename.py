@@ -60,3 +60,73 @@ def test_content_manager_uses_the_renamed_folder(tmp_path):
     assert media.torrent_name == "Movie - Part 2020 1080p WEB-DL"
     assert media.file_name == str(renamed / "Movie - Part 2020 1080p WEB-DL.mkv")
     assert '"Movie - Part 2020 1080p WEB-DL.mkv"' in media.metainfo
+
+
+from ittup.common.rename import episode_name, title_name
+from ittup.core.media_manager.VideoManager import VideoManager
+
+
+def test_title_name_with_dots():
+    assert title_name("Spider-Man: No Way Home 2021 1080p WEB-DL DD+ 5.1 ITA ENG H.264-SIGN") == \
+        "Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DD+.5.1.ITA.ENG.H.264-SIGN"
+    assert title_name("Mission: Impossible - Dead Reckoning 2023 1080p") == \
+        "Mission.Impossible.Dead.Reckoning.2023.1080p"
+
+
+def test_episode_name():
+    assert episode_name("Show.S04.1080p.WEB-DL", "S04", 4, 2) == "Show.S04E02.1080p.WEB-DL"
+    assert episode_name("Show.S04E01-06.1080p", "S04E01-06", 4, 3) == "Show.S04E03.1080p"
+    assert episode_name("Show.1080p", "S04", 4, 2) is None
+    assert episode_name("Show.S04.1080p", "S04", 4, None) is None
+
+
+def contents(path, mode="folder"):
+    return ContentManager(path=str(path), mode=mode, cli=argparse.Namespace(force=None)).process()
+
+
+def test_rename_a_single_file(tmp_path):
+    (tmp_path / "movie.2020.1080p.web-dl.mkv").write_bytes(b"x")
+    media = contents(tmp_path / "movie.2020.1080p.web-dl.mkv", mode="man")[0]
+    media.display_name = "Movie: Il Film 2020 1080p WEB-DL H.264"
+
+    VideoManager.rename_files(media)
+
+    new_file = tmp_path / "Movie.Il.Film.2020.1080p.WEB-DL.H.264.mkv"
+    assert new_file.exists()
+    assert media.torrent_path == media.file_name == str(new_file)
+    assert media.torrent_name == new_file.name
+    assert str(new_file) in media.metainfo
+    assert media.category == "movie"
+
+
+def test_rename_a_season_pack(tmp_path):
+    folder = tmp_path / "show.s04.1080p.web-dl"
+    folder.mkdir()
+    for name in ["show.s04e01.1080p.mkv", "show.s04e02.1080p.mkv", "notes.txt"]:
+        (folder / name).write_bytes(b"x")
+    media = contents(folder)[0]
+    media.display_name = "Show S04 1080p WEB-DL H.264"
+
+    VideoManager.rename_files(media)
+
+    new_folder = tmp_path / "Show.S04.1080p.WEB-DL.H.264"
+    assert sorted(p.name for p in new_folder.iterdir()) == [
+        "Show.S04E01.1080p.WEB-DL.H.264.mkv", "Show.S04E02.1080p.WEB-DL.H.264.mkv", "notes.txt"]
+    assert media.torrent_path == str(new_folder)
+    assert media.torrent_name == "Show.S04.1080p.WEB-DL.H.264"
+    assert media.file_name == str(new_folder / "Show.S04E01.1080p.WEB-DL.H.264.mkv")
+    assert '"Show.S04E02.1080p.WEB-DL.H.264.mkv"' in media.metainfo
+    assert (media.category, media.guess_season, media.torrent_pack) == ("tv", 4, True)
+
+
+def test_a_folder_with_more_movies_keeps_the_file_names(tmp_path):
+    folder = tmp_path / "saga"
+    folder.mkdir()
+    for name in ["movie.one.2001.mkv", "movie.two.2003.mkv"]:
+        (folder / name).write_bytes(b"x")
+    media = contents(folder)[0]
+    media.display_name = "Saga 1080p"
+
+    VideoManager.rename_files(media)
+
+    assert sorted(p.name for p in (tmp_path / "Saga.1080p").iterdir()) == ["movie.one.2001.mkv", "movie.two.2003.mkv"]

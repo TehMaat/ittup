@@ -18,7 +18,7 @@ Il titolo ricavato dal nome mantiene i caratteri speciali scritti nel nome: `Spi
 
 Un pack di stagione si scrive `S04`, un pack di episodi `S04E01-06`, anche quando nel nome c'è uno spazio o un punto tra stagione ed episodi (`S04 E01-06`, `S04.E01-06`). Sul tracker entrambi hanno numero episodio `0` (pack). Quando il pack contiene tutti gli episodi di una stagione conclusa su TMDB (`S04E01-10` di una stagione da 10 episodi), il titolo riporta solo `S04`.
 
-**Non rinomina il tuo file**: costruisce solo il titolo del torrent mostrato sulla pagina del tracker.
+**Non rinomina il tuo file**: costruisce solo il titolo del torrent mostrato sulla pagina del tracker, a meno che non attivi [`RENAME_FILES`](../config/options.md#rinomina-i-file-come-il-titolo).
 
 ## Codec video
 

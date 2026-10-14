@@ -18,7 +18,7 @@ The title from the name keeps the special characters written in it: `Spider-Man.
 
 A season pack is written `S04`, an episode pack `S04E01-06`, also when the name has a space or a dot between season and episodes (`S04 E01-06`, `S04.E01-06`). On the tracker both have episode number `0` (pack). When the pack has every episode of a season that TMDB has concluded (`S04E01-10` of a 10-episode season), the title says just `S04`.
 
-It **does not rename your file**: it only builds the torrent title shown on the tracker page.
+It **does not rename your file**: it only builds the torrent title shown on the tracker page, unless you turn on [`RENAME_FILES`](../config/options.md#rename-the-files-as-the-title).
 
 ## Video codec
 

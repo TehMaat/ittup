@@ -7,7 +7,8 @@ import unicodedata
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.tags import SearchTags
-from ittup.common.utility import ManageTitles
+from ittup.common.rename import rename_to_title
+from ittup.common.utility import ManageTitles, System
 from ittup.common import title
 
 from ittup.core.media_manager.common import UserContent
@@ -39,6 +40,31 @@ class VideoManager:
         self.sign_list: dict = sign_list
         self.ban_list: dict = ban_list
         self.on_upload = on_upload
+
+    @staticmethod
+    def rename_files(content: Media) -> None:
+        """
+        Rename the file, or the folder and its video files, as the title shown on the tracker (RENAME_FILES)
+        The episodes of a pack take their SxxExx
+        """
+        path = content.torrent_path
+        video_files, episodes, pack = [], {}, None
+        if os.path.isdir(path):
+            video_files = sorted([file for file in os.listdir(path) if ManageTitles.filter_ext(file)],
+                                 key=System.natural_key)
+            if content.torrent_pack:
+                pack = content.pack
+                for file in video_files:
+                    guess = title.Guessit(ManageTitles.clean_text(file))
+                    episode = guess.guessit_episode
+                    # A file with more episodes keeps its name
+                    episodes[file] = (guess.guessit_season or content.guess_season,
+                                      episode if isinstance(episode, int) else None)
+
+        new_path, renamed_files = rename_to_title(path=path, display_name=content.display_name,
+                                                  video_files=video_files, pack=pack, episodes=episodes)
+        if new_path != path or renamed_files:
+            content.renamed(path=new_path, renamed_files=renamed_files)
 
     @staticmethod
     def italian_title(details: dict | None) -> str | None:
@@ -150,6 +176,11 @@ class VideoManager:
                         and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
                                                      cli=self.cli)):
                     continue
+
+                # Rename the original files as the title shown on the tracker before creating the torrent
+                if config_settings.user_preferences.RENAME_FILES:
+                    self.rename_files(content=content)
+                    torrent_filepath = os.path.join(archive, f"{content.torrent_name}.torrent")
 
                 torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
                                                        selected_tracker=selected_tracker, this_path=torrent_filepath)

@@ -4,6 +4,7 @@ import json
 import os
 import re
 
+from ittup.common.rename import rename_invalid
 from ittup.common.utility import ManageTitles, System
 from ittup.core.automode import Auto
 from ittup.core.media import Media
@@ -57,6 +58,10 @@ class ContentManager:
     def process(self)-> list[Media]:
         contents = []
         for media in self.media_list:
+            # The tracker refuses the files with ':', '?', '*'.. in their names: rename them
+            new_path = rename_invalid(media.torrent_path)
+            if new_path != os.path.normpath(media.torrent_path):
+                media.move_to(new_path)
             self.path = media.torrent_path
             media.category = media.category if not self.cli.force else self.cli.force
             self.category = media.category

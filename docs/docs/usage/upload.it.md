@@ -45,6 +45,13 @@ Si combinano con `-u`, `-f` e `-scan`:
 | `-notitle "<titolo>"` | Usa questo titolo per la ricerca su TMDB invece di quello ricavato dal nome del file |
 | `-reseed` | Modalità reseed ([Reseed](reseed.md)) |
 
+## Caratteri rifiutati dal tracker
+
+Il tracker rifiuta i torrent con file o cartelle che hanno `:` `?` `*` `<` `>` `|` `"` `\` nel nome, o che finiscono con un punto o uno spazio. Prima di creare il torrent il bot **li rinomina su disco** e scrive ogni rinomina nel log: `Titolo: Sub` diventa `Titolo - Sub`, gli altri caratteri vengono tolti. Trattini, punti esclamativi e gli altri caratteri restano.
+
+!!! warning "File in seed altrove"
+    Un file rinominato non viene più trovato dai client che lo stavano già seedando con il vecchio nome.
+
 ## ID nel nome
 
 Se il nome del file o della cartella contiene un ID, il bot lo usa invece di cercare il titolo su TMDB:

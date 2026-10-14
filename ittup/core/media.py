@@ -55,6 +55,23 @@ class Media:
         self._igdb_id: int | None = None
         self._generate_title: str | None = None
 
+    def move_to(self, path: str) -> None:
+        """
+        The media was renamed: point it to its new path
+        """
+        self.folder = os.path.dirname(path)
+        self.subfolder = path
+        self.title = os.path.basename(path)
+        self._title_sanitized = None
+        self._guess_title = None
+        self._guess_filename = None
+        self._guess_season = None
+        self._episode = None
+        self._torrent_path = None
+        self._crew_list = None
+        self._platform_list = None
+        self._category = None
+
     @property
     def title_sanitized(self) -> str:
         if not self._title_sanitized:

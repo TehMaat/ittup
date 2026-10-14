@@ -45,6 +45,13 @@ They combine with `-u`, `-f` and `-scan`:
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
 
+## Characters refused by the tracker
+
+The tracker refuses torrents whose files or folders have `:` `?` `*` `<` `>` `|` `"` `\` in their names, or end with a dot or a space. Before creating the torrent the bot **renames them on disk** and logs each rename: `Title: Sub` becomes `Title - Sub`, the other characters are removed. Dashes, exclamation marks and the other characters are kept.
+
+!!! warning "Files seeded elsewhere"
+    A renamed file is no longer found by the clients that were already seeding it with its old name.
+
 ## IDs in the name
 
 If the file or folder name carries an ID, the bot uses it instead of searching TMDB by title:

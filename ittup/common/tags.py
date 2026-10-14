@@ -151,6 +151,16 @@ class SearchTags(object):
         tag_esc = re.sub(r'([A-Z])(\d+)', r'\1[._-]?\2', tag_esc)
         return tag_esc
 
+    def expand_platform_rip(self, filename: str) -> str:
+        """
+        Split a platform rip into the platform and the WEBRip source (es. 'NFRip' -> 'NF WEBRip')
+        """
+        platforms = [tag for tag, category in self.TAG_TYPES.items() if category == "platform"]
+        if not platforms:
+            return filename
+        pattern = r'(?<![a-z0-9])(' + "|".join(re.escape(tag) for tag in platforms) + r')rip(?![a-z0-9])'
+        return re.sub(pattern, r'\1 WEBRip', filename, flags=re.IGNORECASE)
+
     def build_title(self, dictionary: dict) -> str:
         # /// Build the title
         build = []
@@ -188,10 +198,13 @@ class SearchTags(object):
                 # Save a regex pattern for each category
             patterns.append([norm, category])
 
+        # NFRip -> NF WEBRip: the streaming platform and the source
+        filename = self.expand_platform_rip(self.filename)
+
         # Run regex
         for p, category in patterns:
             regex = re.compile(r'(?<!\w)' + p + r'(?!\w)', re.IGNORECASE)
-            matches = regex.findall(self.filename)
+            matches = regex.findall(filename)
             if matches:
                 # Normalize Tag_list
                 normalized_tag = TAG_NORMALIZE.get(matches[0].upper(), None)

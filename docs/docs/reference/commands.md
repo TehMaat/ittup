@@ -29,6 +29,7 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | `-noup` | — | Creates the `.torrent` in the archive only, no upload |
 | `-dup`, `--duplicate` | — | Checks the tracker for duplicates before uploading |
 | `-personal` | — | Marks as personal release |
+| `-fl25` `-fl50` `-fl75` `-fl100` | — | Uploads as freeleech 25/50/75/100% (one at a time) |
 | `-ftp` | — | [Interactive FTP browser](../usage/ftp.md): download from the remote server and upload |
 
 !!! note "Removed Unit3Dup flags"

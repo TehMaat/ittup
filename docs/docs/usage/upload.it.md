@@ -41,6 +41,7 @@ Si combinano con `-u`, `-f` e `-scan`:
 | `-noseed` | Upload sul tracker **senza seeding**: il torrent non viene consegnato al client |
 | `-dup` | Controlla i [duplicati](../config/options.md#duplicati) sul tracker prima di caricare |
 | `-personal` | Marca l'upload come **personal release** |
+| `-fl25` `-fl50` `-fl75` `-fl100` | Carica in **freeleech** 25, 50, 75 o 100% (`--freeleech25`…). Il tracker lo applica solo se il tuo account può impostare il freeleech |
 | `-force <categoria>` | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-notitle "<titolo>"` | Usa questo titolo per la ricerca su TMDB invece di quello ricavato dal nome del file |
 | `-reseed` | Modalità reseed ([Reseed](reseed.md)) |

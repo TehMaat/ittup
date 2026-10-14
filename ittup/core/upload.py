@@ -74,6 +74,10 @@ class UploadBot:
         custom_console.rule()
         return {}, error_message
 
+    def freeleech(self) -> int:
+        """ Freeleech percentage from the -fl25, -fl50, -fl75, -fl100 flags, 0 without them """
+        return int(getattr(self.cli, "freeleech", None) or 0)
+
     def resolution_id(self) -> int | None:
         value = self.content.resolution
         _id = self.tracker_data.resolution.get(value)
@@ -108,6 +112,7 @@ class UploadBot:
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
         self.tracker.data["internal"] = int(self.cli.internal)
+        self.tracker.data["free"] = self.freeleech()
         self.tracker.data["mod_queue_opt_in"] = int(self.cli.moderation)
 
 
@@ -134,6 +139,7 @@ class UploadBot:
         self.tracker.data["description"] = igdb.description + self.sign if igdb else "Sorry, there is no valid IGDB"
         self.tracker.data["type_id"] = self.tracker_data.type_id.get(igdb_platform) if igdb_platform else 1
         self.tracker.data["igdb"] = igdb.id if igdb else 1  # need zero not one ( fix tracker)
+        self.tracker.data["free"] = self.freeleech()
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
         return self.tracker
@@ -147,6 +153,7 @@ class UploadBot:
         self.tracker.data["description"] = document_info.description + self.sign
         self.tracker.data["type_id"] = self.tracker_data.filter_type(self.content.file_name)
         self.tracker.data["resolution_id"] = ""
+        self.tracker.data["free"] = self.freeleech()
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
         return self.tracker

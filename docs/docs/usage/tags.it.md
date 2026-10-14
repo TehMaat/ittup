@@ -10,6 +10,10 @@ Tag generabili: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 Per ogni film e serie il bot **costruisce da zero** titolo e tag a partire dall'analisi tecnica del media (MediaInfo) e dal nome del file, nell'ordine definito da `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Opzioni avanzate](../config/options.md#posizione-dei-tag-nel-titolo)). Succede a ogni upload: non c'è un flag da attivare (il vecchio flag `-b` di Unit3Dup non esiste più).
 
+## Pack di stagioni ed episodi
+
+Un pack di stagione si scrive `S04`, un pack di episodi `S04E01-06`, anche quando nel nome c'è uno spazio o un punto tra stagione ed episodi (`S04 E01-06`, `S04.E01-06`). Sul tracker entrambi hanno numero episodio `0` (pack). Quando il pack contiene tutti gli episodi di una stagione conclusa su TMDB (`S04E01-10` di una stagione da 10 episodi), il titolo riporta solo `S04`.
+
 **Non rinomina il tuo file**: costruisce solo il titolo del torrent mostrato sulla pagina del tracker.
 
 ## Codec video

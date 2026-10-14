@@ -244,6 +244,17 @@ class TmdbAPI(MyHttp):
                 return response[0].get('original_language') or None
         return None
 
+    def italian_details(self, video_id: int, category: str) -> dict | None:
+        """ Details of the movie or tv show in Italian (title, seasons..), whatever the preferred language """
+        if not video_id:
+            return None
+        if endpoint_class := self.ENDPOINTS.get(category):
+            request = {**endpoint_class.details(video_id), 'datatype': dict, 'params': {'language': 'it-IT'}}
+            response = self.request(endpoint=request)
+            if response:
+                return response[0]
+        return None
+
     def external_ids(self, video_id: int, category: str) -> dict | None:
         if endpoint_class := self.ENDPOINTS.get(category):
             request = endpoint_class.external_ids(video_id)

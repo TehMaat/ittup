@@ -6,6 +6,7 @@ import os
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.tags import SearchTags
+from ittup.common.utility import ManageTitles
 from ittup.common import title
 
 from ittup.core.media_manager.common import UserContent
@@ -37,6 +38,27 @@ class VideoManager:
         self.sign_list: dict = sign_list
         self.ban_list: dict = ban_list
         self.on_upload = on_upload
+
+    @staticmethod
+    def full_season(pack: str | None, details: dict | None) -> str | None:
+        """
+        'Sxx' when the episode pack has every episode of a season that TMDB has concluded, otherwise None
+        """
+        episodes = ManageTitles.pack_episodes(pack)
+        if not episodes or not details:
+            return None
+        season, first, last = episodes
+
+        # The season goes on: TMDB already knows its next episode
+        next_episode = details.get('next_episode_to_air') or {}
+        if next_episode.get('season_number') == season:
+            return None
+
+        episode_count = next((item.get('episode_count') for item in details.get('seasons') or []
+                              if item.get('season_number') == season), None)
+        if episode_count and first == 1 and last >= episode_count:
+            return f"S{season:02d}"
+        return None
 
     def process(self, selected_tracker: str, tracker_name_list: list, tracker_archive: str) -> list[BittorrentData]:
         """
@@ -101,6 +123,16 @@ class VideoManager:
 
                 # The audio tags need the original language from TMDB
                 content.display_name, _ = search_tags.set_original_language(db.original_language)
+
+                # Details in Italian from TMDB
+                details = db_online.italian_details(video_id=db.video_id, category=content.category)
+
+                # A pack with every episode of a concluded season is the season: S04E01-10 -> S04
+                season_pack = self.full_season(pack=content.pack, details=details)
+                if season_pack:
+                    custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
+                    content.pack = season_pack
+                    content.display_name, _ = search_tags.set_season(season_pack)
 
                 # Get meta from the media video
                 video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)

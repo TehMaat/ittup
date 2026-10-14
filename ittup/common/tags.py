@@ -300,6 +300,13 @@ class SearchTags(object):
             self.tags_dict.update(self.mediainfo_audio(category="acodec"))
         return self.ordered_title()
 
+    def set_season(self, se_str: str) -> tuple[str, dict]:
+        """
+        Rebuild the title with a new season tag (es. 'S04' for a pack with every episode of the season)
+        """
+        self.tags_dict.update({'season': se_str})
+        return self.ordered_title()
+
     def ordered_title(self) -> tuple[str, dict]:
         # /// Order according to tag position
         tags_dict = {

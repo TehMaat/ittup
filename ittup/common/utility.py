@@ -258,6 +258,34 @@ class ManageTitles:
         main_tokens = set().union(*(ManageTitles.title_tokens(t) for t in main_titles if t))
         return (query_tokens - local_tokens) <= main_tokens
 
+    # Episode pack: S04E01-06, S04E01-E06, S04 E01-06, S04.E01-06..
+    # The last episode is not a resolution (S04E01-1080p)
+    EPISODE_PACK = re.compile(r"S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pPiI])")
+
+    @staticmethod
+    def season_pack(name: str) -> str | None:
+        """
+        Season or episode pack written in the name: 'S04' or 'S04E01-06' (es. from 'Show S04 E01-06')
+        None if it is a single episode or a movie
+        """
+        match = re.search(r"(S\d+(?!.*E\d+))|" + ManageTitles.EPISODE_PACK.pattern, name)
+        if not match:
+            return None
+        if match.group(1):
+            return match.group(1)
+        season, first, e, last = match.group(2, 3, 4, 5)
+        return f"S{int(season):02d}E{int(first):02d}-{e}{int(last):02d}"
+
+    @staticmethod
+    def pack_episodes(pack: str | None) -> tuple[int, int, int] | None:
+        """
+        (season, first episode, last episode) of an episode pack, None for a season pack
+        """
+        match = ManageTitles.EPISODE_PACK.fullmatch(pack or '')
+        if not match:
+            return None
+        return int(match.group(1)), int(match.group(2)), int(match.group(4))
+
     @staticmethod
     def normalize_filename(filename) -> str:
         # Remove spaces

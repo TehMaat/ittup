@@ -26,6 +26,12 @@ Il tipo di release, letto dai tag source/remux del nome del file, decide come si
 
 Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 mostra solo un avviso di "possibile falso REMUX". Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
 
+## Sorgente e tipo sul tracker
+
+La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide anche il **tipo** del torrent sul tracker: vince su codec e tag generici scritti prima (`HEVC`, `FullHD`, `BluRay`), quindi `Film.2020.1080p.HEVC.WEB-DL` è un WEB-DL e `Film.2020.1080p.BluRay.REMUX` un Remux. Il bot guarda prima il nome della cartella, poi quello del file video. Senza sorgente nel nome, un codec (`x264`, `HEVC`…) vale Encode.
+
+I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
+
 ## Codec audio
 
 Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola.

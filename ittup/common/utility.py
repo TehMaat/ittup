@@ -258,6 +258,27 @@ class ManageTitles:
         main_tokens = set().union(*(ManageTitles.title_tokens(t) for t in main_titles if t))
         return (query_tokens - local_tokens) <= main_tokens
 
+    @staticmethod
+    def original_spelling(title: str | None, name: str) -> str | None:
+        """
+        The title as written in the name, with its special characters
+        guessit returns 'Spider Man No Way Home' from 'Spider-Man.No.Way.Home.2021' and
+        'Mission Impossible Dead Reckoning' from 'Mission: Impossible - Dead Reckoning (2023)'
+        """
+        words = re.findall(r"[^\W_]+", title or '')
+        if not words:
+            return title
+        pattern = r"(?<![^\W_])" + r"[\W_]*?".join(re.escape(word) for word in words) + r"(?![^\W_])"
+        match = re.search(pattern, name, re.IGNORECASE)
+        if not match:
+            return title
+        spelling = match.group()
+        # Dots and underscores used as spaces, but not in the acronyms (S.W.A.T.)
+        if " " not in spelling:
+            spelling = re.sub(r"(?<![^\W_])((?:[^\W\d_]\.){2,}[^\W\d_](?![^\W_]))|[._]",
+                              lambda m: m.group(1) or " ", spelling)
+        return re.sub(r"\s+", " ", spelling).strip()
+
     # Episode pack: S04E01-06, S04E01-E06, S04 E01-06, S04.E01-06..
     # The last episode is not a resolution (S04E01-1080p)
     EPISODE_PACK = re.compile(r"S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pPiI])")

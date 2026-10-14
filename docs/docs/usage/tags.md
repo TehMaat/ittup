@@ -10,6 +10,8 @@ Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 For every movie and TV show the bot **builds the title from scratch** using the technical analysis of the media (MediaInfo) and the file name, in the order defined by `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Advanced options](../config/options.md#tag-order-in-the-title)). It happens on every upload: there is no flag to turn on (the old Unit3Dup `-b` flag no longer exists).
 
+The title keeps the special characters written in the name: `Spider-Man.No.Way.Home.2021` gives `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` keeps the colon and the dash.
+
 ## Season and episode packs
 
 A season pack is written `S04`, an episode pack `S04E01-06`, also when the name has a space or a dot between season and episodes (`S04 E01-06`, `S04.E01-06`). On the tracker both have episode number `0` (pack). When the pack has every episode of a season that TMDB has concluded (`S04E01-10` of a 10-episode season), the title says just `S04`.

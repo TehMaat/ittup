@@ -87,7 +87,8 @@ class VideoManager:
             tags_position = config_settings.user_preferences.TAGS_POSITION_SERIE if content.category=='tv'\
                 else config_settings.user_preferences.TAGS_POSITION_MOVIE
             search_tags = SearchTags(filename=content.title,
-                                     title=guess.get("title", None),
+                                     # Keep the special characters of the title ('Spider-Man', 'Mission: Impossible')
+                                     title=ManageTitles.original_spelling(guess.get("title", None), content.title),
                                      year=guess.get("year", ""),
                                      season=content.guess_season,
                                      episode=content.guess_episode,

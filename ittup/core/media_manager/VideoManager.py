@@ -48,8 +48,6 @@ class VideoManager:
 
         #  Init the torrent list
         bittorrent_list = []
-        # Tags list extracted used to build title ( -b flag)
-        tags_dictionary = {}
         for content in self.contents:
             # get the archive path
             archive = os.path.join(tracker_archive, selected_tracker)
@@ -78,7 +76,7 @@ class VideoManager:
                                      ban_list=self.ban_list,
                                      media=content,
                                      )
-            content.display_name, tags_dictionary = search_tags.process()
+            content.display_name, _ = search_tags.process()
 
             # Filter contents based on the preferred language or duplicates
             if UserContent.is_preferred_language(content=content):
@@ -102,23 +100,16 @@ class VideoManager:
                     continue
 
                 # The audio tags need the original language from TMDB
-                content.display_name, tags_dictionary = search_tags.set_original_language(db.original_language)
+                content.display_name, _ = search_tags.set_original_language(db.original_language)
 
                 # Get meta from the media video
                 video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)
                 video_info.build_info()
 
-                # Tags found ( -b flag)
-                if tags_dictionary:
-                    custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
-                    for key, value in tags_dictionary.items():
-                        if isinstance(value, list):
-                            value = " ".join(value)
-                        custom_console.bot_log(f"{key:<13} '{value}'")
-                    custom_console.bot_log(f"Done.\n")
-                else:
-                    # print the title will be shown on the torrent page
-                    custom_console.bot_log(f"'DISPLAYNAME'...{{{content.display_name}}}\n")
+                # Print the title shown on the torrent page on a single line
+                custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
+                custom_console.bot_log(f"'{content.display_name}'")
+                custom_console.bot_log(f"Done.\n")
 
                 # Tracker instance
                 unit3d_up = UploadBot(content=content, tracker_name=selected_tracker, cli=self.cli)

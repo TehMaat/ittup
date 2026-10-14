@@ -281,7 +281,7 @@ class ManageTitles:
 
     # Episode pack: S04E01-06, S04E01-E06, S04 E01-06, S04.E01-06..
     # The last episode is not a resolution (S04E01-1080p)
-    EPISODE_PACK = re.compile(r"S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pPiI])")
+    EPISODE_PACK = re.compile(r"(?<![a-z0-9])S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pi])", re.IGNORECASE)
 
     @staticmethod
     def season_pack(name: str) -> str | None:
@@ -289,13 +289,15 @@ class ManageTitles:
         Season or episode pack written in the name: 'S04' or 'S04E01-06' (es. from 'Show S04 E01-06')
         None if it is a single episode or a movie
         """
-        match = re.search(r"(S\d+(?!.*E\d+))|" + ManageTitles.EPISODE_PACK.pattern, name)
+        # Not 'DTS5.1' or 'H.264'
+        match = re.search(r"((?<![a-z0-9])S\d+(?![0-9])(?!.*E\d+))|" + ManageTitles.EPISODE_PACK.pattern,
+                          name, re.IGNORECASE)
         if not match:
             return None
         if match.group(1):
-            return match.group(1)
+            return f"S{int(match.group(1)[1:]):02d}"
         season, first, e, last = match.group(2, 3, 4, 5)
-        return f"S{int(season):02d}E{int(first):02d}-{e}{int(last):02d}"
+        return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
 
     @staticmethod
     def pack_episodes(pack: str | None) -> tuple[int, int, int] | None:

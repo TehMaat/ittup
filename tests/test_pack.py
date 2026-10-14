@@ -16,6 +16,11 @@ from ittup.common.utility import ManageTitles
     ("Show S04E01 1080p WEB-DL", None),
     ("Show S04 E01 1080p WEB-DL", None),
     ("Show S04E01-1080p", None),
+    ("Show.S01E01.1080p.DTS5.1.mkv", None),
+    ("/tv/Show S01/Show.S01E01.1080p.mkv", None),
+    # Lower case
+    ("show.s04.1080p.web-dl", "S04"),
+    ("show.s04e01-e06.1080p", "S04E01-E06"),
 ])
 def test_season_pack(name, pack):
     assert ManageTitles.season_pack(name) == pack

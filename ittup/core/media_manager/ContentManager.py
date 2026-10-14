@@ -8,6 +8,13 @@ from ittup.common.utility import ManageTitles, System
 from ittup.core.automode import Auto
 from ittup.core.media import Media
 
+# {tmdb-603}, [tmdbid-603], [tmdbid=603], (tmdb-603), tmdb 603, {imdb-tt0133093}..
+ID_PATTERN = re.compile(r"[\[{(]?(?<![a-z0-9])(imdb|tmdb|tvdb|igdb)(?:id)?\s*[-=:\s]\s*(tt)?(\d+)(?![0-9])\s*[\]})]?",
+                        re.IGNORECASE)
+# IMDB ID alone: tt0133093
+IMDB_PATTERN = re.compile(r"(?<![a-z0-9])tt(\d{7,8})(?![0-9])", re.IGNORECASE)
+
+
 class ContentManager:
     def __init__(self, path: str, mode: str, cli: argparse.Namespace, include_paths: list[str] | None = None):
         """
@@ -106,15 +113,19 @@ class ContentManager:
         self.tvdb_id = 0
         self.igdb_id = 0
 
-        # e.g. {imdb-tt0133093} (Radarr/Sonarr/Plex naming), {imdb-0133093}, {tmdb-603}
-        _id = re.findall(r"\{(imdb|tmdb|tvdb|igdb)-(tt)?(\d+)}", self.file_name, re.IGNORECASE)
+        # e.g. {imdb-tt0133093} (Radarr/Sonarr/Plex naming), {imdb-0133093}, {tmdb-603},
+        # [tmdbid-603] (Jellyfin), [tmdbid=603] (Emby), (tmdb-603), tmdb 603 or the IMDB ID alone (tt0133093)
+        _id = ID_PATTERN.findall(self.file_name)
         for source, _, value in _id:
             setattr(self, f"{source.lower()}_id", value)
+        imdb = IMDB_PATTERN.search(self.file_name)
+        if imdb and not self.imdb_id:
+            self.imdb_id = imdb.group(1)
 
-        if _id:
+        if _id or imdb:
             # The display name is already cleaned, so '{imdb-tt0133093}' may now read '{imdb tt0133093}'
-            self.display_name = re.sub(r"\{?\s*(imdb|tmdb|tvdb|igdb)[\s-]+(tt)?\d+\s*}?", '',
-                                       self.display_name, flags=re.IGNORECASE)
+            self.display_name = ID_PATTERN.sub('', self.display_name)
+            self.display_name = IMDB_PATTERN.sub('', self.display_name)
             self.display_name = re.sub(r"\s{2,}", ' ', self.display_name).strip()
 
     def process_file(self) -> bool:

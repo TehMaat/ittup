@@ -47,14 +47,19 @@ They combine with `-u`, `-f` and `-scan`:
 
 ## IDs in the name
 
-If the file or folder name carries an ID in braces, the bot uses it instead of searching TMDB by title:
+If the file or folder name carries an ID, the bot uses it instead of searching TMDB by title:
 
 ```text
 The Matrix (1999) {imdb-tt0133093}.mkv
 The Matrix (1999) {tmdb-603}.mkv
+The Matrix (1999) [tmdbid-603].mkv
+The Matrix (1999) (tmdb-603).mkv
+The.Matrix.1999.tt0133093.1080p.mkv
 ```
 
-The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
+The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex, `[tmdbid-…]` the Jellyfin one; round brackets, `=` instead of the dash (Emby) and the IMDB ID alone (`tt0133093`) work too. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
+
+Without an ID, the bot searches TMDB for the title taken from the name. When it isn't found it retries with the whole name before the year (`(500) Days of Summer`) and with the titles in brackets (`Lo Chiamavano Jeeg Robot (They Call Me Jeeg)`), and finally with a year tolerance: one year for movies (end-of-year releases), the year of a later season for TV shows.
 
 ## Full example
 

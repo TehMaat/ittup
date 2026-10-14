@@ -47,14 +47,19 @@ Si combinano con `-u`, `-f` e `-scan`:
 
 ## ID nel nome
 
-Se il nome del file o della cartella contiene un ID tra graffe, il bot lo usa invece di cercare il titolo su TMDB:
+Se il nome del file o della cartella contiene un ID, il bot lo usa invece di cercare il titolo su TMDB:
 
 ```text
 Matrix (1999) {imdb-tt0133093}.mkv
 Matrix (1999) {tmdb-603}.mkv
+Matrix (1999) [tmdbid-603].mkv
+Matrix (1999) (tmdb-603).mkv
+Matrix.1999.tt0133093.1080p.mkv
 ```
 
-Il formato `{imdb-tt…}` è quello di Radarr, Sonarr e Plex. Con il solo ID IMDB il bot chiede a TMDB l'ID TMDB corrispondente; con il solo ID TMDB ricava l'ID IMDB da TMDB. Entrambi vengono inviati al tracker. Il tag viene tolto dal titolo mostrato sul tracker.
+Il formato `{imdb-tt…}` è quello di Radarr, Sonarr e Plex, `[tmdbid-…]` quello di Jellyfin; vanno bene anche le parentesi tonde, `=` al posto del trattino (Emby) e l'ID IMDB da solo (`tt0133093`). Con il solo ID IMDB il bot chiede a TMDB l'ID TMDB corrispondente; con il solo ID TMDB ricava l'ID IMDB da TMDB. Entrambi vengono inviati al tracker. Il tag viene tolto dal titolo mostrato sul tracker.
+
+Senza ID, il bot cerca su TMDB il titolo ricavato dal nome. Se non lo trova riprova con il nome completo prima dell'anno (`(500) Days of Summer`) e con i titoli tra parentesi (`Lo Chiamavano Jeeg Robot (They Call Me Jeeg)`), e infine con una tolleranza sull'anno: un anno di differenza per i film (uscite a fine anno), l'anno di una stagione successiva per le serie.
 
 ## Esempio completo
 

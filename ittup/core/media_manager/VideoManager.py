@@ -2,6 +2,7 @@
 from argparse import Namespace
 from collections.abc import Callable
 import os
+import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
@@ -38,6 +39,19 @@ class VideoManager:
         self.sign_list: dict = sign_list
         self.ban_list: dict = ban_list
         self.on_upload = on_upload
+
+    @staticmethod
+    def italian_title(details: dict | None) -> str | None:
+        """
+        Title (movie) or name (tv show) in Italian from the TMDB details, None if it is unknown
+        """
+        if not details:
+            return None
+        italian = (details.get('title') or details.get('name') or '').strip()
+        # Without an Italian translation TMDB returns the original title: skip it if it is not in latin script
+        if any(char.isalpha() and not unicodedata.name(char, '').startswith('LATIN') for char in italian):
+            return None
+        return italian or None
 
     @staticmethod
     def full_season(pack: str | None, details: dict | None) -> str | None:
@@ -104,16 +118,6 @@ class VideoManager:
             # Filter contents based on the preferred language or duplicates
             if UserContent.is_preferred_language(content=content):
 
-                # Skip(S) if it is a duplicate or let the user choose to continue (C)
-                # Checked before hashing so a skipped duplicate doesn't cost a torrent file
-                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                        and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
-                                                     cli=self.cli)):
-                    continue
-
-                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
-                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
-
                 # Search for VIDEO ID
                 db_online = DbOnline(media=content, category=content.category, no_title=self.cli.notitle)
                 db = db_online.media_result
@@ -128,12 +132,27 @@ class VideoManager:
                 # Details in Italian from TMDB
                 details = db_online.italian_details(video_id=db.video_id, category=content.category)
 
+                # The title in Italian from TMDB, with its punctuation
+                italian_title = self.italian_title(details)
+                if italian_title:
+                    content.display_name, _ = search_tags.set_title(italian_title)
+
                 # A pack with every episode of a concluded season is the season: S04E01-10 -> S04
                 season_pack = self.full_season(pack=content.pack, details=details)
                 if season_pack:
                     custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
                     content.pack = season_pack
                     content.display_name, _ = search_tags.set_season(season_pack)
+
+                # Skip(S) if it is a duplicate or let the user choose to continue (C)
+                # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
+                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
+                        and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
+                                                     cli=self.cli)):
+                    continue
+
+                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
+                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Get meta from the media video
                 video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)

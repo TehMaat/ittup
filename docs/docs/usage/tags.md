@@ -10,7 +10,9 @@ Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 For every movie and TV show the bot **builds the title from scratch** using the technical analysis of the media (MediaInfo) and the file name, in the order defined by `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Advanced options](../config/options.md#tag-order-in-the-title)). It happens on every upload: there is no flag to turn on (the old Unit3Dup `-b` flag no longer exists).
 
-The title keeps the special characters written in the name: `Spider-Man.No.Way.Home.2021` gives `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` keeps the colon and the dash.
+When TMDB finds the movie or TV show, the title is the **Italian title from TMDB**, with its punctuation (`Spider-Man: No Way Home`), also when the file name is in English. Without an Italian translation, or when the TMDB search is skipped, the title comes from the name.
+
+The title from the name keeps the special characters written in it: `Spider-Man.No.Way.Home.2021` gives `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` keeps the colon and the dash.
 
 ## Season and episode packs
 

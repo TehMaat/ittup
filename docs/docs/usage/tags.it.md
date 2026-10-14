@@ -10,7 +10,9 @@ Tag generabili: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 Per ogni film e serie il bot **costruisce da zero** titolo e tag a partire dall'analisi tecnica del media (MediaInfo) e dal nome del file, nell'ordine definito da `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Opzioni avanzate](../config/options.md#posizione-dei-tag-nel-titolo)). Succede a ogni upload: non c'è un flag da attivare (il vecchio flag `-b` di Unit3Dup non esiste più).
 
-Il titolo mantiene i caratteri speciali scritti nel nome: `Spider-Man.No.Way.Home.2021` diventa `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` mantiene i due punti e il trattino.
+Quando TMDB trova il film o la serie, il titolo è il **titolo italiano di TMDB**, con la sua punteggiatura (`Spider-Man: No Way Home`), anche quando il nome del file è in inglese. Senza traduzione italiana, o se la ricerca su TMDB viene saltata, il titolo viene dal nome.
+
+Il titolo ricavato dal nome mantiene i caratteri speciali scritti nel nome: `Spider-Man.No.Way.Home.2021` diventa `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` mantiene i due punti e il trattino.
 
 ## Pack di stagioni ed episodi
 

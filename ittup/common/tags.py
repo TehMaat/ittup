@@ -300,6 +300,17 @@ class SearchTags(object):
             self.tags_dict.update(self.mediainfo_audio(category="acodec"))
         return self.ordered_title()
 
+    def set_title(self, title: str) -> tuple[str, dict]:
+        """
+        Rebuild the title with a new media title (es. the Italian title from TMDB)
+        """
+        self.title = title
+        self.tags_dict.update({'title': title})
+        # The part is already in the new title (es. 'Wicked - Parte 2')
+        if re.search(r'(?<![a-z])part[ei]?(?![a-z])', title, re.IGNORECASE):
+            self.tags_dict.pop('part', None)
+        return self.ordered_title()
+
     def set_season(self, se_str: str) -> tuple[str, dict]:
         """
         Rebuild the title with a new season tag (es. 'S04' for a pack with every episode of the season)

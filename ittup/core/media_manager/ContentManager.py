@@ -182,8 +182,8 @@ class ContentManager:
 
     def list_video_files(self) -> list[str]:
         """List video files in the folder"""
-        return [file for file in os.listdir(self.path) if ManageTitles.filter_ext(file)]
+        return sorted([file for file in os.listdir(self.path) if ManageTitles.filter_ext(file)], key=System.natural_key)
 
     def list_game_files(self) -> list[str]:
         """List all files in a game folder"""
-        return [file for file in os.listdir(self.path)]
+        return sorted(os.listdir(self.path), key=System.natural_key)

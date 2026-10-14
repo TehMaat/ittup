@@ -26,7 +26,7 @@ Use it for: full seasons, multi-part movies, content with companion files.
 ittup -scan "/home/ITT/upload"
 ```
 
-It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found.
+It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found. Items are uploaded in alphanumeric order (`E2` before `E10`).
 
 !!! tip "Too much content?"
     On very large folders you can cap the number of processed items with `FAST_LOAD` in the [Advanced options](../config/options.md).

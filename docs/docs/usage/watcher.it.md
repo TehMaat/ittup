@@ -32,7 +32,7 @@ Allo scadere di `WATCHER_INTERVAL`:
 
 1. Controlla `WATCHER_PATH`; se è vuota, aspetta il ciclo successivo
 2. **Sposta** tutti i file in `WATCHER_DESTINATION_PATH`, preservando le sottocartelle (le cartelle svuotate vengono rimosse)
-3. Processa i file spostati **uno alla volta** e li **carica sul tracker** con seeding, come uno [`-scan`](upload.md)
+3. Processa i file spostati **uno alla volta**, in ordine alfanumerico, e li **carica sul tracker** con seeding, come uno [`-scan`](upload.md)
 4. Ricomincia
 
 Il loop è infinito: si esce con ++ctrl+c++.

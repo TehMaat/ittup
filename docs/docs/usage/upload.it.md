@@ -26,7 +26,7 @@ Usalo per: stagioni complete, film in più parti, contenuti con file di accompag
 ittup -scan "/home/ITT/upload"
 ```
 
-È `-u` e `-f` insieme: analizza **ogni file e ogni cartella** dentro il percorso (ricorsivamente) e processa tutto, un torrent per ogni elemento trovato.
+È `-u` e `-f` insieme: analizza **ogni file e ogni cartella** dentro il percorso (ricorsivamente) e processa tutto, un torrent per ogni elemento trovato. Gli elementi vengono caricati in ordine alfanumerico (`E2` prima di `E10`).
 
 !!! tip "Quanti contenuti alla volta?"
     Su cartelle molto grandi puoi limitare il numero di elementi processati con `FAST_LOAD` nelle [Opzioni avanzate](../config/options.md).

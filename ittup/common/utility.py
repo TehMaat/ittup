@@ -400,6 +400,15 @@ class System:
     NO_RESOLUTION = 'altro'
 
     @staticmethod
+    def natural_key(path: str) -> list:
+        """
+        Sort key for the alphanumeric order of the file names: case-insensitive, with the numbers
+        compared by value (es. 'E2' before 'E10')
+        """
+        name = os.path.basename(os.path.normpath(path))
+        return [int(part) if part.isdigit() else part.casefold() for part in re.split(r"(\d+)", name)]
+
+    @staticmethod
     def get_size(folder_path: str) -> tuple[float, str]:
         """
         Returns the size of a folder or file in GB or MB

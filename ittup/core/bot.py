@@ -18,6 +18,7 @@ from ittup.common.external_services.ftpx.core.models.list import FTPDirectory
 from ittup.common.external_services.ftpx.core.menu import Menu
 from ittup.common.external_services.ftpx.client import Client
 from ittup.common.extractor import Extractor
+from ittup.common.utility import System
 
 from ittup.view import custom_console
 
@@ -172,7 +173,8 @@ class Bot:
 
                 # Move only the entries whose size is unchanged since the previous check
                 moved_paths = []
-                for name, signature in current_snapshot.items():
+                # Alphanumeric order: the entries are uploaded in the same order
+                for name, signature in sorted(current_snapshot.items(), key=lambda item: System.natural_key(item[0])):
                     src = watcher_path / name
                     if previous_snapshot.get(name) != signature:
                         custom_console.bot_log(f"'{name}' is still being copied. Wait for the next cycle")

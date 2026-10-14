@@ -32,7 +32,7 @@ When `WATCHER_INTERVAL` expires:
 
 1. It checks `WATCHER_PATH`; if empty, it waits for the next cycle
 2. It **moves** all files to `WATCHER_DESTINATION_PATH`, preserving subfolders (emptied folders are removed)
-3. It processes the moved files **one at a time** and **uploads them to the tracker** with seeding, like a [`-scan`](upload.md)
+3. It processes the moved files **one at a time**, in alphanumeric order, and **uploads them to the tracker** with seeding, like a [`-scan`](upload.md)
 4. It starts over
 
 The loop is endless: exit with ++ctrl+c++.

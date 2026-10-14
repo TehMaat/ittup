@@ -29,6 +29,7 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | `-noup` | — | Crea solo il `.torrent` nell'archivio, niente upload |
 | `-dup`, `--duplicate` | — | Controlla i duplicati sul tracker prima dell'upload |
 | `-personal` | — | Marca come personal release |
+| `-fl25` `-fl50` `-fl75` `-fl100` | — | Carica in freeleech 25/50/75/100% (uno solo alla volta) |
 | `-ftp` | — | [Browser FTP interattivo](../usage/ftp.md): scarica dal server remoto e carica |
 
 !!! note "Flag di Unit3Dup rimossi"

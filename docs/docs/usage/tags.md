@@ -10,7 +10,15 @@ Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 For every movie and TV show the bot **builds the title from scratch** using the technical analysis of the media (MediaInfo) and the file name, in the order defined by `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Advanced options](../config/options.md#tag-order-in-the-title)). It happens on every upload: there is no flag to turn on (the old Unit3Dup `-b` flag no longer exists).
 
-It **does not rename your file**: it only builds the torrent title shown on the tracker page.
+When TMDB finds the movie or TV show, the title is the **Italian title from TMDB**, with its punctuation (`Spider-Man: No Way Home`), also when the file name is in English. Without an Italian translation, or when the TMDB search is skipped, the title comes from the name.
+
+The title from the name keeps the special characters written in it: `Spider-Man.No.Way.Home.2021` gives `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` keeps the colon and the dash.
+
+## Season and episode packs
+
+A season pack is written `S04`, an episode pack `S04E01-06`, also when the name has a space or a dot between season and episodes (`S04 E01-06`, `S04.E01-06`). On the tracker both have episode number `0` (pack). When the pack has every episode of a season that TMDB has concluded (`S04E01-10` of a 10-episode season), the title says just `S04`.
+
+It **does not rename your file**: it only builds the torrent title shown on the tracker page, unless you turn on [`RENAME_FILES`](../config/options.md#rename-the-files-as-the-title).
 
 ## Video codec
 
@@ -25,6 +33,12 @@ The release type, read from the source/remux tags of the file name, decides how 
 | Encode | `ENCODE`, `WEBRIP`, `BDRIP`, `BRRIP`, `DVDRIP`, `UHDRIP`, `FHDRIP`, `WEB-DLRIP` | `x264` / `x265` |
 
 With `BLURAY` alone, or no release type in the name, the bot looks at the encoder written by MediaInfo: `x264` / `x265` if it finds the x264/x265 signature, `H.264` / `H.265` otherwise. On an untouched release the x264/x265 signature only shows a "possible fake REMUX" warning. Other codecs (AV1, VP9, VC-1, MPEG-2, XviD…) are written as they are.
+
+## Source and tracker type
+
+The source written in the name (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) also decides the torrent **type** on the tracker: it wins over the codec and generic tags written before it (`HEVC`, `FullHD`, `BluRay`), so `Movie.2020.1080p.HEVC.WEB-DL` is a WEB-DL and `Movie.2020.1080p.BluRay.REMUX` a Remux. The bot looks at the folder name first, then at the video file name. With no source in the name, a codec (`x264`, `HEVC`…) means Encode.
+
+Streaming platform rips are split into platform and source: `NFRip` becomes `NF WEBRip` (for every platform in `tags_list.json`, e.g. `AMZNRip` → `AMZN WEBRip`).
 
 ## Audio codec
 

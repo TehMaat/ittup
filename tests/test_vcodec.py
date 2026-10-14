@@ -127,3 +127,11 @@ def test_video_encoder_in_tags_position():
     title, tags_dict = build_title("Movie.2020.1080p.WEBRip.x265-GRP.mkv", "HEVC", tags_position=position)
     assert "video_encoder" not in tags_dict
     assert title.lower().count("265") == 1
+
+
+def test_platform_rip_is_the_platform_and_webrip():
+    title, tags_dict = build_title("Movie.2020.1080p.NFRip.x264-GRP.mkv", "AVC", writing_library=X264_LIBRARY)
+    assert tags_dict["platform"] == ["NF"]
+    assert tags_dict["source"] == ["WEBRip"]
+    assert tags_dict["vcodec"] == "x264"
+    assert "NF WEBRip" in title

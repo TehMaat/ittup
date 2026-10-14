@@ -4,9 +4,17 @@ import json
 import os
 import re
 
+from ittup.common.rename import rename_invalid
 from ittup.common.utility import ManageTitles, System
 from ittup.core.automode import Auto
 from ittup.core.media import Media
+
+# {tmdb-603}, [tmdbid-603], [tmdbid=603], (tmdb-603), tmdb 603, {imdb-tt0133093}..
+ID_PATTERN = re.compile(r"[\[{(]?(?<![a-z0-9])(imdb|tmdb|tvdb|igdb)(?:id)?\s*[-=:\s]\s*(tt)?(\d+)(?![0-9])\s*[\]})]?",
+                        re.IGNORECASE)
+# IMDB ID alone: tt0133093
+IMDB_PATTERN = re.compile(r"(?<![a-z0-9])tt(\d{7,8})(?![0-9])", re.IGNORECASE)
+
 
 class ContentManager:
     def __init__(self, path: str, mode: str, cli: argparse.Namespace, include_paths: list[str] | None = None):
@@ -50,6 +58,10 @@ class ContentManager:
     def process(self)-> list[Media]:
         contents = []
         for media in self.media_list:
+            # The tracker refuses the files with ':', '?', '*'.. in their names: rename them
+            new_path = rename_invalid(media.torrent_path)
+            if new_path != os.path.normpath(media.torrent_path):
+                media.move_to(new_path)
             self.path = media.torrent_path
             media.category = media.category if not self.cli.force else self.cli.force
             self.category = media.category
@@ -74,9 +86,8 @@ class ContentManager:
 
         # add category filter to the regex result caused by a possible substring (e.g., S06) in the whole path
         # and not part of the title
-        match = re.search(r"(S\d+(?!.*E\d+))|(S\d+E\d+-E?\d+)", self.path) if media.category == 'tv' else None
-        pack = match.group() if match else None
-        torrent_pack = bool(match)
+        pack = ManageTitles.season_pack(self.path) if media.category == 'tv' else None
+        torrent_pack = bool(pack)
 
         if process:
             media.file_name = self.file_name
@@ -107,15 +118,19 @@ class ContentManager:
         self.tvdb_id = 0
         self.igdb_id = 0
 
-        # e.g. {imdb-tt0133093} (Radarr/Sonarr/Plex naming), {imdb-0133093}, {tmdb-603}
-        _id = re.findall(r"\{(imdb|tmdb|tvdb|igdb)-(tt)?(\d+)}", self.file_name, re.IGNORECASE)
+        # e.g. {imdb-tt0133093} (Radarr/Sonarr/Plex naming), {imdb-0133093}, {tmdb-603},
+        # [tmdbid-603] (Jellyfin), [tmdbid=603] (Emby), (tmdb-603), tmdb 603 or the IMDB ID alone (tt0133093)
+        _id = ID_PATTERN.findall(self.file_name)
         for source, _, value in _id:
             setattr(self, f"{source.lower()}_id", value)
+        imdb = IMDB_PATTERN.search(self.file_name)
+        if imdb and not self.imdb_id:
+            self.imdb_id = imdb.group(1)
 
-        if _id:
+        if _id or imdb:
             # The display name is already cleaned, so '{imdb-tt0133093}' may now read '{imdb tt0133093}'
-            self.display_name = re.sub(r"\{?\s*(imdb|tmdb|tvdb|igdb)[\s-]+(tt)?\d+\s*}?", '',
-                                       self.display_name, flags=re.IGNORECASE)
+            self.display_name = ID_PATTERN.sub('', self.display_name)
+            self.display_name = IMDB_PATTERN.sub('', self.display_name)
             self.display_name = re.sub(r"\s{2,}", ' ', self.display_name).strip()
 
     def process_file(self) -> bool:
@@ -182,8 +197,8 @@ class ContentManager:
 
     def list_video_files(self) -> list[str]:
         """List video files in the folder"""
-        return [file for file in os.listdir(self.path) if ManageTitles.filter_ext(file)]
+        return sorted([file for file in os.listdir(self.path) if ManageTitles.filter_ext(file)], key=System.natural_key)
 
     def list_game_files(self) -> list[str]:
         """List all files in a game folder"""
-        return [file for file in os.listdir(self.path)]
+        return sorted(os.listdir(self.path), key=System.natural_key)

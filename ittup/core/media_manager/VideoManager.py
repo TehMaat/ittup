@@ -2,10 +2,13 @@
 from argparse import Namespace
 from collections.abc import Callable
 import os
+import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.tags import SearchTags
+from ittup.common.rename import rename_to_title
+from ittup.common.utility import ManageTitles, System
 from ittup.common import title
 
 from ittup.core.media_manager.common import UserContent
@@ -38,6 +41,65 @@ class VideoManager:
         self.ban_list: dict = ban_list
         self.on_upload = on_upload
 
+    @staticmethod
+    def rename_files(content: Media) -> None:
+        """
+        Rename the file, or the folder and its video files, as the title shown on the tracker (RENAME_FILES)
+        The episodes of a pack take their SxxExx
+        """
+        path = content.torrent_path
+        video_files, episodes, pack = [], {}, None
+        if os.path.isdir(path):
+            video_files = sorted([file for file in os.listdir(path) if ManageTitles.filter_ext(file)],
+                                 key=System.natural_key)
+            if content.torrent_pack:
+                pack = content.pack
+                for file in video_files:
+                    guess = title.Guessit(ManageTitles.clean_text(file))
+                    episode = guess.guessit_episode
+                    # A file with more episodes keeps its name
+                    episodes[file] = (guess.guessit_season or content.guess_season,
+                                      episode if isinstance(episode, int) else None)
+
+        new_path, renamed_files = rename_to_title(path=path, display_name=content.display_name,
+                                                  video_files=video_files, pack=pack, episodes=episodes)
+        if new_path != path or renamed_files:
+            content.renamed(path=new_path, renamed_files=renamed_files)
+
+    @staticmethod
+    def italian_title(details: dict | None) -> str | None:
+        """
+        Title (movie) or name (tv show) in Italian from the TMDB details, None if it is unknown
+        """
+        if not details:
+            return None
+        italian = (details.get('title') or details.get('name') or '').strip()
+        # Without an Italian translation TMDB returns the original title: skip it if it is not in latin script
+        if any(char.isalpha() and not unicodedata.name(char, '').startswith('LATIN') for char in italian):
+            return None
+        return italian or None
+
+    @staticmethod
+    def full_season(pack: str | None, details: dict | None) -> str | None:
+        """
+        'Sxx' when the episode pack has every episode of a season that TMDB has concluded, otherwise None
+        """
+        episodes = ManageTitles.pack_episodes(pack)
+        if not episodes or not details:
+            return None
+        season, first, last = episodes
+
+        # The season goes on: TMDB already knows its next episode
+        next_episode = details.get('next_episode_to_air') or {}
+        if next_episode.get('season_number') == season:
+            return None
+
+        episode_count = next((item.get('episode_count') for item in details.get('seasons') or []
+                              if item.get('season_number') == season), None)
+        if episode_count and first == 1 and last >= episode_count:
+            return f"S{season:02d}"
+        return None
+
     def process(self, selected_tracker: str, tracker_name_list: list, tracker_archive: str) -> list[BittorrentData]:
         """
            Process the video contents to filter duplicates and create torrents
@@ -48,8 +110,6 @@ class VideoManager:
 
         #  Init the torrent list
         bittorrent_list = []
-        # Tags list extracted used to build title ( -b flag)
-        tags_dictionary = {}
         for content in self.contents:
             # get the archive path
             archive = os.path.join(tracker_archive, selected_tracker)
@@ -67,7 +127,8 @@ class VideoManager:
             tags_position = config_settings.user_preferences.TAGS_POSITION_SERIE if content.category=='tv'\
                 else config_settings.user_preferences.TAGS_POSITION_MOVIE
             search_tags = SearchTags(filename=content.title,
-                                     title=guess.get("title", None),
+                                     # Keep the special characters of the title ('Spider-Man', 'Mission: Impossible')
+                                     title=ManageTitles.original_spelling(guess.get("title", None), content.title),
                                      year=guess.get("year", ""),
                                      season=content.guess_season,
                                      episode=content.guess_episode,
@@ -78,20 +139,10 @@ class VideoManager:
                                      ban_list=self.ban_list,
                                      media=content,
                                      )
-            content.display_name, tags_dictionary = search_tags.process()
+            content.display_name, _ = search_tags.process()
 
             # Filter contents based on the preferred language or duplicates
             if UserContent.is_preferred_language(content=content):
-
-                # Skip(S) if it is a duplicate or let the user choose to continue (C)
-                # Checked before hashing so a skipped duplicate doesn't cost a torrent file
-                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                        and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
-                                                     cli=self.cli)):
-                    continue
-
-                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
-                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Search for VIDEO ID
                 db_online = DbOnline(media=content, category=content.category, no_title=self.cli.notitle)
@@ -102,23 +153,46 @@ class VideoManager:
                     continue
 
                 # The audio tags need the original language from TMDB
-                content.display_name, tags_dictionary = search_tags.set_original_language(db.original_language)
+                content.display_name, _ = search_tags.set_original_language(db.original_language)
+
+                # Details in Italian from TMDB
+                details = db_online.italian_details(video_id=db.video_id, category=content.category)
+
+                # The title in Italian from TMDB, with its punctuation
+                italian_title = self.italian_title(details)
+                if italian_title:
+                    content.display_name, _ = search_tags.set_title(italian_title)
+
+                # A pack with every episode of a concluded season is the season: S04E01-10 -> S04
+                season_pack = self.full_season(pack=content.pack, details=details)
+                if season_pack:
+                    custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
+                    content.pack = season_pack
+                    content.display_name, _ = search_tags.set_season(season_pack)
+
+                # Skip(S) if it is a duplicate or let the user choose to continue (C)
+                # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
+                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
+                        and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
+                                                     cli=self.cli)):
+                    continue
+
+                # Rename the original files as the title shown on the tracker before creating the torrent
+                if config_settings.user_preferences.RENAME_FILES:
+                    self.rename_files(content=content)
+                    torrent_filepath = os.path.join(archive, f"{content.torrent_name}.torrent")
+
+                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
+                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Get meta from the media video
                 video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)
                 video_info.build_info()
 
-                # Tags found ( -b flag)
-                if tags_dictionary:
-                    custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
-                    for key, value in tags_dictionary.items():
-                        if isinstance(value, list):
-                            value = " ".join(value)
-                        custom_console.bot_log(f"{key:<13} '{value}'")
-                    custom_console.bot_log(f"Done.\n")
-                else:
-                    # print the title will be shown on the torrent page
-                    custom_console.bot_log(f"'DISPLAYNAME'...{{{content.display_name}}}\n")
+                # Print the title shown on the torrent page on a single line
+                custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
+                custom_console.bot_log(f"'{content.display_name}'")
+                custom_console.bot_log(f"Done.\n")
 
                 # Tracker instance
                 unit3d_up = UploadBot(content=content, tracker_name=selected_tracker, cli=self.cli)

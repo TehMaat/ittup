@@ -26,7 +26,7 @@ Use it for: full seasons, multi-part movies, content with companion files.
 ittup -scan "/home/ITT/upload"
 ```
 
-It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found.
+It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found. Items are uploaded in alphanumeric order (`E2` before `E10`).
 
 !!! tip "Too much content?"
     On very large folders you can cap the number of processed items with `FAST_LOAD` in the [Advanced options](../config/options.md).
@@ -41,20 +41,33 @@ They combine with `-u`, `-f` and `-scan`:
 | `-noseed` | Upload to the tracker **without seeding**: the torrent is not handed to the client |
 | `-dup` | Checks the tracker for [duplicates](../config/options.md#duplicates) before uploading |
 | `-personal` | Marks the upload as a **personal release** |
+| `-fl25` `-fl50` `-fl75` `-fl100` | Uploads as **freeleech** 25, 50, 75 or 100% (`--freeleech25`…). The tracker applies it only if your account can set the freeleech |
 | `-force <category>` | Forces the category: `movie`, `tv`, `game`, `edicola` (without argument: `movie`) |
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
 
+## Characters refused by the tracker
+
+The tracker refuses torrents whose files or folders have `:` `?` `*` `<` `>` `|` `"` `\` in their names, or end with a dot or a space. Before creating the torrent the bot **renames them on disk** and logs each rename: `Title: Sub` becomes `Title - Sub`, the other characters are removed. Dashes, exclamation marks and the other characters are kept.
+
+!!! warning "Files seeded elsewhere"
+    A renamed file is no longer found by the clients that were already seeding it with its old name.
+
 ## IDs in the name
 
-If the file or folder name carries an ID in braces, the bot uses it instead of searching TMDB by title:
+If the file or folder name carries an ID, the bot uses it instead of searching TMDB by title:
 
 ```text
 The Matrix (1999) {imdb-tt0133093}.mkv
 The Matrix (1999) {tmdb-603}.mkv
+The Matrix (1999) [tmdbid-603].mkv
+The Matrix (1999) (tmdb-603).mkv
+The.Matrix.1999.tt0133093.1080p.mkv
 ```
 
-The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
+The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex, `[tmdbid-…]` the Jellyfin one; round brackets, `=` instead of the dash (Emby) and the IMDB ID alone (`tt0133093`) work too. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
+
+Without an ID, the bot searches TMDB for the title taken from the name. When it isn't found it retries with the whole name before the year (`(500) Days of Summer`) and with the titles in brackets (`Lo Chiamavano Jeeg Robot (They Call Me Jeeg)`), and finally with a year tolerance: one year for movies (end-of-year releases), the year of a later season for TV shows.
 
 ## Full example
 

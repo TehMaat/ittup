@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 import re
 
@@ -54,6 +55,47 @@ class Media:
         self._tvdb_id: int | None = None
         self._igdb_id: int | None = None
         self._generate_title: str | None = None
+
+    def move_to(self, path: str) -> None:
+        """
+        The media was renamed: point it to its new path
+        """
+        self.folder = os.path.dirname(path)
+        self.subfolder = path
+        self.title = os.path.basename(path)
+        self._title_sanitized = None
+        self._guess_title = None
+        self._guess_filename = None
+        self._guess_season = None
+        self._episode = None
+        self._torrent_path = None
+        self._crew_list = None
+        self._platform_list = None
+        self._category = None
+
+    def renamed(self, path: str, renamed_files: dict[str, str]) -> None:
+        """
+        The files were renamed as the title after the analysis: point the media to the new paths
+        and keep what was read from the old name (category, season, episode, MediaInfo)
+        """
+        category, season, episode = self.category, self.guess_season, self.guess_episode
+        old_file_name = self.file_name
+        is_folder = os.path.isdir(path)
+        self.move_to(path)
+        self._category, self._guess_season, self._episode = category, season, episode
+        self.torrent_name = os.path.basename(path)
+
+        if is_folder:
+            file = os.path.basename(old_file_name)
+            self.file_name = os.path.join(path, renamed_files.get(file, file))
+            meta = [{**item, "path": [renamed_files.get(item["path"][0], item["path"][0])]}
+                    for item in json.loads(self.metainfo)]
+        else:
+            self.file_name = path
+            meta = [{**item, "path": [path]} for item in json.loads(self.metainfo)]
+        self.metainfo = json.dumps(meta, indent=4)
+        if self._media_file:
+            self._media_file.file_path = self.file_name
 
     @property
     def title_sanitized(self) -> str:

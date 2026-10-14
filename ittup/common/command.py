@@ -70,6 +70,12 @@ class CommandLine:
         upload_group.add_argument("-personal", "--personal", action="store_true", help="Personal release")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
 
+        # Freeleech of the uploaded torrents
+        freeleech_group = upload_group.add_mutually_exclusive_group()
+        for percent in (25, 50, 75, 100):
+            freeleech_group.add_argument(f"-fl{percent}", f"--freeleech{percent}", dest="freeleech",
+                                         action="store_const", const=percent, help=f"Freeleech {percent}%%")
+
         # Removed flags: ITTup uploads only to ItaTorrents. Without this '-mt' would be parsed as '-m t'
         upload_group.add_argument("-mt", "--mt", "-tracker", "--tracker", nargs='?', action=RemovedFlag,
                                   help=argparse.SUPPRESS)

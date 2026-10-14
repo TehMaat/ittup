@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from ittup.common.utility import ManageTitles
+from ittup.common.utility import ManageTitles, System
 from ittup.view import custom_console
 
 from ittup.core.media import Media
@@ -87,9 +87,10 @@ class Auto:
 
     def _lists(self, files_path: list, subfolders_path: list):
 
+        # Files and folders in alphanumeric order
         return [
             result
-            for media_path in files_path + subfolders_path
+            for media_path in sorted(files_path + subfolders_path, key=System.natural_key)
             if (result := Media(folder=self.path,subfolder=media_path)) is not None
         ]
 

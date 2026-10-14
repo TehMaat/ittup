@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import hashlib
 from datetime import datetime
 
@@ -32,6 +33,10 @@ from ittup.view import custom_console
 from ittup.core import config_settings
 
 base_url = "https://api.themoviedb.org/3"
+
+# The title ends at the year, the season or the resolution
+TITLE_END = re.compile(r"\(?(?<![0-9])(?:19|20)\d{2}(?![0-9])\)?|(?<![a-z0-9])S\d{1,2}(?:E\d+)?(?![a-z0-9])|"
+                       r"(?<![0-9])\d{3,4}[pi](?![a-z0-9])", re.IGNORECASE)
 ENABLE_LOG = True
 T = TypeVar('T')
 
@@ -244,6 +249,17 @@ class TmdbAPI(MyHttp):
                 return response[0].get('original_language') or None
         return None
 
+    def italian_details(self, video_id: int, category: str) -> dict | None:
+        """ Details of the movie or tv show in Italian (title, seasons..), whatever the preferred language """
+        if not video_id:
+            return None
+        if endpoint_class := self.ENDPOINTS.get(category):
+            request = {**endpoint_class.details(video_id), 'datatype': dict, 'params': {'language': 'it-IT'}}
+            response = self.request(endpoint=request)
+            if response:
+                return response[0]
+        return None
+
     def external_ids(self, video_id: int, category: str) -> dict | None:
         if endpoint_class := self.ENDPOINTS.get(category):
             request = endpoint_class.external_ids(video_id)
@@ -282,6 +298,8 @@ class DbOnline(TmdbAPI):
         self.category = category
         self.imdb_id = None
         self.tvdb_id = None
+        self.no_title = no_title
+        self.relaxed_year = False
 
         # Load the cache file
         self.cache = None
@@ -375,9 +393,18 @@ class DbOnline(TmdbAPI):
         return False
 
     def year_matches(self, result: T) -> bool:
-        """ False only when both years are known and they differ """
+        """
+        False only when both years are known and they differ
+        With relaxed_year a movie may differ by one year and a tv show may have the year of a later season
+        """
         if result.get_date() and self.media.guess_filename.guessit_year:
-            return datetime.strptime(result.get_date(), '%Y-%m-%d').year == self.media.guess_filename.guessit_year
+            tmdb_year = datetime.strptime(result.get_date(), '%Y-%m-%d').year
+            year = self.media.guess_filename.guessit_year
+            if not self.relaxed_year:
+                return tmdb_year == year
+            if self.category == 'tv':
+                return year >= tmdb_year - 1
+            return abs(tmdb_year - year) <= 1
         return True
 
     def debug_scores(self, result: T, alternatives: list[T] | None, translations: list[T] | None) -> None:
@@ -452,7 +479,8 @@ class DbOnline(TmdbAPI):
                 return search_results
 
         # or start an on-line search
-        results = self._search(self.query, self.category)
+        main_query = self.query
+        result, results = self.search_queries()
 
         # Use imdb_id when tmdb_id is not available
         tvdb_result = self.tvdb_search()
@@ -461,7 +489,7 @@ class DbOnline(TmdbAPI):
             self.imdb_id = tvdb_result.get('imdb_id', None)
 
         if results:
-            if result := self.is_like(results):
+            if result:
                 # Get the trailer
                 trailer_key = self.trailer(result.id)
                 keywords_list = self.keywords(result.id)
@@ -475,7 +503,7 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 # Write to the cache if it is enabled
                 if config_settings.user_preferences.CACHE_DBONLINE:
-                    self.cache[self.hash_key(self.query)] = search_results
+                    self.cache[self.hash_key(main_query)] = search_results
                 # return the result
                 return search_results
 
@@ -501,6 +529,65 @@ class DbOnline(TmdbAPI):
         if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
             self.cache[self.hash_key(self.query)] = search_results
         return search_results
+
+    def search_queries(self) -> tuple[T | None, list[T] | None]:
+        """
+        Search TMDB with the title from the file name, then with the other titles written in the name
+        (es. '(500) Days of Summer', the title in parentheses). Each query is checked first with the exact year,
+        then with a tolerance (movies released at the end of the year, the year of a season..)
+        Returns the result found and the results of the first query (None if TMDB doesn't answer)
+        On success self.query is the query that found the result, otherwise the first query
+        """
+        queries = [self.query] if self.no_title else self.title_queries(self.query, self.media.title)
+        responses = {}
+        for relaxed in (False, True):
+            self.relaxed_year = relaxed
+            for query in queries:
+                if query not in responses:
+                    responses[query] = self._search(query, self.category)
+                    # No response from TMDB
+                    if responses[query] is None:
+                        if query == queries[0]:
+                            return None, None
+                        responses[query] = []
+                self.query = query
+                result = self.is_like(responses[query]) if responses[query] else None
+                if result:
+                    if query != queries[0] or relaxed:
+                        custom_console.bot_log(f"TMDB: found with the title '{query}'"
+                                               f"{' and a year tolerance' if relaxed else ''}")
+                    self.relaxed_year = False
+                    return result, responses[query]
+        self.relaxed_year = False
+        self.query = queries[0]
+        return None, responses[queries[0]]
+
+    @staticmethod
+    def title_queries(query: str, name: str) -> list[str]:
+        """
+        TMDB queries: the title from guessit, then the name before the year, the season or the resolution,
+        and the titles in parentheses ('Lo Chiamavano Jeeg Robot (They Call Me Jeeg) (2015)')
+        """
+        queries = [query]
+        name = re.sub(r"\.(mkv|mp4|avi|m2ts|ts|mov|wmv|m4v|mpg|mpeg|webm)$", "", name, flags=re.IGNORECASE)
+        # Dots and underscores as spaces, but not in the acronyms (S.W.A.T.)
+        name = re.sub(r"(?<=[^\W\d_]{2})[._]|[._](?=[^\W\d_]{2})|_", " ", name)
+        prefix = TITLE_END.split(name, maxsplit=1)[0]
+        prefix = re.sub(r"[\[{].*", "", prefix).strip(" -.")
+        # Titles in parentheses, not numbers like '(500)'
+        groups = [group for group in re.findall(r"\(([^()]+)\)", prefix) if re.search(r"[^\W\d_]{2}", group)]
+        # The whole prefix, e.g. '(500) Days of Summer'
+        queries.append(re.sub(r"[()]", "", prefix))
+        # The prefix without the parentheses and each title in parentheses
+        queries.append(re.sub(r"\([^()]*\)", "", prefix))
+        queries.extend(groups)
+
+        unique = []
+        for item in queries:
+            item = re.sub(r"\s+", " ", item or "").strip(" -.")
+            if item and item.lower() not in [u.lower() for u in unique]:
+                unique.append(item)
+        return unique[:4]
 
     def add_external_ids(self, video_id: int, override: bool = False) -> None:
         """ Set the IMDB and TVDB IDs from TMDB; override=False keeps the ones already known """

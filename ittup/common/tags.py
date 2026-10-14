@@ -151,6 +151,16 @@ class SearchTags(object):
         tag_esc = re.sub(r'([A-Z])(\d+)', r'\1[._-]?\2', tag_esc)
         return tag_esc
 
+    def expand_platform_rip(self, filename: str) -> str:
+        """
+        Split a platform rip into the platform and the WEBRip source (es. 'NFRip' -> 'NF WEBRip')
+        """
+        platforms = [tag for tag, category in self.TAG_TYPES.items() if category == "platform"]
+        if not platforms:
+            return filename
+        pattern = r'(?<![a-z0-9])(' + "|".join(re.escape(tag) for tag in platforms) + r')rip(?![a-z0-9])'
+        return re.sub(pattern, r'\1 WEBRip', filename, flags=re.IGNORECASE)
+
     def build_title(self, dictionary: dict) -> str:
         # /// Build the title
         build = []
@@ -188,10 +198,13 @@ class SearchTags(object):
                 # Save a regex pattern for each category
             patterns.append([norm, category])
 
+        # NFRip -> NF WEBRip: the streaming platform and the source
+        filename = self.expand_platform_rip(self.filename)
+
         # Run regex
         for p, category in patterns:
             regex = re.compile(r'(?<!\w)' + p + r'(?!\w)', re.IGNORECASE)
-            matches = regex.findall(self.filename)
+            matches = regex.findall(filename)
             if matches:
                 # Normalize Tag_list
                 normalized_tag = TAG_NORMALIZE.get(matches[0].upper(), None)
@@ -285,6 +298,24 @@ class SearchTags(object):
         self.original_language = (original_language or DEFAULT_ORIGINAL_LANGUAGE).lower()
         if "acodec" in self.tags_position:
             self.tags_dict.update(self.mediainfo_audio(category="acodec"))
+        return self.ordered_title()
+
+    def set_title(self, title: str) -> tuple[str, dict]:
+        """
+        Rebuild the title with a new media title (es. the Italian title from TMDB)
+        """
+        self.title = title
+        self.tags_dict.update({'title': title})
+        # The part is already in the new title (es. 'Wicked - Parte 2')
+        if re.search(r'(?<![a-z])part[ei]?(?![a-z])', title, re.IGNORECASE):
+            self.tags_dict.pop('part', None)
+        return self.ordered_title()
+
+    def set_season(self, se_str: str) -> tuple[str, dict]:
+        """
+        Rebuild the title with a new season tag (es. 'S04' for a pack with every episode of the season)
+        """
+        self.tags_dict.update({'season': se_str})
         return self.ordered_title()
 
     def ordered_title(self) -> tuple[str, dict]:

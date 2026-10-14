@@ -10,7 +10,15 @@ Tag generabili: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `
 
 Per ogni film e serie il bot **costruisce da zero** titolo e tag a partire dall'analisi tecnica del media (MediaInfo) e dal nome del file, nell'ordine definito da `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE` ([Opzioni avanzate](../config/options.md#posizione-dei-tag-nel-titolo)). Succede a ogni upload: non c'è un flag da attivare (il vecchio flag `-b` di Unit3Dup non esiste più).
 
-**Non rinomina il tuo file**: costruisce solo il titolo del torrent mostrato sulla pagina del tracker.
+Quando TMDB trova il film o la serie, il titolo è il **titolo italiano di TMDB**, con la sua punteggiatura (`Spider-Man: No Way Home`), anche quando il nome del file è in inglese. Senza traduzione italiana, o se la ricerca su TMDB viene saltata, il titolo viene dal nome.
+
+Il titolo ricavato dal nome mantiene i caratteri speciali scritti nel nome: `Spider-Man.No.Way.Home.2021` diventa `Spider-Man No Way Home`, `Mission: Impossible - Dead Reckoning (2023)` mantiene i due punti e il trattino.
+
+## Pack di stagioni ed episodi
+
+Un pack di stagione si scrive `S04`, un pack di episodi `S04E01-06`, anche quando nel nome c'è uno spazio o un punto tra stagione ed episodi (`S04 E01-06`, `S04.E01-06`). Sul tracker entrambi hanno numero episodio `0` (pack). Quando il pack contiene tutti gli episodi di una stagione conclusa su TMDB (`S04E01-10` di una stagione da 10 episodi), il titolo riporta solo `S04`.
+
+**Non rinomina il tuo file**: costruisce solo il titolo del torrent mostrato sulla pagina del tracker, a meno che non attivi [`RENAME_FILES`](../config/options.md#rinomina-i-file-come-il-titolo).
 
 ## Codec video
 
@@ -25,6 +33,12 @@ Il tipo di release, letto dai tag source/remux del nome del file, decide come si
 | Encode | `ENCODE`, `WEBRIP`, `BDRIP`, `BRRIP`, `DVDRIP`, `UHDRIP`, `FHDRIP`, `WEB-DLRIP` | `x264` / `x265` |
 
 Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 mostra solo un avviso di "possibile falso REMUX". Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
+
+## Sorgente e tipo sul tracker
+
+La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide anche il **tipo** del torrent sul tracker: vince su codec e tag generici scritti prima (`HEVC`, `FullHD`, `BluRay`), quindi `Film.2020.1080p.HEVC.WEB-DL` è un WEB-DL e `Film.2020.1080p.BluRay.REMUX` un Remux. Il bot guarda prima il nome della cartella, poi quello del file video. Senza sorgente nel nome, un codec (`x264`, `HEVC`…) vale Encode.
+
+I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
 
 ## Codec audio
 

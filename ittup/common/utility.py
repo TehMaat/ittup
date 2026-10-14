@@ -259,6 +259,57 @@ class ManageTitles:
         return (query_tokens - local_tokens) <= main_tokens
 
     @staticmethod
+    def original_spelling(title: str | None, name: str) -> str | None:
+        """
+        The title as written in the name, with its special characters
+        guessit returns 'Spider Man No Way Home' from 'Spider-Man.No.Way.Home.2021' and
+        'Mission Impossible Dead Reckoning' from 'Mission: Impossible - Dead Reckoning (2023)'
+        """
+        words = re.findall(r"[^\W_]+", title or '')
+        if not words:
+            return title
+        pattern = r"(?<![^\W_])" + r"[\W_]*?".join(re.escape(word) for word in words) + r"(?![^\W_])"
+        match = re.search(pattern, name, re.IGNORECASE)
+        if not match:
+            return title
+        spelling = match.group()
+        # Dots and underscores used as spaces, but not in the acronyms (S.W.A.T.)
+        if " " not in spelling:
+            spelling = re.sub(r"(?<![^\W_])((?:[^\W\d_]\.){2,}[^\W\d_](?![^\W_]))|[._]",
+                              lambda m: m.group(1) or " ", spelling)
+        return re.sub(r"\s+", " ", spelling).strip()
+
+    # Episode pack: S04E01-06, S04E01-E06, S04 E01-06, S04.E01-06..
+    # The last episode is not a resolution (S04E01-1080p)
+    EPISODE_PACK = re.compile(r"(?<![a-z0-9])S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pi])", re.IGNORECASE)
+
+    @staticmethod
+    def season_pack(name: str) -> str | None:
+        """
+        Season or episode pack written in the name: 'S04' or 'S04E01-06' (es. from 'Show S04 E01-06')
+        None if it is a single episode or a movie
+        """
+        # Not 'DTS5.1' or 'H.264'
+        match = re.search(r"((?<![a-z0-9])S\d+(?![0-9])(?!.*E\d+))|" + ManageTitles.EPISODE_PACK.pattern,
+                          name, re.IGNORECASE)
+        if not match:
+            return None
+        if match.group(1):
+            return f"S{int(match.group(1)[1:]):02d}"
+        season, first, e, last = match.group(2, 3, 4, 5)
+        return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
+
+    @staticmethod
+    def pack_episodes(pack: str | None) -> tuple[int, int, int] | None:
+        """
+        (season, first episode, last episode) of an episode pack, None for a season pack
+        """
+        match = ManageTitles.EPISODE_PACK.fullmatch(pack or '')
+        if not match:
+            return None
+        return int(match.group(1)), int(match.group(2)), int(match.group(4))
+
+    @staticmethod
     def normalize_filename(filename) -> str:
         # Remove spaces
         filename = filename.strip()
@@ -398,6 +449,15 @@ class System:
     RESOLUTIONS = ["8640", "4320", "2160", "1080", "720", "576", "480"]
     RESOLUTION_labels = ["8640p", "4320p", "2160p", "1080p", "1080i", "720p", "720i", "576p", "576i", "480p", "480i"]
     NO_RESOLUTION = 'altro'
+
+    @staticmethod
+    def natural_key(path: str) -> list:
+        """
+        Sort key for the alphanumeric order of the file names: case-insensitive, with the numbers
+        compared by value (es. 'E2' before 'E10')
+        """
+        name = os.path.basename(os.path.normpath(path))
+        return [int(part) if part.isdigit() else part.casefold() for part in re.split(r"(\d+)", name)]
 
     @staticmethod
     def get_size(folder_path: str) -> tuple[float, str]:

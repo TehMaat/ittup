@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import os
+from typing import Any
 
 import diskcache
 
@@ -34,11 +35,11 @@ class LookupCache:
         return cls._cache
 
     @staticmethod
-    def key(*parts) -> str:
+    def key(*parts: Any) -> str:
         return hashlib.md5(repr(parts).encode("utf-8")).hexdigest()
 
     @classmethod
-    def get(cls, *parts):
+    def get(cls, *parts: Any) -> Any:
         """
         The cached value, None if it is not cached (or the cache is off)
         """
@@ -47,6 +48,6 @@ class LookupCache:
         return cls.cache().get(cls.key(*parts))
 
     @classmethod
-    def set(cls, *parts, value, expire: int = DEFAULT_EXPIRE) -> None:
+    def set(cls, *parts: Any, value: Any, expire: int = DEFAULT_EXPIRE) -> None:
         if cls.enabled() and value is not None:
             cls.cache().set(cls.key(*parts), value, expire=expire)

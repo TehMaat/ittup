@@ -178,13 +178,13 @@ def plan_name(name: str, target: str, info: TitleInfo | None) -> RenamePlan:
 
     if has_source:
         return RenamePlan(None, "the name already has every information")
-    if not info.source:
+    if not info.source or not resolution:
         return RenamePlan(None, "the name has every information but the source, unknown in MediaInfo too")
     return RenamePlan(add_source(name, info.source, after=resolution),
                       f"added the source '{info.source}' missing from the name")
 
 
-def add_source(name: str, source: str, after: re.Match) -> str:
+def add_source(name: str, source: str, after: re.Match[str]) -> str:
     """
     Write the source after the resolution, with the separator of the name: 'Movie.2020.1080p.H.264' -> '..1080p.WEB-DL.H.264'
     """

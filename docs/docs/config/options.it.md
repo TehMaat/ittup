@@ -90,6 +90,14 @@ Per una cartella, la cartella prende il titolo; lo prende anche il file video di
 !!! warning "File in seed altrove"
     Un file rinominato non viene più trovato dai client che lo stavano già seedando con il vecchio nome.
 
+## File corrotti
+
+```json
+"CHECK_CORRUPTED": "True",
+```
+
+Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una cartella) e decodifica alcuni frame all'inizio, a metà e alla fine. Un file illeggibile, con dati danneggiati o troncato (per esempio un download non finito) non viene caricato: il bot mostra l'errore e passa al successivo. Serve meno di un secondo per file. Impostalo a `False` per saltare il controllo.
+
 ## Watcher
 
 ```json

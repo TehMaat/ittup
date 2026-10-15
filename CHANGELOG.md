@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/TehMaat/ittup/compare/1.6.0...1.6.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* rename the DbOnline search cache to stop clashing with MyHttp.cache ([670e4a0](https://github.com/TehMaat/ittup/commit/670e4a06eb9b181408d2251698acaece8427d7ac))
+
 ## [1.6.0](https://github.com/TehMaat/ittup/compare/1.5.2...1.6.0) (2026-10-15)
 
 

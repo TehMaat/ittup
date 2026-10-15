@@ -27,7 +27,12 @@ The client is **required** for any upload with seeding (`-u`, `-f`, `-scan`, `-w
 "QBIT_ENABLED": "True",
 ```
 
-**WebUI** credentials (in qBittorrent: *Tools → Options → WebUI*). `QBIT_HOST` takes the IP of the machine running the client.
+**WebUI** credentials (in qBittorrent: *Tools → Options → WebUI*). `QBIT_HOST` takes the IP, the hostname or the FQDN of the machine running the client. A WebUI behind a reverse proxy or on a seedbox takes the full address, with the scheme and the path, and an empty `QBIT_PORT`: the port of the address is used, or the scheme's one (443 for `https`).
+
+```json
+"QBIT_HOST": "https://seedbox.example.com/qbittorrent/",
+"QBIT_PORT": "",
+```
 
 `QBIT_SKIP_CHECK` (default `True`) adds the torrent skipping the hash check, so seeding starts right away: the bot has just created the torrent from those same files. Set it to `False` to let qBittorrent verify the data first.
 

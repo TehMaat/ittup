@@ -315,10 +315,10 @@ class DbOnline(TmdbAPI):
         self.no_title = no_title
         self.relaxed_year = False
 
-        # Load the cache file
-        self.cache = None
+        # Load the cache file (not self.cache: MyHttp already has a read-only cache property)
+        self.search_cache = None
         if config_settings.user_preferences.CACHE_DBONLINE:
-            self.cache = diskcache.Cache(str(os.path.join(config_settings.user_preferences.CACHE_PATH, "tmdb.cache")))
+            self.search_cache = diskcache.Cache(str(os.path.join(config_settings.user_preferences.CACHE_PATH, "tmdb.cache")))
 
         if media.tmdb_id or media.imdb_id or media.tvdb_id:
             # Skip cache if there is a tmdb id or imdb in the title string
@@ -491,7 +491,7 @@ class DbOnline(TmdbAPI):
                     if self.imdb_id:
                         search_results.imdb_id = self.imdb_id
                         search_results.tvdb_id = self.tvdb_id
-                        self.cache[cache_key] = search_results
+                        self.search_cache[cache_key] = search_results
                 self.print_results(results=search_results)
                 return search_results
 
@@ -519,7 +519,7 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 # Write to the cache if it is enabled
                 if config_settings.user_preferences.CACHE_DBONLINE:
-                    self.cache[cache_key] = search_results
+                    self.search_cache[cache_key] = search_results
                 # return the result
                 return search_results
 
@@ -543,7 +543,7 @@ class DbOnline(TmdbAPI):
         search_results = self.manual_search()
         # Don't cache a skipped result (TMDB ID 0): the next run should search again
         if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
-            self.cache[cache_key] = search_results
+            self.search_cache[cache_key] = search_results
         return search_results
 
     def search_queries(self) -> tuple[T | None, list[T] | None]:
@@ -717,13 +717,13 @@ class DbOnline(TmdbAPI):
 
     def load_cache(self, query: str) -> MediaResult | None:
         # Check if the item is in the cache
-        if query not in self.cache:
+        if query not in self.search_cache:
             return None
 
         custom_console.bot_warning_log(f"<> Using cached results")
         try:
             # Try to get the video from the cache
-            return self.cache[query]
+            return self.search_cache[query]
         except KeyError:
             # Handle the case where the video is missing or the cache is corrupted
             custom_console.bot_error_log("Cached frame not found or cache file corrupted")

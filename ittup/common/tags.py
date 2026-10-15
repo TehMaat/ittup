@@ -46,6 +46,9 @@ audio_translate = {
     "MPEG Audio": "MPEG",
 }
 
+# Channels written in the title from the number of channels of the track
+audio_channels = {1: "1.0", 2: "2.0", 6: "5.1", 8: "7.1"}
+
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
 # The title keeps the best ITA codec and the best codec in the original language, then fills up to
@@ -340,6 +343,14 @@ class SearchTags(object):
         return None
 
     @staticmethod
+    def channel_count(audio: dict) -> int:
+        """
+        Number of channels of an audio track, 0 when MediaInfo doesn't tell it (es. '2 / 1' -> 2)
+        """
+        match = re.match(r'\s*(\d+)', str(audio.get('channel_s') or ''))
+        return int(match.group(1)) if match else 0
+
+    @staticmethod
     def audio_score(codec: str, atmos: bool, channel_s: int) -> tuple:
         """
         Sort key of an audio track: codec, then Atmos, then channels
@@ -369,9 +380,9 @@ class SearchTags(object):
                     dolby = audio.get('commercial_name', "").lower()
                     atmos = 'Atmos' if 'atmos' in dolby else ''
                     # Add audio codec
-                    channel_s = audio.get('channel_s', 0)
+                    channel_s = self.channel_count(audio)
                     # Add channels
-                    ch = {2: "2.0", 6: "5.1", 8: "7.1"}.get(channel_s, "")
+                    ch = audio_channels.get(channel_s, "")
                     tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
                                    f"{codec_translated} {ch} {atmos}".strip(), language, original))
 

@@ -98,7 +98,8 @@ class TorrentManager:
 
         # Scan and watcher: send each torrent to the client as soon as it is uploaded,
         # without waiting for the end of the cycle
-        seed_now = (bool(self.cli.scan) or self.cli.watcher) and not (self.cli.noseed or self.cli.noup)
+        seed_now = ((bool(self.cli.scan) or self.cli.watcher) and not (self.cli.noseed or self.cli.noup)
+                    and not UserContent.client_disabled())
 
         for selected_tracker in trackers_name_list:
             # Build the torrent file and upload each GAME to the tracker
@@ -131,7 +132,7 @@ class TorrentManager:
                                                             tracker_archive=self.tracker_archive)
 
             # No seeding
-            if self.cli.noseed or self.cli.noup:
+            if self.cli.noseed or self.cli.noup or UserContent.client_disabled():
                 custom_console.bot_warning_log(f"No seeding active. Done.")
                 custom_console.rule()
                 continue

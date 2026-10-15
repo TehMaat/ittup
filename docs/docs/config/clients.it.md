@@ -24,11 +24,14 @@ Il client è **obbligatorio** per qualsiasi operazione di upload con seeding (`-
 "QBIT_PORT": "8080",
 "SHARED_QBIT_PATH": "no_path",
 "QBIT_SKIP_CHECK": "True",
+"QBIT_ENABLED": "True",
 ```
 
 Credenziali della **WebUI** (in qBittorrent: *Strumenti → Opzioni → WebUI*). `QBIT_HOST` accetta l'IP della macchina dove gira il client.
 
 `QBIT_SKIP_CHECK` (default `True`) aggiunge il torrent saltando il controllo hash, così il seeding parte subito: il bot ha appena creato il torrent da quegli stessi file. Impostalo a `False` per far verificare i dati a qBittorrent.
+
+`QBIT_ENABLED` (default `True`) attiva o disattiva qBittorrent. Con `False` il bot non si connette mai al client: i torrent vengono caricati sul tracker e salvati nell'archivio, ma non aggiunti al client, come con `-noseed`.
 
 ## Transmission
 

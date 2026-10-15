@@ -32,6 +32,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `QBIT_PORT` | number | `8080` | if using qBittorrent | WebUI port |
 | `SHARED_QBIT_PATH` | string | `no_path` | no | Path as seen by the client when it runs elsewhere |
 | `QBIT_SKIP_CHECK` | boolean | `True` | no | Skip the hash check when adding the torrent |
+| `QBIT_ENABLED` | boolean | `True` | no | `False` disables qBittorrent: no connection, no seeding |
 | `TRASM_USER` | string | `admin` | if using Transmission | Username |
 | `TRASM_PASS` | string | `no_pass` | if using Transmission | Password |
 | `TRASM_HOST` | string | `127.0.0.1` | if using Transmission | Host |

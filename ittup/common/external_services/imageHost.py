@@ -5,9 +5,13 @@ import json
 import time
 import requests
 
+from datetime import datetime
+
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from ittup.common import config_settings
+from ittup.common.settings import SCREENSHOTS_TO_DELETE_PATH
 from ittup.view import custom_console
 
 
@@ -24,6 +28,20 @@ READ_TIMEOUT = 120
 
 # HTTP errors worth another attempt: the others (e.g. 400 image too big) fail again with the same screenshot
 RETRY_HTTP_STATUS = (408, 429)
+
+
+class ScreenshotsUploadFailed(Exception):
+    """
+    Fewer screenshots than requested were uploaded on the image hosts: the content must not be uploaded
+    """
+
+
+@dataclass
+class UploadedImage:
+    url: str
+    # The link that removes the image from the host, None if the host doesn't return it
+    delete_url: str | None
+    host: str
 
 
 class ImageUploader(ABC):
@@ -104,6 +122,19 @@ class ImageUploader(ABC):
         except (json.decoder.JSONDecodeError, AttributeError, KeyError, TypeError):
             custom_console.bot_error_log(f"HTTPError received: {error}")
 
+    def delete(self, delete_url: str) -> bool:
+        """
+        Remove an uploaded image with its delete link (Chevereto: a request to the link deletes the image
+        and redirects to '?deleted')
+
+        :return: True if the host deleted it
+        """
+        try:
+            response = requests.get(delete_url, timeout=self.timeout, allow_redirects=False)
+        except requests.exceptions.RequestException:
+            return False
+        return response.is_redirect and "deleted" in response.headers.get("Location", "")
+
 
 class ImgBB(ImageUploader):
 
@@ -119,6 +150,10 @@ class ImgBB(ImageUploader):
 
     def get_field_name(self) -> str:
         return 'image'
+
+    def delete(self, delete_url: str) -> bool:
+        # ImgBB has no API to delete: its delete link opens a page that asks to confirm, remove it by hand
+        return False
 
 
 class Freeimage(ImageUploader):
@@ -220,7 +255,7 @@ class ImageUploaderFallback:
     def __init__(self, uploader):
         self.uploader = uploader
 
-    def upload(self, test=False) -> str:
+    def upload(self, test=False) -> UploadedImage | None:
         result = None
 
         # Get response from the uploader
@@ -254,7 +289,17 @@ class ImageUploaderFallback:
         return result
 
     @staticmethod
-    def result(response: dict, uploader_host: str) -> str | None:
+    def result(response: dict, uploader_host: str) -> UploadedImage | None:
+        """ The URL and the delete link of the uploaded image """
+        image = response.get("data") if uploader_host == "ImgBB" else response.get("image")
+        url = ImageUploaderFallback.url(response=response, uploader_host=uploader_host)
+        if not url:
+            return None
+        delete_url = image.get("delete_url") if isinstance(image, dict) else None
+        return UploadedImage(url=url, delete_url=delete_url, host=uploader_host)
+
+    @staticmethod
+    def url(response: dict, uploader_host: str) -> str | None:
 
         if uploader_host == "Freeimage":
             return response["image"]["image"]["url"]
@@ -308,14 +353,8 @@ class Build:
         # A host without an API key in settings.json ('no_key' or empty) can't upload
         return bool(key and key.strip()) and 'no_key' not in key.lower()
 
-    def upload_image(self, number: int, img_bytes: bytes) -> str | None:
-        """
-        Upload a screenshot to the first on-line host, in order of priority
-
-        :return: the image URL, None if every host failed
-        """
-        image_name = f"{self.filename}.id_{number}"
-
+    def uploaders(self, img_bytes: bytes, image_name: str) -> list[ImageUploader]:
+        """ The hosts with an API key, in order of priority """
         hosts = [
             (ImgBB, self.IMGBB_KEY),
             (Freeimage, self.FREE_IMAGE_KEY),
@@ -331,6 +370,16 @@ class Build:
 
         # Sorting list based on priority
         master_uploaders.sort(key=lambda uploader: uploader.priority)
+        return master_uploaders
+
+    def upload_image(self, number: int, img_bytes: bytes) -> UploadedImage | None:
+        """
+        Upload a screenshot to the first on-line host, in order of priority (failover)
+
+        :return: the uploaded image, None if every host failed
+        """
+        image_name = f"{self.filename}.id_{number}"
+        master_uploaders = self.uploaders(img_bytes, image_name=image_name)
 
         # The off-line hosts last: a temporary error on another screenshot doesn't mean this one fails too,
         # skipping them could lose the screenshot (e.g. a single host)
@@ -353,13 +402,13 @@ class Build:
                 if uploader.__class__.__name__ not in self.offline_uploaders:
                     self.offline_uploaders.append(uploader.__class__.__name__)
                 continue
-            custom_console.bot_log(img_url)
+            custom_console.bot_log(img_url.url)
             return img_url
 
         custom_console.bot_error_log(f"Screenshot n° {number} not uploaded: every image host failed")
         return None
 
-    def safe_upload_image(self, number: int, img_bytes: bytes) -> str | None:
+    def safe_upload_image(self, number: int, img_bytes: bytes) -> UploadedImage | None:
         """
         upload_image() that loses only this screenshot on an unexpected error, not the whole description
         """
@@ -368,6 +417,40 @@ class Build:
         except Exception as e:
             custom_console.bot_error_log(f"Screenshot n° {number} not uploaded: {e!r}")
             return None
+
+    def delete_images(self, images: list[UploadedImage]) -> None:
+        """
+        Remove the uploaded screenshots of a content that will not be uploaded
+        """
+        hosts = {uploader.__class__.__name__: uploader for uploader in self.uploaders(b"", image_name="")}
+        left = []
+        for image in images:
+            uploader = hosts.get(image.host)
+            if image.delete_url and uploader and uploader.delete(image.delete_url):
+                custom_console.bot_log(f"[{image.host}] removed '{image.url}'")
+            else:
+                custom_console.bot_warning_log(f"[{image.host}] can't remove '{image.url}'"
+                                               + (f": delete it from '{image.delete_url}'" if image.delete_url else ""))
+                left.append(image)
+        if left:
+            self.save_screenshots_to_delete(left)
+
+    def save_screenshots_to_delete(self, images: list[UploadedImage]) -> None:
+        """
+        Append the screenshots left on the hosts to a file, to remove them by hand: one per line,
+        date, content, host, image URL and delete link separated by a tab
+        """
+        now = datetime.now().isoformat(timespec="seconds")
+        try:
+            SCREENSHOTS_TO_DELETE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(SCREENSHOTS_TO_DELETE_PATH, "a", encoding="utf-8") as f:
+                for image in images:
+                    f.write("\t".join([now, self.filename, image.host, image.url, image.delete_url or "-"]) + "\n")
+        except OSError as e:
+            custom_console.bot_error_log(f"Can't write '{SCREENSHOTS_TO_DELETE_PATH}': {e}")
+            return
+        custom_console.bot_warning_log(f"{len(images)} screenshots to remove by hand, listed in"
+                                       f" '{SCREENSHOTS_TO_DELETE_PATH}'")
 
     def description(self) -> str:
         description = "[center]\n"
@@ -381,18 +464,21 @@ class Build:
 
         # Upload the screenshots at the same time, the description keeps their order
         with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
-            urls = list(executor.map(self.safe_upload_image, range(1, len(self.extracted_frames) + 1),
-                                     self.extracted_frames))
+            images = list(executor.map(self.safe_upload_image, range(1, len(self.extracted_frames) + 1),
+                                       self.extracted_frames))
 
-        for img_url in urls:
-            if img_url:
-                # Append the URL to new description
-                description += f"[url={img_url}][img=650]{img_url}[/img][/url]"
+        # Quorum: every requested screenshot must be on a host, or the content is not uploaded
+        uploaded = [image for image in images if image]
+        if len(uploaded) < len(self.extracted_frames):
+            reason = (f"only {len(uploaded)} of {len(self.extracted_frames)} screenshots uploaded"
+                      f" on the image hosts")
+            custom_console.bot_error_log(f"{reason}: skip the upload of '{self.filename}'")
+            self.delete_images(uploaded)
+            raise ScreenshotsUploadFailed(reason)
 
-        missing = urls.count(None)
-        if missing:
-            custom_console.bot_error_log(f"{missing} of {len(urls)} screenshots not uploaded,"
-                                         f" the description has only {len(urls) - missing}")
+        for image in uploaded:
+            # Append the URL to new description
+            description += f"[url={image.url}][img=650]{image.url}[/img][/url]"
 
         # Append the new URL to the description string
         description += "\n[/center]"

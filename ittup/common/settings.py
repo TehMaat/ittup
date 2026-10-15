@@ -44,6 +44,8 @@ WATCHER_QUARANTINE_PATH: Path = CONFIG_DIR / "watcher_quarantine_path"
 WATCHER_QUEUE_PATH: Path = CONFIG_DIR / "watcher_queue.json"
 CACHE_PATH: Path = CONFIG_DIR / "cache_path"
 TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
+# The screenshots of the contents not uploaded that the image hosts could not delete: remove them by hand
+SCREENSHOTS_TO_DELETE_PATH: Path = CONFIG_DIR / "screenshots_to_delete.txt"
 DEFAULT_JSON_PATH: Path = CONFIG_DIR / f"{config_file}"
 USER_TAGS_PATH: Path = CONFIG_DIR / f"{user_tags_file}"
 USER_SIGN_PATH: Path = CONFIG_DIR / f"{user_sign_file}"

@@ -4,7 +4,7 @@ import requests
 
 from ittup.common import config_settings
 from ittup.common.external_services import imageHost
-from ittup.common.external_services.imageHost import Build, UPLOAD_ATTEMPTS
+from ittup.common.external_services.imageHost import Build, ScreenshotsUploadFailed, UPLOAD_ATTEMPTS
 
 
 class FakeResponse:
@@ -20,12 +20,13 @@ class FakeResponse:
 
 
 @pytest.fixture
-def only_imgbb(monkeypatch):
+def only_imgbb(monkeypatch, tmp_path):
     """ ImgBB is the only host with an API key, no wait between the attempts """
     for key in ("FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "IMGFI_KEY", "PASSIMA_KEY", "IMARIDE_KEY"):
         monkeypatch.setattr(config_settings.tracker_config, key, "no_key")
     monkeypatch.setattr(config_settings.tracker_config, "IMGBB_KEY", "imgbb-key")
     monkeypatch.setattr(imageHost.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(imageHost, "SCREENSHOTS_TO_DELETE_PATH", tmp_path / "screenshots_to_delete.txt")
 
 
 def fake_post(monkeypatch, failures: dict[str, int], error=requests.exceptions.ReadTimeout):
@@ -62,24 +63,25 @@ def test_a_connection_error_is_retried(monkeypatch, only_imgbb):
 
 def test_a_screenshot_is_lost_after_every_attempt(monkeypatch, only_imgbb):
     calls = fake_post(monkeypatch, {"video.id_1": UPLOAD_ATTEMPTS})
-    description = Build([b"1", b"2"], "video").description()
-    assert "video.id_1" not in description
-    assert "https://i.ibb.co/video.id_2.png" in description
+    # Without every screenshot the content is not uploaded
+    with pytest.raises(ScreenshotsUploadFailed, match="only 1 of 2 screenshots"):
+        Build([b"1", b"2"], "video").description()
     assert calls["video.id_1"] == UPLOAD_ATTEMPTS
 
 
 def test_the_only_host_is_tried_after_failing_a_screenshot(monkeypatch, only_imgbb):
     # One screenshot at a time: the first one marks ImgBB off-line before the second one starts
     monkeypatch.setattr(imageHost, "UPLOAD_WORKERS", 1)
-    fake_post(monkeypatch, {"video.id_1": UPLOAD_ATTEMPTS})
-    description = Build([b"1", b"2", b"3"], "video").description()
-    assert "https://i.ibb.co/video.id_2.png" in description
-    assert "https://i.ibb.co/video.id_3.png" in description
+    calls = fake_post(monkeypatch, {"video.id_1": UPLOAD_ATTEMPTS})
+    with pytest.raises(ScreenshotsUploadFailed, match="only 2 of 3 screenshots"):
+        Build([b"1", b"2", b"3"], "video").description()
+    assert calls["video.id_2"] == 1 and calls["video.id_3"] == 1
 
 
 def test_a_failed_host_is_not_skipped_by_the_next_upload(monkeypatch, only_imgbb):
     fake_post(monkeypatch, {"first.id_1": UPLOAD_ATTEMPTS})
-    Build([b"1"], "first").description()
+    with pytest.raises(ScreenshotsUploadFailed):
+        Build([b"1"], "first").description()
     assert "https://i.ibb.co/second.id_1.png" in Build([b"1"], "second").description()
 
 
@@ -100,7 +102,8 @@ def test_a_server_error_is_retried(monkeypatch, only_imgbb):
 def test_a_bad_request_is_not_retried(monkeypatch, only_imgbb):
     # e.g. the screenshot is too big: it fails again
     calls = fake_post(monkeypatch, {"video.id_1": 1}, error=http_error(400))
-    assert "video.id_1" not in Build([b"1"], "video").description()
+    with pytest.raises(ScreenshotsUploadFailed):
+        Build([b"1"], "video").description()
     assert calls["video.id_1"] == 1
 
 
@@ -134,6 +137,6 @@ def test_an_answer_without_the_url_loses_only_its_screenshot(monkeypatch, only_i
         return response
 
     monkeypatch.setattr(imageHost.requests, "post", post)
-    description = Build([b"1", b"2"], "video").description()
-    assert "video.id_1" not in description
-    assert "https://i.ibb.co/video.id_2.png" in description
+    images = [Build([b"1", b"2"], "video").safe_upload_image(number, b"x") for number in (1, 2)]
+    assert images[0] is None
+    assert images[1].url == "https://i.ibb.co/video.id_2.png"

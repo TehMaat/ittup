@@ -79,6 +79,10 @@ video_codec_labels = {
 # x264, x.264, H264, H.265, AVC, HEVC... in the file name
 NAME_CODEC_PATTERN = re.compile(r'(?<![a-z0-9])(?:[xh][._ -]?26([45])|(avc)|(hevc))(?![a-z0-9])', re.IGNORECASE)
 
+# The tags of a release name start at the year, the season or the resolution after the title
+RELEASE_TAGS_START = re.compile(r"(?<![^\W_])(?:(?:19|20)\d{2}|S\d{1,2}(?:E\d+)?|\d{3,4}[pi])(?![^\W_])",
+                                re.IGNORECASE)
+
 TAG_NORMALIZE = {
     "BLURAY": "BluRay",
     "BLU-RAY": "BluRay",
@@ -108,6 +112,8 @@ class SearchTags(object):
         self.tags_dict = {}
         self.release_type: str | None = None
         self.name_family: str | None = None
+        # The source and remux tags read from MediaInfo when the file name has no source
+        self.mediainfo_tags: dict[str, list[str]] = {}
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
 
         self.TAG_TYPES: dict = tags_list
@@ -177,15 +183,13 @@ class SearchTags(object):
         refactored = ' '.join(build) + self.releaser_sign
         return refactored
 
-    def process(self) -> tuple[str, dict]:
+    def find_tags(self, text: str) -> dict[str, list[str]]:
+        """
+        Tags of the tags list written in a release name, by category: {'source': ['WEB-DL'], ...}
+        """
         patterns = []
-
-        # Remove banned items from categories
-        self.tags_position = [x.lower() for x in self.tags_position if x not in self.BAN_LIST]
         # loop sorted TAG_TYPES dictionary
-        for i, (tag, category) in enumerate(
-                sorted(self.TAG_TYPES.items(), key=lambda x: len(x[0]), reverse=True)
-        ):
+        for tag, category in sorted(self.TAG_TYPES.items(), key=lambda x: len(x[0]), reverse=True):
             if category == "version":
                 norm = self.normalize_version_tag(tag)
             elif category == "platform":
@@ -198,22 +202,26 @@ class SearchTags(object):
                 norm = self.normalize_video_encoder(tag)
             else:
                 norm = re.escape(tag)
-                # Save a regex pattern for each category
+            # Save a regex pattern for each category
             patterns.append([norm, category])
 
         # NFRip -> NF WEBRip: the streaming platform and the source
-        filename = self.expand_platform_rip(self.filename)
+        text = self.expand_platform_rip(text)
 
         # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
+        tags = {}
         for p, category in patterns:
             regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
-            matches = regex.findall(filename)
+            matches = regex.findall(text)
             if matches:
                 # Normalize Tag_list
-                normalized_tag = TAG_NORMALIZE.get(matches[0].upper(), None)
-                if normalized_tag:
-                    matches[0] = normalized_tag
-                self.tags_dict.setdefault(category, []).append(matches[0])
+                tags.setdefault(category, []).append(TAG_NORMALIZE.get(matches[0].upper(), matches[0]))
+        return tags
+
+    def process(self) -> tuple[str, dict]:
+        # Remove banned items from categories
+        self.tags_position = [x.lower() for x in self.tags_position if x not in self.BAN_LIST]
+        self.tags_dict.update(self.find_tags(self.filename))
 
         # /// Tags with no categories
         # Identify PartX
@@ -227,6 +235,16 @@ class SearchTags(object):
         # x264/x265 from the file name only tell the codec family: the codec is written by vcodec
         name_encoders = self.tags_dict.pop('video_encoder', [])
         self.name_family = self.codec_family_from_name(self.filename, name_encoders)
+
+        # No source in the file name: read it from MediaInfo when it tells it
+        if not self.tags_dict.get('source') and not self.tags_dict.get('remux'):
+            found = self.mediainfo_source()
+            if found:
+                self.mediainfo_tags = found
+                self.tags_dict.update({category: list(tags) for category, tags in found.items()})
+                custom_console.bot_log(f"Source not in the file name: '{' '.join(sum(found.values(), []))}'"
+                                       f" from MediaInfo")
+
         # Read the release type before 'remux' gets the REMUX tag appended below
         self.release_type = self.detect_release_type(
             self.tags_dict.get('source', []) + self.tags_dict.get('remux', [])
@@ -410,6 +428,38 @@ class SearchTags(object):
         first = [language for language in ["ITA"] + original_languages[:1] if language in languages]
         audio_codecs.extend(dict.fromkeys(first + languages))
         return {category: audio_codecs}
+
+    def mediainfo_source(self) -> dict[str, list[str]]:
+        """
+        Source of a file with no source in its name, from MediaInfo:
+        - the release name some files keep in their metadata title (es. 'Movie.2020.1080p.WEB-DL.H.264-GRP')
+        - the disc of the remuxes made with MakeMKV and other rippers ('Original source medium: Blu-ray')
+        Returns the 'source' and 'remux' tags, empty when MediaInfo doesn't tell the source
+        """
+        general = getattr(self.mediafile, 'general_track', None) or {}
+        video = self.mediafile.video_track[0] if self.mediafile.video_track else {}
+
+        for text in (general.get('title'), general.get('movie_name'), video.get('title')):
+            text = str(text or '')
+            # Only a release name: a plain title ('Charlotte's Web') has no year, season or resolution after it
+            start = RELEASE_TAGS_START.search(text)
+            if not start or start.start() == 0:
+                continue
+            tags = self.find_tags(text[start.start():])
+            found = {category: list(dict.fromkeys(tags[category])) for category in ('source', 'remux')
+                     if tags.get(category)}
+            if found:
+                return found
+
+        medium = f"{general.get('original_source_medium') or ''} {video.get('original_source_medium') or ''}"
+        medium = medium.lower()
+        encoded = self.encoder_signature(video) is not None
+        if 'blu-ray' in medium or 'bluray' in medium:
+            # The video track copied from the disc is a remux, re-encoded it is an encode of the Blu-ray
+            return {'source': ['BluRay']} if encoded else {'source': ['BluRay'], 'remux': ['REMUX']}
+        if 'dvd' in medium and encoded:
+            return {'source': ['DVDRip']}
+        return {}
 
     @staticmethod
     def detect_release_type(tags: list) -> str | None:

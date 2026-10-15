@@ -29,10 +29,10 @@ class MediaFile:
     def general_track(self)-> dict:
         """Returns general information"""
         if not self._general_track:
-            for track in self.media_info.to_data().get("tracks", []):
-                if track.get("track_type") == "General":
-                    return self._general_track
-            self._general_track = {}
+            for track in self.media_info.tracks:
+                if track.track_type == "General":
+                    self._general_track = track.to_data()
+                    break
         return self._general_track
 
     @property

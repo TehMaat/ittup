@@ -164,6 +164,8 @@ class VideoManager:
                                  media=content,
                                  )
         content.display_name, _ = search_tags.process()
+        if search_tags.mediainfo_tags:
+            content.mediainfo_source = " ".join(sum(search_tags.mediainfo_tags.values(), []))
 
         # Filter contents based on the preferred language
         if not UserContent.is_preferred_language(content=content):

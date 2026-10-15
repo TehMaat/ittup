@@ -276,16 +276,20 @@ class Validate:
         return position_list
 
     @staticmethod
-    def unit3dup_path(path: str | None, field_name: str, default_path: str) -> str | None:
+    def unit3dup_path(path: str | None, field_name: str, default_path: str, must_exist: bool = True) -> str | None:
         """
         Validates path
-        return: validated and verified path or None
+        must_exist: False for a folder created when it is first used (the watcher quarantine)
+        return: validated and verified path, with '~' expanded, or the default path
         """
         if isinstance(path, str) and path.strip():
             if validate_path := Validate.validate_path(path=path):
+                validate_path = os.path.expanduser(validate_path)
                 # check if path exist
-                if Path(validate_path).expanduser().is_dir():
+                if not must_exist or Path(validate_path).is_dir():
                     return validate_path
+                print(f"{Ccolors.WARNING}'{field_name}': the folder '{path}' does not exist."
+                      f" Using the default '{default_path}'{Ccolors.ENDC}")
         # otherwise return the default path
         return default_path
 
@@ -504,9 +508,11 @@ class Config(BaseModel):
                     section[field] = Validate.unit3dup_path(path=section[field], field_name=field,
                                                             default_path=get_default_path(field=field))
 
+                # Created by the watcher when the first entry is quarantined
                 if field == 'WATCHER_QUARANTINE_PATH':
                     section[field] = Validate.unit3dup_path(path=section[field], field_name=field,
-                                                            default_path=get_default_path(field=field))
+                                                            default_path=get_default_path(field=field),
+                                                            must_exist=False)
 
                 if field == 'TORRENT_ARCHIVE_PATH':
                     section[field] = Validate.unit3dup_path(path=section[field], field_name=field,

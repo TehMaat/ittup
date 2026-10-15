@@ -181,6 +181,7 @@ class VideoManager:
 
         # If it is 'None' we skipped the imdb search (-notitle)
         if not db:
+            report.failed(content.display_name, "not found on TMDB")
             return None
 
         # The audio tags need the original language from TMDB

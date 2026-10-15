@@ -108,6 +108,9 @@ class Bot:
         # Get the user content
         contents = self.contents(include_paths=include_paths)
         if not contents:
+            # Discarded: the watcher moves it to the quarantine
+            for path in include_paths or []:
+                report.failed(os.path.basename(path), "no media to upload: no video file or an unsupported type")
             return False
 
         # Instance a new run

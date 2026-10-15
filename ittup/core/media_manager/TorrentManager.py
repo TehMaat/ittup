@@ -16,6 +16,7 @@ from ittup.common.constants import my_language
 from ittup.common.utility import System
 
 from ittup.core.media_manager.common import UserContent
+from ittup.core.report import report
 from ittup.view import custom_console
 
 
@@ -57,6 +58,8 @@ class TorrentManager:
         if self.games:
             if 'no_key' in config_settings.tracker_config.IGDB_CLIENT_ID:
                 custom_console.bot_warning_log("Skipping game upload, no IGDB credentials provided")
+                for game in self.games:
+                    report.failed(game.display_name, "game upload without the IGDB credentials")
                 self.games = []
 
         # // Build a VIDEO list

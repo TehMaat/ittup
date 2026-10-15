@@ -6,6 +6,7 @@ import os
 import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
+from ittup.common.external_services.imageHost import ScreenshotsUploadFailed
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.frames import VideoFrame
 from ittup.common.integrity import MediaIntegrity
@@ -255,7 +256,13 @@ class VideoManager:
             # Get meta from the media video
             video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key,
                                screenshots=screenshots)
-            video_info.build_info()
+            # Not every screenshot is on an image host: skip this content and go on with the next
+            try:
+                video_info.build_info()
+            except ScreenshotsUploadFailed as e:
+                report.failed(content.display_name, str(e))
+                custom_console.rule()
+                continue
 
             # Print the title shown on the torrent page on a single line
             custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")

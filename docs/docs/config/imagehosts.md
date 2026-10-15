@@ -40,4 +40,8 @@ In `user_preferences` every host has a priority — **0 = first attempt**:
 
 The bot tries the hosts in increasing priority order; on the first error (invalid key, service down, rate limit) it moves to the next one.
 
+## Every screenshot or no upload
+
+A content is uploaded only if **all** its screenshots (`NUMBER_OF_SCREENSHOTS`) are on an image host, on one or more hosts. If a screenshot can't be uploaded on any host, the bot doesn't upload that content: it says why, removes the screenshots already uploaded from the hosts with their delete link, and goes on with the next content. A screenshot that can't be removed is logged with its delete link, to remove it by hand.
+
 Screenshot options (`NUMBER_OF_SCREENSHOTS`, compression, resize, webp) are in [Advanced options](options.md).

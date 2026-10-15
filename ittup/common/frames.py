@@ -4,6 +4,7 @@ import json
 import subprocess
 import io
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import cache
 from pathlib import Path
 from PIL import Image, ImageStat
@@ -23,6 +24,9 @@ DARK_FRAME_THRESHOLD = 40
 
 # How many other positions to try around a dark frame before keeping the brightest one
 DARK_FRAME_RETRIES = 4
+
+# Screenshots extracted at the same time (ffmpeg processes)
+EXTRACT_WORKERS = 4
 
 
 @cache
@@ -117,12 +121,13 @@ class VideoFrame:
         duration_step = interval // self.num_screenshots
         min_time = int(min_time)
         max_time = int(max_time)
-        frames = [self._extract_bright_frame(time, duration_step, duration)
-                  for time in range(min_time + duration_step, max_time, duration_step)]
+        times = list(range(min_time + duration_step, max_time, duration_step))
+        if len(times) < self.num_screenshots:
+            times.append(max_time)
 
-        if len(frames) < self.num_screenshots:
-            frames.append(self._extract_bright_frame(max_time, duration_step, duration))
-        return frames
+        # One ffmpeg process for each screenshot, at the same time
+        with ThreadPoolExecutor(max_workers=EXTRACT_WORKERS) as executor:
+            return list(executor.map(lambda time_: self._extract_bright_frame(time_, duration_step, duration), times))
 
     def _extract_bright_frame(self, time_: int, duration_step: int, duration: float) -> Image:
         """

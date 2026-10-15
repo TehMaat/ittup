@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from argparse import Namespace
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
 import os
 import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
+from ittup.common.frames import VideoFrame
 from ittup.common.tags import SearchTags
 from ittup.common.rename import rename_to_title
 from ittup.common.utility import ManageTitles, System
@@ -40,6 +42,7 @@ class VideoManager:
         self.sign_list: dict = sign_list
         self.ban_list: dict = ban_list
         self.on_upload = on_upload
+        self.screenshots_executor: ThreadPoolExecutor | None = None
 
     @staticmethod
     def rename_files(content: Media) -> None:
@@ -65,6 +68,18 @@ class VideoManager:
                                                   video_files=video_files, pack=pack, episodes=episodes)
         if new_path != path or renamed_files:
             content.renamed(path=new_path, renamed_files=renamed_files)
+
+    def extract_screenshots(self, content: Media) -> Future[tuple[list[bytes], int]] | None:
+        """
+        Start extracting the screenshots in the background, while TMDB is searched and the torrent is hashed
+
+        :return: the screenshots, None if they are extracted later by Video
+        """
+        # A cached description doesn't need the screenshots, and a renamed file can't be read by ffmpeg
+        if config_settings.user_preferences.CACHE_SCR or config_settings.user_preferences.RENAME_FILES:
+            return None
+        video_frames = VideoFrame(content.file_name, num_screenshots=Video.screenshots_number())
+        return self.screenshots_executor.submit(video_frames.create)
 
     @staticmethod
     def italian_title(details: dict | None) -> str | None:
@@ -110,6 +125,8 @@ class VideoManager:
 
         #  Init the torrent list
         bittorrent_list = []
+        # One content at a time: the screenshots of a skipped content are never waited for
+        self.screenshots_executor = ThreadPoolExecutor(max_workers=1)
         for content in self.contents:
             # get the archive path
             archive = os.path.join(tracker_archive, selected_tracker)
@@ -120,6 +137,8 @@ class VideoManager:
             if self.cli.watcher and os.path.exists(torrent_filepath):
                 custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
                 continue
+
+            screenshots = self.extract_screenshots(content)
 
             # /// User request to build the title; overwriting display_name
             guess_filename = title.Guessit(content.title_sanitize_tags)
@@ -186,7 +205,8 @@ class VideoManager:
                                                        selected_tracker=selected_tracker, this_path=torrent_filepath)
 
                 # Get meta from the media video
-                video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key)
+                video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key,
+                                   screenshots=screenshots)
                 video_info.build_info()
 
                 # Print the title shown on the torrent page on a single line
@@ -228,4 +248,6 @@ class VideoManager:
                     self.on_upload(bittorrent_list[-1])
 
         # // end content
+        # Drop the screenshots of the skipped contents that are still waiting
+        self.screenshots_executor.shutdown(wait=False, cancel_futures=True)
         return bittorrent_list

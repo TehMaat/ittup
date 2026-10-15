@@ -6,8 +6,13 @@ import time
 import requests
 
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from ittup.common import config_settings
 from ittup.view import custom_console
+
+
+# Screenshots uploaded at the same time
+UPLOAD_WORKERS = 4
 
 
 class ImageUploader(ABC):
@@ -277,56 +282,69 @@ class Build:
         # A host without an API key in settings.json ('no_key' or empty) can't upload
         return bool(key and key.strip()) and 'no_key' not in key.lower()
 
+    def upload_image(self, number: int, img_bytes: bytes) -> str | None:
+        """
+        Upload a screenshot to the first on-line host, in order of priority
+
+        :return: the image URL, None if every host failed
+        """
+        image_name = f"{self.filename}.id_{number}"
+
+        master_uploaders = [
+            ImgBB(img_bytes, self.IMGBB_KEY, image_name=image_name),
+            Freeimage(img_bytes, self.FREE_IMAGE_KEY,image_name=image_name),
+            PtScreens(img_bytes, self.PTSCREENS_KEY,image_name=image_name),
+            LensDump(img_bytes, self.LENSDUMP_KEY,image_name=image_name),
+            ImgFi(img_bytes, self.IMGFI_KEY,image_name=image_name),
+            PassIMA(img_bytes, self.PASSIMA_KEY, image_name=image_name),
+            ImaRide(img_bytes, self.IMARIDE_KEY, image_name=image_name),
+        ]
+
+        # Skip the hosts without an API key
+        master_uploaders = [uploader for uploader in master_uploaders if self.has_key(uploader.key)]
+
+        # Sorting list based on priority
+        master_uploaders.sort(key=lambda uploader: uploader.priority)
+
+        # for each on-line uploader
+        for uploader in master_uploaders:
+            if not uploader.__class__.__name__ in self.offline_uploaders:
+                # Upload the screenshot
+                fallback_uploader = ImageUploaderFallback(uploader)
+                # Get a new URL
+                img_url = fallback_uploader.upload()
+
+                # If it goes offline during upload skip the uploader
+                if not img_url:
+                    custom_console.bot_error_log(
+                        "** Upload failed, skip to next host **"
+                    )
+                    # Other screenshots may have found it offline at the same time
+                    if uploader.__class__.__name__ not in self.offline_uploaders:
+                        self.offline_uploaders.append(uploader.__class__.__name__)
+                    continue
+                custom_console.bot_log(img_url)
+                return img_url
+        return None
+
     def description(self) -> str:
         description = "[center]\n"
-        console_url = []
 
         custom_console.bot_log(f"\n[STARTING IMAGE UPLOAD..]")
-        _number = 0
-        for img_bytes in self.extracted_frames:
-            _number = _number + 1
-            image_name = f"{self.filename}.id_{_number}"
+        keys = [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY, self.PTSCREENS_KEY, self.IMGFI_KEY,
+                self.PASSIMA_KEY, self.IMARIDE_KEY]
+        if not any(self.has_key(key) for key in keys):
+            custom_console.bot_error_log("No image host API key found in settings.json, skip the upload")
+            return description + "\n[/center]"
 
-            master_uploaders = [
-                ImgBB(img_bytes, self.IMGBB_KEY, image_name=image_name),
-                Freeimage(img_bytes, self.FREE_IMAGE_KEY,image_name=image_name),
-                PtScreens(img_bytes, self.PTSCREENS_KEY,image_name=image_name),
-                LensDump(img_bytes, self.LENSDUMP_KEY,image_name=image_name),
-                ImgFi(img_bytes, self.IMGFI_KEY,image_name=image_name),
-                PassIMA(img_bytes, self.PASSIMA_KEY, image_name=image_name),
-                ImaRide(img_bytes, self.IMARIDE_KEY, image_name=image_name),
-            ]
+        # Upload the screenshots at the same time, the description keeps their order
+        with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
+            urls = executor.map(self.upload_image, range(1, len(self.extracted_frames) + 1), self.extracted_frames)
 
-            # Skip the hosts without an API key
-            master_uploaders = [uploader for uploader in master_uploaders if self.has_key(uploader.key)]
-            if not master_uploaders:
-                custom_console.bot_error_log("No image host API key found in settings.json, skip the upload")
-                break
-
-            # Sorting list based on priority
-            master_uploaders.sort(key=lambda uploader: uploader.priority)
-
-            # for each on-line uploader
-            for uploader in master_uploaders:
-                if not uploader.__class__.__name__ in self.offline_uploaders:
-                    # Upload the screenshot
-                    fallback_uploader = ImageUploaderFallback(uploader)
-                    # Get a new URL
-                    img_url = fallback_uploader.upload()
-
-                    # If it goes offline during upload skip the uploader
-                    if not img_url:
-                        custom_console.bot_error_log(
-                            "** Upload failed, skip to next host **"
-                        )
-                        self.offline_uploaders.append(uploader.__class__.__name__)
-                        continue
-                    custom_console.bot_log(img_url)
+            for img_url in urls:
+                if img_url:
                     # Append the URL to new description
-                    console_url.append(img_url)
                     description += f"[url={img_url}][img=650]{img_url}[/img][/url]"
-                    # Got description for this screenshot
-                    break
 
         # Append the new URL to the description string
         description += "\n[/center]"

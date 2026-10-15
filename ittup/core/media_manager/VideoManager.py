@@ -49,7 +49,7 @@ class VideoManager:
     def rename_files(content: Media) -> None:
         """
         Rename the file, or the folder and its video files, as the title shown on the tracker (RENAME_FILES)
-        The episodes of a pack take their SxxExx
+        The episodes of a pack take their SxxExx. A complete name is kept or only gets the missing source
         """
         path = content.torrent_path
         video_files, episodes, pack = [], {}, None
@@ -66,7 +66,8 @@ class VideoManager:
                                       episode if isinstance(episode, int) else None)
 
         new_path, renamed_files = rename_to_title(path=path, display_name=content.display_name,
-                                                  video_files=video_files, pack=pack, episodes=episodes)
+                                                  video_files=video_files, pack=pack, episodes=episodes,
+                                                  info=content.title_info)
         if new_path != path or renamed_files:
             content.renamed(path=new_path, renamed_files=renamed_files)
 
@@ -196,6 +197,9 @@ class VideoManager:
             custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
             content.pack = season_pack
             content.display_name, _ = search_tags.set_season(season_pack)
+
+        # What the file names should say, for RENAME_FILES
+        content.title_info = search_tags.title_info()
 
         # Skip(S) if it is a duplicate or let the user choose to continue (C)
         # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file

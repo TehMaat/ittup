@@ -2,6 +2,7 @@
 import re
 from ittup.common.utility import ManageTitles
 from ittup.common.mediainfo import MediaFile
+from ittup.common.rename import TitleInfo
 from ittup.core.media import Media
 from ittup.view import custom_console
 
@@ -338,6 +339,16 @@ class SearchTags(object):
         """
         self.tags_dict.update({'season': se_str})
         return self.ordered_title()
+
+    def title_info(self) -> TitleInfo:
+        """
+        What the file names should say according to the title and MediaInfo (RENAME_FILES)
+        """
+        _, tags_dict = self.ordered_title()
+        video = self.mediafile.video_track[0] if self.mediafile.video_track else {}
+        source = [str(tag) for tag in tags_dict.get('source', []) + tags_dict.get('remux', [])]
+        return TitleInfo(resolution=self.media.resolution, family=video_family.get(str(video.get('format') or '')),
+                         source=" ".join(source) or None, year=tags_dict.get('year') or None)
 
     def ordered_title(self) -> tuple[str, dict]:
         # /// Order according to tag position

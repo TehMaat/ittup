@@ -57,6 +57,8 @@ class Media:
         self._generate_title: str | None = None
         # Source read from MediaInfo when the name has none (es. 'BluRay REMUX'), for the tracker type
         self.mediainfo_source: str | None = None
+        # What the file names should say according to the title and MediaInfo (RENAME_FILES)
+        self.title_info = None
 
     def move_to(self, path: str) -> None:
         """

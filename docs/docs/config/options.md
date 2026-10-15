@@ -87,6 +87,23 @@ With `True` the bot **renames the original files on disk** as the title shown on
 
 For a folder, the folder takes the title; the video file of a movie folder takes it too, and in a season pack each episode takes the title with its own `SxxExx`. A folder with more movies keeps the file names. Characters that are not valid in a file name (`:` `?` `*`…) are removed.
 
+Before renaming, the bot **checks the current name** against what it should say (from the title and MediaInfo):
+
+| Current name | What it does |
+|---|---|
+| Only the title (also with the year or the season), e.g. `Spider-Man (2021)` | Renames it as the title, with no other check |
+| Resolution, year or video codec different from MediaInfo, or no resolution, video codec or audio codec | Renames it as the title |
+| Complete but with no source, e.g. `Movie.2021.1080p.DDP5.1.H.264-GRP` | Adds the source of the title after the resolution, in the style of the name: `Movie.2021.1080p.WEB-DL.DDP5.1.H.264-GRP` (the source is [read from MediaInfo](../usage/tags.md#source-from-mediainfo) when the name has none) |
+| Complete | Keeps it |
+
+During the upload each decision is shown on screen and in the log, with its reason:
+
+```text
+[RENAME_FILES] Checking the names of 'movie.2021.1080p.ddp5.1.h.264-grp.mkv' against the title 'Movie.2021.1080p.WEB-DL.DD+.5.1.ITA.H.264'
+[RENAME_FILES] 'movie.2021.1080p.ddp5.1.h.264-grp.mkv': added the source 'WEB-DL' missing from the name
+Renamed 'movie.2021.1080p.ddp5.1.h.264-grp.mkv' -> 'movie.2021.1080p.WEB-DL.ddp5.1.h.264-grp.mkv'
+```
+
 !!! warning "Files seeded elsewhere"
     A renamed file is no longer found by the clients that were already seeding it with its old name.
 

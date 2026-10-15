@@ -130,3 +130,72 @@ def test_a_folder_with_more_movies_keeps_the_file_names(tmp_path):
     VideoManager.rename_files(media)
 
     assert sorted(p.name for p in (tmp_path / "Saga.1080p").iterdir()) == ["movie.one.2001.mkv", "movie.two.2003.mkv"]
+
+
+from ittup.common.rename import TitleInfo, plan_name, rename_to_title
+
+TITLE = "Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DD+.5.1.ITA.ENG.H.264"
+INFO = TitleInfo(resolution="1080p", family="264", source="WEB-DL", year=2021)
+
+
+@pytest.mark.parametrize("name, new_name", [
+    # Only the title: renamed without checking
+    ("Spider-Man No Way Home (2021)", TITLE),
+    ("spiderman", TITLE),
+    # Information that doesn't match MediaInfo or is missing: renamed as the title
+    ("Spider-Man.No.Way.Home.2021.720p.WEB-DL.DDP5.1.H.264", TITLE),
+    ("Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DDP5.1.x265", TITLE),
+    ("Spider-Man.No.Way.Home.2021.1080p.WEB-DL", TITLE),
+    # Everything but the source: the source is added in the style of the name
+    ("Spider-Man.No.Way.Home.2021.1080p.DDP5.1.H.264-GRP", "Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DDP5.1.H.264-GRP"),
+    ("Spider-Man No Way Home 2021 1080p EAC3 x264", "Spider-Man No Way Home 2021 1080p WEB-DL EAC3 x264"),
+    ("Spider_Man_2021_1080p_AAC_H264", "Spider_Man_2021_1080p_WEB-DL_AAC_H264"),
+    # Complete: kept
+    ("Spider-Man.No.Way.Home.2021.1080p.WEB-DL.AAC.2.0.H.264-GRP", None),
+    (TITLE, None),
+])
+def test_plan_name(name, new_name):
+    assert plan_name(name, TITLE, INFO).new_name == new_name
+
+
+def test_no_source_to_add():
+    plan = plan_name("Movie.2020.1080p.DDP5.1.H.264-GRP", "Movie.2020.1080p.H.264", TitleInfo(resolution="1080p"))
+    assert plan.new_name is None
+    assert "source" in plan.reason
+
+
+def test_a_complete_name_is_kept(tmp_path):
+    movie = tmp_path / "Movie.2020.1080p.WEB-DL.DDP5.1.H.264-GRP.mkv"
+    movie.write_bytes(b"x")
+    new_path, renamed = rename_to_title(str(movie), "Movie 2020 1080p WEB-DL DD+ 5.1 ITA H.264", [], None, {},
+                                        TitleInfo(resolution="1080p", family="264", source="WEB-DL", year=2020))
+    assert (new_path, renamed) == (str(movie), {})
+    assert movie.exists()
+
+
+def test_the_missing_source_is_added_to_the_pack(tmp_path):
+    folder = tmp_path / "Show.S01.1080p.DDP5.1.H.264-GRP"
+    folder.mkdir()
+    for name in ["Show.S01E01.1080p.DDP5.1.H.264-GRP.mkv", "show.s01e02.mkv"]:
+        (folder / name).write_bytes(b"x")
+    new_path, renamed = rename_to_title(
+        str(folder), "Show S01 1080p WEB-DL DD+ 5.1 ITA H.264", ["Show.S01E01.1080p.DDP5.1.H.264-GRP.mkv",
+                                                                 "show.s01e02.mkv"], "S01",
+        {"Show.S01E01.1080p.DDP5.1.H.264-GRP.mkv": (1, 1), "show.s01e02.mkv": (1, 2)},
+        TitleInfo(resolution="1080p", family="264", source="WEB-DL"))
+    assert new_path == str(tmp_path / "Show.S01.1080p.WEB-DL.DDP5.1.H.264-GRP")
+    assert renamed == {"Show.S01E01.1080p.DDP5.1.H.264-GRP.mkv": "Show.S01E01.1080p.WEB-DL.DDP5.1.H.264-GRP.mkv",
+                       "show.s01e02.mkv": "Show.S01E02.1080p.WEB-DL.DD+.5.1.ITA.H.264.mkv"}
+
+
+def test_title_info_from_the_tags():
+    from types import SimpleNamespace
+    from ittup.common.tags import SearchTags
+    from ittup.common.trackers.tags_list import TAGS_LIST
+    mediafile = SimpleNamespace(general_track={}, video_track=[{"format": "HEVC"}], audio_track=[], subtitle_track=[])
+    media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="2160p", pack=None)
+    search = SearchTags(filename="Movie.2020.2160p.BluRay.REMUX.mkv", title="Movie", year=2020, season=None,
+                        episode=None, media=media, tags_position=["title", "year", "source", "remux", "vcodec"],
+                        tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+    search.process()
+    assert search.title_info() == TitleInfo(resolution="2160p", family="265", source="BluRay REMUX", year=2020)

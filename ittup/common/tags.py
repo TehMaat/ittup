@@ -123,7 +123,7 @@ class SearchTags(object):
         Try to remove noisy chars and return a normalized tag
         Part1, Part 1, Part.1, [Part 1], Parte1, Pt1, Prt 2,
         """
-        pattern = r'[\[\(]?\b(?:Part|Parte|Pt|Prt)[\s\.-]*?(\d+)\b[\]\)]?'
+        pattern = r'[\[\(]?(?<![^\W_])(?:Part|Parte|Pt|Prt)[\s\._-]*?(\d+)(?![^\W_])[\]\)]?'
         match = re.search(pattern, title, re.IGNORECASE)
         if match:
             part_number = match.group(1)
@@ -201,9 +201,9 @@ class SearchTags(object):
         # NFRip -> NF WEBRip: the streaming platform and the source
         filename = self.expand_platform_rip(self.filename)
 
-        # Run regex
+        # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
         for p, category in patterns:
-            regex = re.compile(r'(?<!\w)' + p + r'(?!\w)', re.IGNORECASE)
+            regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
             matches = regex.findall(filename)
             if matches:
                 # Normalize Tag_list

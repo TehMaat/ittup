@@ -57,3 +57,23 @@ def test_a_word_with_part_inside_keeps_the_part_tag():
                         ban_list={"dummy": "banned"}, releaser_sign="")
     search.process()
     assert search.set_title("The Departed")[0] == "The Departed 2020 Part 2"
+
+
+@pytest.mark.parametrize("filename, expected", [
+    ("Titolo_1990_BDRip_1080p.mkv", "Titolo 1990 BDRip"),
+    ("Titolo_1990_WEB-DL_1080p.mkv", "Titolo 1990 WEB-DL"),
+    ("Titolo_1990_WebDL_1080p.mkv", "Titolo 1990 WEB-DL"),
+    ("Titolo.1990.(WEB-DL).1080p.mkv", "Titolo 1990 WEB-DL"),
+    ("Titolo 1990 [BluRay] 1080p.mkv", "Titolo 1990 BluRay"),
+    ("Titolo_1990_Part_2_1080p.mkv", "Titolo 1990 Part 2"),
+])
+def test_the_source_between_special_characters(filename, expected):
+    from types import SimpleNamespace
+    from ittup.common.tags import SearchTags
+    from ittup.common.trackers.tags_list import TAGS_LIST
+    media = SimpleNamespace(mediafile=SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[]),
+                            torrent_pack=False, resolution="1080p", pack=None)
+    search = SearchTags(filename=filename, title="Titolo", year=1990, season=None, episode=None, media=media,
+                        tags_position=["title", "year", "part", "source"], tags_list=TAGS_LIST, sign_list={},
+                        ban_list={"dummy": "banned"}, releaser_sign="")
+    assert search.process()[0] == expected

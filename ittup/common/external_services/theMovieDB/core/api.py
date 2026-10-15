@@ -25,9 +25,11 @@ from ittup.common.external_services.trailers.api import YtTrailer
 from ittup.common.external_services.sessions.agents import Agent
 from ittup.common.external_services.theMovieDB import config
 from ittup.common.external_services.tvdb import TVDB
+from ittup.common.lookup_cache import LookupCache, DAY
 from ittup.common.utility import ManageTitles
 
 from ittup.core.media import Media
+from ittup.core.report import TemporaryFailure
 from ittup.view import custom_console
 
 from ittup.core import config_settings
@@ -254,7 +256,9 @@ class TmdbAPI(MyHttp):
         if not video_id:
             return None
         if endpoint_class := self.ENDPOINTS.get(category):
-            request = {**endpoint_class.details(video_id), 'datatype': dict, 'params': {'language': 'it-IT'}}
+            # The details of a show change with its new episodes (next_episode_to_air): cached for a day
+            request = {**endpoint_class.details(video_id), 'datatype': dict, 'params': {'language': 'it-IT'},
+                       'expire': DAY}
             response = self.request(endpoint=request)
             if response:
                 return response[0]
@@ -275,6 +279,13 @@ class TmdbAPI(MyHttp):
         :return: list of T or None
         """
         params = {**self.params, "query": endpoint['query'], **endpoint.get('params', {})}
+
+        # The same request in a repeated upload or scan is read from the cache (CACHE_DBONLINE)
+        cache_key = ("tmdb", endpoint['url'], sorted((k, str(v)) for k, v in params.items() if k != "api_key"))
+        response_data = LookupCache.get(*cache_key)
+        if response_data is not None:
+            return [endpoint['datatype'](**attribute) for attribute in response_data]
+
         response = self.get_url(endpoint['url'], params=params)
 
         if response:
@@ -284,6 +295,9 @@ class TmdbAPI(MyHttp):
                 else:
                     response_data = response.json().get(endpoint['results'], [])
 
+                # An empty search is not cached: TMDB may add the movie later
+                if response_data:
+                    LookupCache.set(*cache_key, value=response_data, expire=endpoint.get('expire', 30 * DAY))
                 return [endpoint['datatype'](**attribute) for attribute in response_data]
             else:
                 return []
@@ -462,9 +476,12 @@ class DbOnline(TmdbAPI):
         Search for results based on a tmdb query
         season: True = search for a season. Title unknown
         """
+        # The same title is another movie in another year, or a tv show
+        cache_key = self.hash_key(f"{self.category}|{self.media.guess_filename.guessit_year}|{self.query}")
+
         # Search in the cache first if cache is enabled
         if config_settings.user_preferences.CACHE_DBONLINE:
-            search_results = self.load_cache(self.hash_key(self.query))
+            search_results = self.load_cache(cache_key)
             if search_results:
                 # Results cached by older versions may lack the IMDB ID
                 if search_results.video_id and not search_results.imdb_id:
@@ -474,12 +491,11 @@ class DbOnline(TmdbAPI):
                     if self.imdb_id:
                         search_results.imdb_id = self.imdb_id
                         search_results.tvdb_id = self.tvdb_id
-                        self.cache[self.hash_key(self.query)] = search_results
+                        self.cache[cache_key] = search_results
                 self.print_results(results=search_results)
                 return search_results
 
         # or start an on-line search
-        main_query = self.query
         result, results = self.search_queries()
 
         # Use imdb_id when tmdb_id is not available
@@ -503,7 +519,7 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 # Write to the cache if it is enabled
                 if config_settings.user_preferences.CACHE_DBONLINE:
-                    self.cache[self.hash_key(main_query)] = search_results
+                    self.cache[cache_key] = search_results
                 # return the result
                 return search_results
 
@@ -511,7 +527,7 @@ class DbOnline(TmdbAPI):
         if results is None:
             custom_console.bot_error_log(
                 f"TMDB - No response from the remote host or the API key is invalid. Retry or update your key")
-            exit(1)
+            raise TemporaryFailure("TMDB - No response from the remote host or the API key is invalid")
 
         # not results found so try to initialize imdb
         custom_console.bot_warning_log(f"Title not found.What the bot has understood:")
@@ -527,7 +543,7 @@ class DbOnline(TmdbAPI):
         search_results = self.manual_search()
         # Don't cache a skipped result (TMDB ID 0): the next run should search again
         if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
-            self.cache[self.hash_key(self.query)] = search_results
+            self.cache[cache_key] = search_results
         return search_results
 
     def search_queries(self) -> tuple[T | None, list[T] | None]:

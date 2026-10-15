@@ -85,7 +85,7 @@ Sì, con uv, che porta anche un Python con sqlite3 già incluso: guida [Seedbox 
 
 ### Come aggiorno?
 
-`pip install --upgrade git+https://github.com/TehMaat/ittup` — [Aggiornamento](../install/upgrade.md).
+`pip install ittup --upgrade` — [Aggiornamento](../install/upgrade.md).
 
 ### Dove chiedo aiuto?
 

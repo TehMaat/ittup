@@ -42,9 +42,13 @@ Si combinano con `-u`, `-f` e `-scan`:
 | `-dup` | Controlla i [duplicati](../config/options.md#duplicati) sul tracker prima di caricare |
 | `-personal` | Marca l'upload come **personal release** |
 | `-fl25` `-fl50` `-fl75` `-fl100` | Carica in **freeleech** 25, 50, 75 o 100% (`--freeleech25`…). Il tracker lo applica solo se il tuo account può impostare il freeleech |
+| `-int` | Carica come **release internal** (`--internal`) |
 | `-force <categoria>` | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-notitle "<titolo>"` | Usa questo titolo per la ricerca su TMDB invece di quello ricavato dal nome del file |
 | `-reseed` | Modalità reseed ([Reseed](reseed.md)) |
+
+!!! note "`-int` e il freeleech richiedono il permesso"
+    Il tracker applica `-int` e `-fl25`…`-fl100` solo allo staff e ai membri di un gruppo internal: per gli altri account carica il torrent senza, e senza errori. Dopo l'upload il bot rilegge il torrent e ti avvisa se non sono stati applicati.
 
 ## Caratteri rifiutati dal tracker
 

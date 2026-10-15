@@ -6,6 +6,7 @@ import requests
 from urllib.parse import urljoin
 from ittup.view import custom_console
 from ittup.common.trackers.data import trackers_api_data
+from ittup.core.report import TemporaryFailure
 from ittup.common.about import USER_AGENT
 
 
@@ -86,14 +87,14 @@ class Tracker(Myhttp):
                     custom_console.bot_error_log(
                         f"TRACKER HTTP Error {e.response.status_code}. Check your configuration file"
                         f" or verify if the tracker is online")
-                    exit(1)
+                    raise TemporaryFailure(f"TRACKER HTTP Error {e.response.status_code}")
 
             except requests.exceptions.ConnectionError:
                 custom_console.bot_error_log(
                     f"TRACKER Connection error. Please check your configuration data "
                     f"or verify if the tracker is online",
                 )
-                exit(1)
+                raise TemporaryFailure("TRACKER Connection error")
             except requests.exceptions.MissingSchema:
                 custom_console.bot_error_log(
                     f"TRACKER Connection error. Please check your configuration data"
@@ -101,7 +102,7 @@ class Tracker(Myhttp):
                 exit(1)
             except requests.exceptions.ReadTimeout as e:
                 custom_console.bot_error_log(f"TRACKER HTTP Error {e}. Tracker Offline !")
-                exit(1)
+                raise TemporaryFailure("TRACKER Offline (timeout)")
 
     def _post(self, file: dict, data: dict, params: dict):
             try:
@@ -113,9 +114,9 @@ class Tracker(Myhttp):
                     params=params,
                     timeout=10
                 )
-            except requests.exceptions.ReadTimeout as e:
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
                 custom_console.bot_error_log(f"TRACKER HTTP Error {e}. Tracker Offline !")
-                exit(1)
+                raise TemporaryFailure("TRACKER Offline: the upload didn't reach the tracker")
 
 
     def _fetch_all(self, params: dict) -> requests.Response:

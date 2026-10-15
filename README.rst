@@ -45,7 +45,7 @@ and then the bot can upload it to an image host, then add the link to the torren
 Install and Upgrade
 ===================
 
-- pip install --upgrade git+https://github.com/TehMaat/ittup
+- pip install ittup --upgrade
 
 Keeping Unit3Dup
 ----------------
@@ -63,7 +63,7 @@ If you use both, keep in mind that:
 - If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries
   Unit3Dup depends on. To keep them isolated, install ITTup with pipx or in a virtualenv::
 
-    pipx install git+https://github.com/TehMaat/ittup
+    pipx install ittup
 
 When you no longer need Unit3Dup, you can remove it with ``pip uninstall unit3dup``: this also removes
 the old top-level ``common``, ``view`` and ``unit3dup`` modules it installed.

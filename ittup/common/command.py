@@ -68,6 +68,7 @@ class CommandLine:
         upload_group.add_argument("-noup", "--noup", action="store_true", help="Torrent only")
         upload_group.add_argument("-dup", "--duplicate", action="store_true", help="Check duplicates")
         upload_group.add_argument("-personal", "--personal", action="store_true", help="Personal release")
+        upload_group.add_argument("-int", "--internal", action="store_true", help="Upload as internal release")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
 
         # Freeleech of the uploaded torrents
@@ -91,7 +92,6 @@ class CommandLine:
         search_group.add_argument("-d", "--description", type=str, help="By description")
         search_group.add_argument("-bd", "--bdinfo", type=str, help="Show BDInfo")
         search_group.add_argument("-m", "--mediainfo", type=str, help="Show MediaInfo")
-        search_group.add_argument("-int", "--internal", action="store_true", help="Internal Release")
         search_group.add_argument("-mod", "--moderation", action="store_true", help="In moderation")
 
 
@@ -129,7 +129,7 @@ class CommandLine:
         special_group.add_argument("-str", "--stream", action="store_true", help="Stream")
         special_group.add_argument("-sd", "--standard", action="store_true", help="SD")
         special_group.add_argument("-hs", "--highspeed", action="store_true", help="Highspeed")
-        special_group.add_argument("-inter", "--intern_r", action="store_true", help="Internal Release")
+        special_group.add_argument("-inter", "--intern_r", action="store_true", help="Internal releases")
         special_group.add_argument("-pr", "--prelease", action="store_true", help="Personal")
 
         # /////////////////////////

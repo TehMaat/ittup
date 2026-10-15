@@ -34,6 +34,15 @@ Screenshots are taken evenly between 10% and 90% of the video. A frame that is t
 | `SKIP_DUPLICATE` | Skips the content when a duplicate is found, without asking |
 | `SIZE_TH` | Percentage threshold: a torrent on the tracker counts as "same content" if its size differs from your file within this percentage |
 
+How the check works:
+
+1. The bot searches the tracker for the title and, for movies and TV shows, for the **TMDB ID** too: it finds the torrents uploaded with a different title (e.g. the original title instead of the Italian one)
+2. It skips the torrents of another category and those with **another resolution** (a 720p is not a duplicate of a 1080p)
+3. It compares title and year (with the same TMDB ID it is enough to be the same movie or show), season and episode
+4. Last, it compares the size with `SIZE_TH`
+
+The log shows how many torrents it checked (`Duplicate check: N torrents on the tracker for '...'`) and, when there are none, `No duplicates of '...'`.
+
 ## Cache
 
 ```json
@@ -47,7 +56,7 @@ Screenshots are taken evenly between 10% and 90% of the video. A frame that is t
 |---|---|
 | `CACHE_PATH` | Cache folder (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Reuses screenshots already extracted |
-| `CACHE_DBONLINE` | Caches TMDB results and online searches |
+| `CACHE_DBONLINE` | Caches the online lookups on disk: the TMDB/IMDB/TVDB/IGDB IDs found for each title and the answers of TMDB, TVDB and IGDB. An upload or a scan repeated on the same contents doesn't send the same requests again. The data is kept for 30 days (the details of a show, which change with its new episodes, for a day); searches with no results are not saved |
 | `TMDB_DEBUG` | Logs the TMDB title-matching scores (title, original, alternative titles, translations). Makes extra HTTP requests: keep it off unless you are debugging a wrong match |
 
 ## Language, anonymity and signature
@@ -87,6 +96,23 @@ With `True` the bot **renames the original files on disk** as the title shown on
 
 For a folder, the folder takes the title; the video file of a movie folder takes it too, and in a season pack each episode takes the title with its own `SxxExx`. A folder with more movies keeps the file names. Characters that are not valid in a file name (`:` `?` `*`…) are removed.
 
+Before renaming, the bot **checks the current name** against what it should say (from the title and MediaInfo):
+
+| Current name | What it does |
+|---|---|
+| Only the title (also with the year or the season), e.g. `Spider-Man (2021)` | Renames it as the title, with no other check |
+| Resolution, year or video codec different from MediaInfo, or no resolution, video codec or audio codec | Renames it as the title |
+| Complete but with no source, e.g. `Movie.2021.1080p.DDP5.1.H.264-GRP` | Adds the source of the title after the resolution, in the style of the name: `Movie.2021.1080p.WEB-DL.DDP5.1.H.264-GRP` (the source is [read from MediaInfo](../usage/tags.md#source-from-mediainfo) when the name has none) |
+| Complete | Keeps it |
+
+During the upload each decision is shown on screen and in the log, with its reason:
+
+```text
+[RENAME_FILES] Checking the names of 'movie.2021.1080p.ddp5.1.h.264-grp.mkv' against the title 'Movie.2021.1080p.WEB-DL.DD+.5.1.ITA.H.264'
+[RENAME_FILES] 'movie.2021.1080p.ddp5.1.h.264-grp.mkv': added the source 'WEB-DL' missing from the name
+Renamed 'movie.2021.1080p.ddp5.1.h.264-grp.mkv' -> 'movie.2021.1080p.WEB-DL.ddp5.1.h.264-grp.mkv'
+```
+
 !!! warning "Files seeded elsewhere"
     A renamed file is no longer found by the clients that were already seeding it with its old name.
 
@@ -105,6 +131,8 @@ Before the upload, `ffprobe` reads every video file (the file, or each video of 
 "WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
+"WATCHER_QUARANTINE_PATH": "no_path",
+"WATCHER_MAX_RETRIES": 5,
 ```
 
 | Key | Effect |
@@ -113,6 +141,8 @@ Before the upload, `ffprobe` reads every video file (the file, or each video of 
 | `WATCHER_TIMEOUT` | Maximum **seconds** to process a single file or folder: if it's still running, it's stopped and skipped. `0` = no limit |
 | `WATCHER_PATH` | Watched folder (e.g. where your client downloads) |
 | `WATCHER_DESTINATION_PATH` | Folder where files are moved and then uploaded |
+| `WATCHER_QUARANTINE_PATH` | Folder where the failed uploads are moved, with an `.error.txt` file that tells why ([Quarantine](../usage/watcher.md#quarantine)) |
+| `WATCHER_MAX_RETRIES` | How many times an upload stopped by a temporary error (network, rate limit, tracker offline) is retried, with a wait that doubles from 1 minute to 1 hour. Then it is quarantined |
 
 How it works: [Watcher](../usage/watcher.md).
 

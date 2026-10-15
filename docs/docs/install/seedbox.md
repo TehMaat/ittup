@@ -19,7 +19,7 @@ source $HOME/.local/bin/env
 ## 2. Install the bot
 
 ```bash
-uv tool install --python 3.12 git+https://github.com/TehMaat/ittup
+uv tool install --python 3.12 ittup
 ```
 
 uv downloads Python 3.12 by itself (the bot requires Python 3.10 minimum; 3.12 is recommended — newer versions are still too recent for some libraries). The `ittup` command ends up in `~/.local/bin`.
@@ -72,7 +72,7 @@ If you'd rather use the **pyenv** preinstalled on ultra.cc, you first have to co
     ```bash
     pyenv install -f 3.12.0
     pyenv global 3.12.0
-    pip install git+https://github.com/TehMaat/ittup
+    pip install ittup
     ```
 
     If pyenv is missing, install it with `curl -fsSL https://pyenv.run | bash` (instructions on the [pyenv GitHub page](https://github.com/pyenv/pyenv?tab=readme-ov-file#linuxunix)).

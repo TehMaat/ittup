@@ -70,6 +70,8 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `WATCHER_TIMEOUT` | numero | `3600` | Secondi massimi che il watcher dedica a un file o cartella prima di saltarlo (`0` = nessun limite) |
 | `WATCHER_PATH` | stringa | `no_path` | Cartella monitorata dal watcher |
 | `WATCHER_DESTINATION_PATH` | stringa | `no_path` | Destinazione dei file del watcher |
+| `WATCHER_QUARANTINE_PATH` | stringa | `no_path` | Cartella degli upload falliti del watcher |
+| `WATCHER_MAX_RETRIES` | numero | `5` | Nuovi tentativi di un upload fermato da un errore temporaneo |
 | `TORRENT_ARCHIVE_PATH` | stringa | `no_path` | Archivio dei `.torrent` generati |
 | `CACHE_PATH` | stringa | `no_path` | Cartella cache |
 | `COMPRESS_SCSHOT` | numero | `3` | Compressione screenshot |
@@ -79,7 +81,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `ANON` | booleano | `False` | Upload anonimo |
 | `WEBP_ENABLED` | booleano | `False` | Webp animata nella descrizione |
 | `CACHE_SCR` | booleano | `False` | Cache degli screenshot |
-| `CACHE_DBONLINE` | booleano | `False` | Cache delle ricerche online |
+| `CACHE_DBONLINE` | booleano | `False` | Cache su disco delle ricerche online (ID TMDB/IMDB/TVDB/IGDB) |
 | `TMDB_DEBUG` | booleano | `False` | Log dei punteggi di confronto titoli TMDB (richieste HTTP extra) |
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
 | `RENAME_FILES` | booleano | `False` | Rinomina i file originali come il titolo del tracker prima dell'upload |

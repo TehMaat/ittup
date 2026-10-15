@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
 import time
+from collections import deque
 
 from rich.align import Align
 from rich.console import Console
@@ -14,6 +15,8 @@ from ittup.common.about import APP_DESCRIPTION, APP_NAME
 class CustomConsole(Console):
     def __init__(self):
         super().__init__(log_path=False)
+        # The last errors, to tell why an upload of the watcher failed
+        self.recent_errors: deque[str] = deque(maxlen=5)
 
     def welcome_message(self):
         title_panel = Panel(
@@ -37,6 +40,7 @@ class CustomConsole(Console):
         self.log(message, style=config_settings.console_options.NORMAL_COLOR)
 
     def bot_error_log(self, message: str):
+        self.recent_errors.append(str(message).strip())
         self.log(message, style=config_settings.console_options.ERROR_COLOR)
 
     def bot_warning_log(self, message: str):

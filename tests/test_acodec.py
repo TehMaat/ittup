@@ -83,3 +83,12 @@ def test_title_is_rebuilt_with_the_original_language():
     assert title == "Movie 2020 MULTI DD 5.1 DD+ 5.1 ITA ENG JPN"
     title, _ = search.set_original_language("ja")
     assert title == "Movie 2020 MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN ENG"
+
+
+def test_mono_track():
+    assert acodec(track("AAC LC", 1, "ITA")) == ["AAC 1.0", "ITA"]
+    assert acodec(track("AC-3", "1", "ITA")) == ["DD 1.0", "ITA"]
+
+
+def test_unknown_channels_are_not_written():
+    assert acodec(track("AC-3", 0, "ITA")) == ["DD", "ITA"]

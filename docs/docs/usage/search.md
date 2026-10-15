@@ -52,7 +52,7 @@ Lists by torrent attribute:
 | `-str` | Stream-friendly |
 | `-sd` | Standard definition |
 | `-hs` | Highspeed |
-| `-int` | Internal |
+| `-inter` | Internal |
 | `-pr` | Personal release |
 
 ```bash

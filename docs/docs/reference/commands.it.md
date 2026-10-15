@@ -30,6 +30,7 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | `-dup`, `--duplicate` | — | Controlla i duplicati sul tracker prima dell'upload |
 | `-personal` | — | Marca come personal release |
 | `-fl25` `-fl50` `-fl75` `-fl100` | — | Carica in freeleech 25/50/75/100% (uno solo alla volta) |
+| `-int`, `--internal` | — | Carica come release internal |
 | `-ftp` | — | [Browser FTP interattivo](../usage/ftp.md): scarica dal server remoto e carica |
 
 !!! note "Flag di Unit3Dup rimossi"
@@ -80,5 +81,5 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | `-str`, `--stream` | Torrent stream-friendly |
 | `-sd`, `--standard` | Torrent SD |
 | `-hs`, `--highspeed` | Torrent Highspeed |
-| `-int`, `--internal` | Release Internal |
+| `-inter`, `--intern_r` | Release Internal |
 | `-pr`, `--prelease` | Personal release |

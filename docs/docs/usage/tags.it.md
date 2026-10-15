@@ -40,9 +40,18 @@ La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide an
 
 I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
 
+### Sorgente dal MediaInfo
+
+Se il nome del file non ha una sorgente, il bot prova a leggerla dal MediaInfo e la scrive nel titolo e nel tipo del tracker:
+
+- il nome della release che molti file conservano nel titolo dei metadati (es. `Film.2020.1080p.WEB-DL.H.264-GRP` → `WEB-DL`). Un titolo semplice, senza anno, stagione o risoluzione, viene ignorato
+- il disco da cui è stato rippato il video (`Original source medium` scritto da MakeMKV e simili): `Blu-ray` con la traccia video copiata così com'è diventa `BluRay REMUX`, ricodificata con x264/x265 `BluRay`; un DVD ricodificato diventa `DVDRip`
+
+Se il MediaInfo non dice la sorgente, il titolo resta senza. Nel log trovi `Source not in the file name: '...' from MediaInfo`.
+
 ## Codec audio
 
-Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola.
+Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Dopo il codec vengono scritti i canali letti dal MediaInfo: `1.0`, `2.0`, `5.1` o `7.1`.
 
 Dopo i codec vengono le lingue: `ITA`, la lingua originale, poi le altre lingue del file, che hanno solo la bandiera e nessun codec. Esempio con tracce italiana, inglese e giapponese di un film giapponese: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
 

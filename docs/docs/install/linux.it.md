@@ -5,7 +5,6 @@
 - **Python 3.10 o superiore** (consigliato: dalla 3.10 alla 3.12 — le versioni più recenti possono dare problemi con alcune librerie)
 - **FFmpeg** — usato per estrarre gli screenshot dai video
 - **Poppler** — solo se vuoi creare torrent di documenti PDF
-- **Git** — serve per installare ITTup direttamente da GitHub
 - **pipx** — installa ITTup in un ambiente tutto suo, separato dal Python di sistema
 
 Distribuzioni testate: Ubuntu 22, Debian 12.
@@ -13,7 +12,7 @@ Distribuzioni testate: Ubuntu 22, Debian 12.
 ## 1. Installa le dipendenze
 
 ```bash
-sudo apt install ffmpeg git pipx
+sudo apt install ffmpeg pipx
 pipx ensurepath
 ```
 
@@ -28,7 +27,7 @@ sudo apt install poppler-utils
 ## 2. Installa ITTup
 
 ```bash
-pipx install git+https://github.com/TehMaat/ittup
+pipx install ittup
 ```
 
 !!! warning "Non usare `pip install` né `--break-system-packages`"

@@ -40,9 +40,18 @@ The source written in the name (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) also de
 
 Streaming platform rips are split into platform and source: `NFRip` becomes `NF WEBRip` (for every platform in `tags_list.json`, e.g. `AMZNRip` → `AMZN WEBRip`).
 
+### Source from MediaInfo
+
+When the file name has no source, the bot tries to read it from MediaInfo and writes it in the title and in the tracker type:
+
+- the release name many files keep in their metadata title (e.g. `Movie.2020.1080p.WEB-DL.H.264-GRP` → `WEB-DL`). A plain title, with no year, season or resolution, is ignored
+- the disc the video was ripped from (`Original source medium`, written by MakeMKV and similar tools): `Blu-ray` with the video track copied as it is becomes `BluRay REMUX`, re-encoded with x264/x265 `BluRay`; a re-encoded DVD becomes `DVDRip`
+
+When MediaInfo doesn't tell the source, the title stays without it. The log shows `Source not in the file name: '...' from MediaInfo`.
+
 ## Audio codec
 
-The title keeps at most two audio codecs: the **best ITA codec** and the **best codec in the original language** of the movie or show (read from TMDB, English when TMDB doesn't know it). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once.
+The title keeps at most two audio codecs: the **best ITA codec** and the **best codec in the original language** of the movie or show (read from TMDB, English when TMDB doesn't know it). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once. After the codec come the channels read from MediaInfo: `1.0`, `2.0`, `5.1` or `7.1`.
 
 The languages follow the codecs: `ITA`, the original language, then the other languages of the file, which only get their flag and no codec. Example with Italian, English and Japanese tracks of a Japanese movie: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
 

@@ -85,7 +85,7 @@ Yes, with uv, which also brings a Python that already includes sqlite3: [ultra.c
 
 ### How do I upgrade?
 
-`pip install --upgrade git+https://github.com/TehMaat/ittup` — [Upgrade](../install/upgrade.md).
+`pip install ittup --upgrade` — [Upgrade](../install/upgrade.md).
 
 ### Where do I ask for help?
 

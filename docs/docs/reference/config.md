@@ -70,6 +70,8 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `WATCHER_TIMEOUT` | number | `3600` | Max seconds the watcher spends on one file or folder before skipping it (`0` = no limit) |
 | `WATCHER_PATH` | string | `no_path` | Folder watched by the watcher |
 | `WATCHER_DESTINATION_PATH` | string | `no_path` | Watcher file destination |
+| `WATCHER_QUARANTINE_PATH` | string | `no_path` | Folder of the failed watcher uploads |
+| `WATCHER_MAX_RETRIES` | number | `5` | Retries of an upload stopped by a temporary error |
 | `TORRENT_ARCHIVE_PATH` | string | `no_path` | Archive of the generated `.torrent` files |
 | `CACHE_PATH` | string | `no_path` | Cache folder |
 | `COMPRESS_SCSHOT` | number | `3` | Screenshot compression |
@@ -79,7 +81,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `ANON` | boolean | `False` | Anonymous upload |
 | `WEBP_ENABLED` | boolean | `False` | Animated webp in the description |
 | `CACHE_SCR` | boolean | `False` | Screenshot cache |
-| `CACHE_DBONLINE` | boolean | `False` | Online search cache |
+| `CACHE_DBONLINE` | boolean | `False` | Disk cache of the online lookups (TMDB/IMDB/TVDB/IGDB IDs) |
 | `TMDB_DEBUG` | boolean | `False` | Logs TMDB title-matching scores (extra HTTP requests) |
 | `PERSONAL_RELEASE` | boolean | `False` | Personal release on every upload |
 | `RENAME_FILES` | boolean | `False` | Renames the original files as the tracker title before the upload |

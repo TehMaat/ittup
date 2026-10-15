@@ -25,7 +25,8 @@ def main():
 
     # These modules load the user configuration on import
     from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
-    from ittup.common.settings import Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH, version
+    from ittup.common.settings import (Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH,
+                                       WATCHER_QUEUE_PATH, version)
     from ittup.common.trackers import TRACKER_NAME
     from ittup.common.about import APP_NAME
 
@@ -45,6 +46,7 @@ def main():
     custom_console.bot_log(f"[Images,Tmdb cache] '{config.user_preferences.CACHE_PATH}'")
     custom_console.bot_log(f"[Watcher] '{config.user_preferences.WATCHER_PATH}'")
     custom_console.bot_log(f"[Watcher] '{config.user_preferences.WATCHER_DESTINATION_PATH}'")
+    custom_console.bot_log(f"[Watcher quarantine] '{config.user_preferences.WATCHER_QUARANTINE_PATH}'")
     custom_console.bot_log(f"[Preferred Language] '{config.user_preferences.PREFERRED_LANG}'")
     custom_console.bot_log(f"[Youtube Preferred Language] '{config.user_preferences.YOUTUBE_PREF_LANG}'")
     print()
@@ -150,7 +152,10 @@ def main():
         bot.watcher(duration=config.user_preferences.WATCHER_INTERVAL,
                     watcher_path=config.user_preferences.WATCHER_PATH,
                     destination_path=config.user_preferences.WATCHER_DESTINATION_PATH,
-                    timeout=config.user_preferences.WATCHER_TIMEOUT)
+                    timeout=config.user_preferences.WATCHER_TIMEOUT,
+                    quarantine_path=config.user_preferences.WATCHER_QUARANTINE_PATH,
+                    max_retries=config.user_preferences.WATCHER_MAX_RETRIES,
+                    queue_file=str(WATCHER_QUEUE_PATH))
 
     # ftp and upload
     if cli.args.ftp:

@@ -1,4 +1,5 @@
 import tvdb_v4_official
+from ittup.common.lookup_cache import LookupCache, DAY
 from ittup.common.utility import ManageTitles
 from ittup.core import config_settings
 
@@ -11,6 +12,17 @@ class TVDB:
         self.filtered_results = []
 
     def search(self, query: str, query_year: str) -> dict | None:
+        # A repeated upload or scan reads the IDs from the cache (CACHE_DBONLINE)
+        cache_key = ("tvdb", self.category, query, query_year)
+        cached = LookupCache.get(*cache_key)
+        if cached is not None:
+            return cached.get("result")
+        result = self._search(query=query, query_year=query_year)
+        # Not found is kept for a day only: TVDB may add it
+        LookupCache.set(*cache_key, value={"result": result}, expire=30 * DAY if result else DAY)
+        return result
+
+    def _search(self, query: str, query_year: str) -> dict | None:
         show_type = ''
         if self.category == "tv":
             show_type = 'series'

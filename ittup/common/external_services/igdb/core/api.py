@@ -2,6 +2,7 @@
 
 from urllib.parse import urljoin
 from ittup.common.external_services.sessions.session import MyHttp
+from ittup.common.lookup_cache import LookupCache
 from ittup.common import config_settings
 from ittup.common.about import USER_AGENT
 from ittup.view import custom_console
@@ -38,17 +39,24 @@ class IGDBapi:
         })
 
 
-        response = self.http_client.post(self.oauth, params = {
-            "client_id": config_settings.tracker_config.IGDB_CLIENT_ID,
-            "client_secret": config_settings.tracker_config.IGDB_ID_SECRET,
-            "grant_type": "client_credentials",
-        })
+        # The token lasts weeks: a repeated upload or scan reuses it (CACHE_DBONLINE)
+        token_key = ("igdb_token", config_settings.tracker_config.IGDB_CLIENT_ID)
+        access_token = LookupCache.get(*token_key)
+        response = None
+        if not access_token:
+            response = self.http_client.post(self.oauth, params = {
+                "client_id": config_settings.tracker_config.IGDB_CLIENT_ID,
+                "client_secret": config_settings.tracker_config.IGDB_ID_SECRET,
+                "grant_type": "client_credentials",
+            })
 
-        if response:
-            authentication = response.json()
-            access_token = authentication["access_token"]
-            expires = authentication["expires_in"]
-            token_type = authentication["token_type"]
+        if access_token or response:
+            if not access_token:
+                authentication = response.json()
+                access_token = authentication["access_token"]
+                # Renewed an hour before it expires
+                LookupCache.set(*token_key, value=access_token,
+                                expire=max(int(authentication.get("expires_in", 0)) - 3600, 60))
             custom_console.bot_log("IGDB Login successful!")
 
             self.access_header = {
@@ -64,7 +72,14 @@ class IGDBapi:
 
 
     def request(self, query:str , endpoint:str)-> list:
+        # The same search in a repeated upload or scan is read from the cache (CACHE_DBONLINE)
+        cached = LookupCache.get("igdb", endpoint, query)
+        if cached is not None:
+            return cached
         build_request = urljoin(self.base_request_url, endpoint)
         response = self.http_client.post(build_request, headers=self.access_header, data=query)
         if response:
-            return response.json()
+            results = response.json()
+            if results:
+                LookupCache.set("igdb", endpoint, query, value=results)
+            return results

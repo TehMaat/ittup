@@ -19,6 +19,7 @@ from ittup.core.upload import UploadBot
 from ittup.core import config_settings
 from ittup.core.pvtVideo import Video
 from ittup.core.media import Media
+from ittup.core.report import report
 
 from ittup.view import custom_console
 
@@ -49,7 +50,7 @@ class VideoManager:
     def rename_files(content: Media) -> None:
         """
         Rename the file, or the folder and its video files, as the title shown on the tracker (RENAME_FILES)
-        The episodes of a pack take their SxxExx
+        The episodes of a pack take their SxxExx. A complete name is kept or only gets the missing source
         """
         path = content.torrent_path
         video_files, episodes, pack = [], {}, None
@@ -66,7 +67,8 @@ class VideoManager:
                                       episode if isinstance(episode, int) else None)
 
         new_path, renamed_files = rename_to_title(path=path, display_name=content.display_name,
-                                                  video_files=video_files, pack=pack, episodes=episodes)
+                                                  video_files=video_files, pack=pack, episodes=episodes,
+                                                  info=content.title_info)
         if new_path != path or renamed_files:
             content.renamed(path=new_path, renamed_files=renamed_files)
 
@@ -98,6 +100,8 @@ class VideoManager:
         if errors:
             custom_console.bot_error_log(f"Skip the upload of '{content.display_name}'")
             custom_console.rule()
+            report.failed(content.display_name, "corrupted file: " + "; ".join(
+                f"{os.path.basename(file)}: {error}" for file, error in errors.items()))
         return bool(errors)
 
     @staticmethod
@@ -164,6 +168,8 @@ class VideoManager:
                                  media=content,
                                  )
         content.display_name, _ = search_tags.process()
+        if search_tags.mediainfo_tags:
+            content.mediainfo_source = " ".join(sum(search_tags.mediainfo_tags.values(), []))
 
         # Filter contents based on the preferred language
         if not UserContent.is_preferred_language(content=content):
@@ -195,10 +201,14 @@ class VideoManager:
             content.pack = season_pack
             content.display_name, _ = search_tags.set_season(season_pack)
 
+        # What the file names should say, for RENAME_FILES
+        content.title_info = search_tags.title_info()
+
         # Skip(S) if it is a duplicate or let the user choose to continue (C)
         # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
         if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
+                and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli,
+                                             tmdb_id=db.video_id)):
             return None
         return db
 
@@ -261,6 +271,8 @@ class VideoManager:
 
             # Do not upload if an error occurs
             if not processed_data:
+                report.failed(content.display_name, f"resolution '{content.resolution}' or category"
+                                                    f" '{content.category}' unknown to the tracker")
                 continue
 
             # Don't upload if -noup is set to True

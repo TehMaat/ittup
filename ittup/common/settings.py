@@ -37,6 +37,9 @@ else:
 
 WATCHER_DESTINATION_PATH: Path = CONFIG_DIR / "watcher_destination_path"
 WATCHER_PATH: Path = CONFIG_DIR / "watcher_path"
+WATCHER_QUARANTINE_PATH: Path = CONFIG_DIR / "watcher_quarantine_path"
+# The watcher uploads left to do, kept across restarts
+WATCHER_QUEUE_PATH: Path = CONFIG_DIR / "watcher_queue.json"
 CACHE_PATH: Path = CONFIG_DIR / "cache_path"
 TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
 DEFAULT_JSON_PATH: Path = CONFIG_DIR / f"{config_file}"
@@ -59,6 +62,7 @@ def get_default_path(field: str) -> str:
         "CACHE_PATH": CACHE_PATH,
         "WATCHER_DESTINATION_PATH": WATCHER_DESTINATION_PATH,
         "WATCHER_PATH": WATCHER_PATH,
+        "WATCHER_QUARANTINE_PATH": WATCHER_QUARANTINE_PATH,
     }
     return str(default_paths[field])
 
@@ -135,6 +139,8 @@ class UserPreferences(BaseModel):
     WATCHER_TIMEOUT: int = 3600
     WATCHER_PATH: str | None = None
     WATCHER_DESTINATION_PATH: str | None = None
+    WATCHER_QUARANTINE_PATH: str | None = None
+    WATCHER_MAX_RETRIES: int = 5
     TORRENT_ARCHIVE_PATH: str | None = None
     CACHE_PATH: str | None = None
     COMPRESS_SCSHOT: int = 4
@@ -467,8 +473,8 @@ class Config(BaseModel):
                     section[field] = 'False'
                 if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
-                if field == 'WATCHER_TIMEOUT' and section[field] == '':
-                    section[field] = UserPreferences.model_fields['WATCHER_TIMEOUT'].default
+                if field in ['WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES'] and section[field] == '':
+                    section[field] = UserPreferences.model_fields[field].default
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
@@ -480,7 +486,7 @@ class Config(BaseModel):
 
                 if field in ['NUMBER_OF_SCREENSHOTS', 'COMPRESS_SCSHOT', 'IMGBB_PRIORITY', 'FREE_IMAGE_PRIORITY',
                              'LENSDUMP_PRIORITY', 'PASSIMA_PRIORITY', 'IMARIDE_PRIORITY', 'WATCHER_INTERVAL', 'SIZE_TH',
-                             'FAST_LOAD', 'WATCHER_TIMEOUT']:
+                             'FAST_LOAD', 'WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES']:
                     section[field] = Validate.integer(value=section[field], field_name=field)
 
                 if field in ['PREFERRED_LANG', 'YOUTUBE_PREF_LANG']:
@@ -495,6 +501,10 @@ class Config(BaseModel):
                                                             default_path=get_default_path(field=field))
 
                 if field == 'WATCHER_PATH':
+                    section[field] = Validate.unit3dup_path(path=section[field], field_name=field,
+                                                            default_path=get_default_path(field=field))
+
+                if field == 'WATCHER_QUARANTINE_PATH':
                     section[field] = Validate.unit3dup_path(path=section[field], field_name=field,
                                                             default_path=get_default_path(field=field))
 
@@ -648,6 +658,8 @@ class Load:
                 "WATCHER_TIMEOUT": 3600,
                 "WATCHER_PATH": "no_path",
                 "WATCHER_DESTINATION_PATH": "no_path",
+                "WATCHER_QUARANTINE_PATH": "no_path",
+                "WATCHER_MAX_RETRIES": 5,
                 "TORRENT_ARCHIVE_PATH": "no_path",
                 "CACHE_PATH": "no_path",
                 "COMPRESS_SCSHOT": 3,
@@ -734,6 +746,10 @@ class Load:
         if not WATCHER_PATH.exists():
             print(f"Create default watcher path: {WATCHER_PATH}")
             os.makedirs(WATCHER_PATH)
+
+        if not WATCHER_QUARANTINE_PATH.exists():
+            print(f"Create default watcher quarantine path: {WATCHER_QUARANTINE_PATH}")
+            os.makedirs(WATCHER_QUARANTINE_PATH)
 
         if not TORRENT_ARCHIVE_PATH.exists():
             print(f"Create default torrent archive path: {TORRENT_ARCHIVE_PATH}")

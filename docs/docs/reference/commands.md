@@ -30,6 +30,7 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | `-dup`, `--duplicate` | — | Checks the tracker for duplicates before uploading |
 | `-personal` | — | Marks as personal release |
 | `-fl25` `-fl50` `-fl75` `-fl100` | — | Uploads as freeleech 25/50/75/100% (one at a time) |
+| `-int`, `--internal` | — | Uploads as internal release |
 | `-ftp` | — | [Interactive FTP browser](../usage/ftp.md): download from the remote server and upload |
 
 !!! note "Removed Unit3Dup flags"
@@ -80,5 +81,5 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | `-str`, `--stream` | Stream-friendly torrents |
 | `-sd`, `--standard` | SD torrents |
 | `-hs`, `--highspeed` | Highspeed torrents |
-| `-int`, `--internal` | Internal releases |
+| `-inter`, `--intern_r` | Internal releases |
 | `-pr`, `--prelease` | Personal releases |

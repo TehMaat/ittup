@@ -34,6 +34,15 @@ Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video
 | `SKIP_DUPLICATE` | Salta il contenuto se viene trovato un duplicato, senza chiedere |
 | `SIZE_TH` | Soglia percentuale: un torrent sul tracker è considerato "stesso contenuto" se la differenza di dimensione rispetto al tuo file è entro questa percentuale |
 
+Come funziona il controllo:
+
+1. Il bot cerca sul tracker il titolo e, per film e serie, anche il **TMDB ID**: così trova i torrent caricati con un titolo diverso (es. il titolo originale invece di quello italiano)
+2. Scarta i torrent di un'altra categoria e quelli con un'**altra risoluzione** (un 720p non è un duplicato di un 1080p)
+3. Confronta titolo e anno (con lo stesso TMDB ID basta che sia lo stesso film o la stessa serie), stagione ed episodio
+4. Infine confronta la dimensione con `SIZE_TH`
+
+Nel log trovi quanti torrent ha controllato (`Duplicate check: N torrents on the tracker for '...'`) e, se non ce ne sono, `No duplicates of '...'`.
+
 ## Cache
 
 ```json
@@ -47,7 +56,7 @@ Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video
 |---|---|
 | `CACHE_PATH` | Cartella della cache (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Riusa gli screenshot già estratti |
-| `CACHE_DBONLINE` | Mette in cache i risultati di TMDB e delle ricerche online |
+| `CACHE_DBONLINE` | Mette in cache su disco le ricerche online: gli ID TMDB/IMDB/TVDB/IGDB trovati per ogni titolo e le risposte di TMDB, TVDB e IGDB. Un upload o una scansione ripetuta sugli stessi contenuti non rifà le stesse richieste. I dati restano validi 30 giorni (i dettagli di una serie, che cambiano con i nuovi episodi, un giorno); le ricerche senza risultati non vengono salvate |
 | `TMDB_DEBUG` | Mostra nel log i punteggi di confronto dei titoli TMDB (titolo, originale, titoli alternativi, traduzioni). Fa richieste HTTP extra: lascialo spento se non stai indagando un match sbagliato |
 
 ## Lingua, anonimato e firma
@@ -87,6 +96,23 @@ Con `True` il bot **rinomina su disco i file originali** come il titolo mostrato
 
 Per una cartella, la cartella prende il titolo; lo prende anche il file video di una cartella con un film, e in un pack di stagione ogni episodio prende il titolo con il suo `SxxExx`. Una cartella con più film mantiene i nomi dei file. I caratteri non validi nel nome di un file (`:` `?` `*`…) vengono tolti.
 
+Prima di rinominare, il bot **controlla il nome attuale** con quello che dovrebbe dire (dal titolo e dal MediaInfo):
+
+| Nome attuale | Cosa fa |
+|---|---|
+| Solo il titolo (anche con anno o stagione), es. `Spider-Man (2021)` | Lo rinomina come il titolo, senza altri controlli |
+| Risoluzione, anno o codec video diversi dal MediaInfo, oppure senza risoluzione, codec video o codec audio | Lo rinomina come il titolo |
+| Completo ma senza sorgente, es. `Film.2021.1080p.DDP5.1.H.264-GRP` | Aggiunge la sorgente del titolo dopo la risoluzione, nello stile del nome: `Film.2021.1080p.WEB-DL.DDP5.1.H.264-GRP` (la sorgente viene [letta dal MediaInfo](../usage/tags.md#sorgente-dal-mediainfo) se il nome non ce l'ha) |
+| Completo | Lo lascia com'è |
+
+Durante l'upload ogni decisione viene scritta a schermo e nel log, con il motivo:
+
+```text
+[RENAME_FILES] Checking the names of 'film.2021.1080p.ddp5.1.h.264-grp.mkv' against the title 'Film.2021.1080p.WEB-DL.DD+.5.1.ITA.H.264'
+[RENAME_FILES] 'film.2021.1080p.ddp5.1.h.264-grp.mkv': added the source 'WEB-DL' missing from the name
+Renamed 'film.2021.1080p.ddp5.1.h.264-grp.mkv' -> 'film.2021.1080p.WEB-DL.ddp5.1.h.264-grp.mkv'
+```
+
 !!! warning "File in seed altrove"
     Un file rinominato non viene più trovato dai client che lo stavano già seedando con il vecchio nome.
 
@@ -105,6 +131,8 @@ Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una 
 "WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
+"WATCHER_QUARANTINE_PATH": "no_path",
+"WATCHER_MAX_RETRIES": 5,
 ```
 
 | Chiave | Effetto |
@@ -113,6 +141,8 @@ Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una 
 | `WATCHER_TIMEOUT` | **Secondi** massimi per processare un singolo file o cartella: se è ancora in corso viene fermato e saltato. `0` = nessun limite |
 | `WATCHER_PATH` | Cartella monitorata (es. dove scarica il tuo client) |
 | `WATCHER_DESTINATION_PATH` | Cartella dove i file vengono spostati e poi caricati |
+| `WATCHER_QUARANTINE_PATH` | Cartella dove vengono spostati gli upload falliti, con un file `.error.txt` che dice perché ([Quarantena](../usage/watcher.md#quarantena)) |
+| `WATCHER_MAX_RETRIES` | Quante volte viene ritentato un upload fermato da un errore temporaneo (rete, rate limit, tracker offline), con un'attesa che raddoppia da 1 minuto a 1 ora. Poi va in quarantena |
 
 Come funziona: [Watcher](../usage/watcher.md).
 

@@ -1,13 +1,42 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import subprocess
 import io
 
+from functools import cache
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageStat
 
 from ittup.common import config_settings
 from ittup.view import custom_console
+
+# Transfer characteristics of the HDR videos: PQ (HDR10, HDR10+, Dolby Vision with HDR10 base layer) and HLG
+HDR_TRANSFERS = ('smpte2084', 'arib-std-b67')
+
+# HDR -> SDR: linear light, BT.709 primaries, Hable tone mapping, back to BT.709 8 bit
+TONEMAP_FILTER = ("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
+                  "tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
+
+# A frame with a mean luminance (0-255) below this value is considered too dark for a screenshot
+DARK_FRAME_THRESHOLD = 40
+
+# How many other positions to try around a dark frame before keeping the brightest one
+DARK_FRAME_RETRIES = 4
+
+
+@cache
+def ffmpeg_can_tonemap() -> bool:
+    """
+    The tone mapping needs an ffmpeg build with the 'zscale' (libzimg) and 'tonemap' filters
+    """
+    try:
+        result = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, text=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+    filters = {line.split()[1] for line in result.stdout.splitlines() if len(line.split()) > 2}
+    return {'zscale', 'tonemap'} <= filters
+
 
 class VideoFrame:
     def __init__(self, video_path: str, num_screenshots: int):
@@ -20,6 +49,8 @@ class VideoFrame:
         self.video_path = Path(video_path)
         # Number of screenshots based on the user's preferences
         self.num_screenshots = num_screenshots
+        # ffmpeg '-vf' option for the screenshots, set by create()
+        self.video_filter: list[str] = []
 
     def create(self):
         """
@@ -27,6 +58,7 @@ class VideoFrame:
 
         :return: A list of screenshots in bytes and a flag indicating if any screenshot is HD
         """
+        self.video_filter = self._get_video_filter()
         frames = self._extract()
         frames_in_bytes = []
         is_hd = 0
@@ -79,17 +111,92 @@ class VideoFrame:
         :return: A list of frames
         """
         duration = self._get_video_duration()
-        min_time = duration * 0.35
-        max_time = duration * 0.85
+        min_time = duration * 0.10
+        max_time = duration * 0.90
         interval = int(max_time - min_time)
         duration_step = interval // self.num_screenshots
         min_time = int(min_time)
         max_time = int(max_time)
-        frames = [self._extract_frame(time) for time in range(min_time + duration_step, max_time, duration_step)]
+        frames = [self._extract_bright_frame(time, duration_step, duration)
+                  for time in range(min_time + duration_step, max_time, duration_step)]
 
         if len(frames) < self.num_screenshots:
-            frames.append(self._extract_frame(max_time))
+            frames.append(self._extract_bright_frame(max_time, duration_step, duration))
         return frames
+
+    def _extract_bright_frame(self, time_: int, duration_step: int, duration: float) -> Image:
+        """
+        Extract the frame at 'time_'. If it is too dark try a few positions around it, within the same
+        interval between two screenshots, and keep the first bright one or the brightest one
+
+        :param time_: The time of the screenshot
+        :param duration_step: The distance between two screenshots
+        :param duration: Duration of the video in seconds
+        :return: The extracted frame as a PIL Image
+        """
+        frame = self._extract_frame(time_)
+        brightness = self.brightness(frame)
+        if brightness >= DARK_FRAME_THRESHOLD:
+            return frame
+
+        # +offset, -offset, +2*offset, -2*offset ...
+        offset = max(1, duration_step // (DARK_FRAME_RETRIES + 2))
+        for attempt in range(1, DARK_FRAME_RETRIES + 1):
+            shift = offset * ((attempt + 1) // 2) * (1 if attempt % 2 else -1)
+            candidate_time = time_ + shift
+            if not 0 <= candidate_time < duration:
+                continue
+            candidate = self._extract_frame(candidate_time)
+            candidate_brightness = self.brightness(candidate)
+            if candidate_brightness > brightness:
+                frame, brightness = candidate, candidate_brightness
+            if brightness >= DARK_FRAME_THRESHOLD:
+                break
+        return frame
+
+    @staticmethod
+    def brightness(frame: Image) -> float:
+        """
+        Mean luminance of the frame (0-255)
+        """
+        return ImageStat.Stat(frame.convert("L")).mean[0]
+
+    def _get_video_filter(self) -> list[str]:
+        """
+        ffmpeg options for the screenshots: HDR videos are tone mapped to SDR, otherwise the colors look washed out
+
+        :return: The '-vf' option or an empty list
+        """
+        command = [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=color_transfer",
+            "-of",
+            "json",
+            str(self.video_path),
+        ]
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            streams = json.loads(result.stdout).get("streams", [])
+        except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
+            # ffprobe errors are reported by _get_video_duration()
+            return []
+
+        color_transfer = streams[0].get("color_transfer", "") if streams else ""
+        if color_transfer not in HDR_TRANSFERS:
+            return []
+
+        if not ffmpeg_can_tonemap():
+            custom_console.bot_warning_log("HDR video: ffmpeg without the 'zscale' filter (libzimg),"
+                                           " the screenshots are not tone mapped")
+            return []
+
+        custom_console.bot_log(f"HDR video ({color_transfer}): tone mapping the screenshots to SDR")
+        return ["-vf", TONEMAP_FILTER]
 
     def _get_video_duration(self) -> float:
         """
@@ -137,6 +244,7 @@ class VideoFrame:
             str(time_),
             "-i",
             str(self.video_path),
+            *self.video_filter,
             "-vframes",
             "1",
             "-threads",

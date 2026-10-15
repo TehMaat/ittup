@@ -18,6 +18,8 @@
 | `RESIZE_SCSHOT` | Resize screenshots before uploading |
 | `WEBP_ENABLED` | Adds an animated webp to the torrent description |
 
+Screenshots are taken evenly between 10% and 90% of the video. A frame that is too dark is replaced with a brighter one close to it. HDR videos (HDR10, HDR10+, HLG, Dolby Vision with an HDR10 base layer) are tone mapped to SDR, so the colors don't look washed out: this needs an ffmpeg build with the `zscale` filter (libzimg), included in the common builds.
+
 ## Duplicates
 
 ```json

@@ -18,6 +18,8 @@ Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Ne
 | `RESIZE_SCSHOT` | Ridimensiona gli screenshot prima dell'upload |
 | `WEBP_ENABLED` | Aggiunge una webp animata alla descrizione del torrent |
 
+Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video. Un frame troppo scuro viene sostituito con uno più luminoso lì vicino. I video HDR (HDR10, HDR10+, HLG, Dolby Vision con base layer HDR10) vengono convertiti in SDR con il tone mapping, così i colori non risultano slavati: serve un ffmpeg con il filtro `zscale` (libzimg), presente nelle build più comuni.
+
 ## Duplicati
 
 ```json

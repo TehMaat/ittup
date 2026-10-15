@@ -19,6 +19,11 @@ HDR_TRANSFERS = ('smpte2084', 'arib-std-b67')
 TONEMAP_FILTER = ("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
                   "tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
 
+# HDR/Dolby Vision -> SDR on the GPU (Vulkan). libplacebo applies the Dolby Vision RPU reshaping, needed by
+# profile 5 (IPTPQc2, no HDR10 base layer): without it the colors are green and purple
+LIBPLACEBO_FILTER = ("libplacebo=tonemapping=auto:colorspace=bt709:color_primaries=bt709:color_trc=bt709:"
+                     "range=tv:format=yuv420p")
+
 # A frame with a mean luminance (0-255) below this value is considered too dark for a screenshot
 DARK_FRAME_THRESHOLD = 40
 
@@ -41,6 +46,21 @@ def ffmpeg_can_tonemap() -> bool:
         return False
     filters = {line.split()[1] for line in result.stdout.splitlines() if len(line.split()) > 2}
     return {'zscale', 'tonemap'} <= filters
+
+
+@cache
+def ffmpeg_can_libplacebo() -> bool:
+    """
+    The 'libplacebo' filter needs an ffmpeg build with libplacebo and a working Vulkan device:
+    try it on a test frame
+    """
+    command = ["ffmpeg", "-hide_banner", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=64x64:d=0.1",
+               "-vf", LIBPLACEBO_FILTER, "-frames:v", "1", "-f", "null", "-"]
+    try:
+        subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True, timeout=30)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+    return True
 
 
 class VideoFrame:
@@ -169,7 +189,9 @@ class VideoFrame:
 
     def _get_video_filter(self) -> list[str]:
         """
-        ffmpeg options for the screenshots: HDR videos are tone mapped to SDR, otherwise the colors look washed out
+        ffmpeg options for the screenshots: HDR videos are tone mapped to SDR, otherwise the colors look washed out.
+        Dolby Vision profile 5 has no HDR transfer (it is 'unknown') and without the RPU reshaping the colors
+        are green and purple: only libplacebo can fix it
 
         :return: The '-vf' option or an empty list
         """
@@ -180,7 +202,7 @@ class VideoFrame:
             "-select_streams",
             "v:0",
             "-show_entries",
-            "stream=color_transfer",
+            "stream=color_transfer:stream_side_data=dv_profile",
             "-of",
             "json",
             str(self.video_path),
@@ -192,8 +214,21 @@ class VideoFrame:
             # ffprobe errors are reported by _get_video_duration()
             return []
 
-        color_transfer = streams[0].get("color_transfer", "") if streams else ""
+        stream = streams[0] if streams else {}
+        color_transfer = stream.get("color_transfer", "")
+        dv_profile = next((side_data["dv_profile"] for side_data in stream.get("side_data_list", [])
+                           if "dv_profile" in side_data), None)
+        if color_transfer not in HDR_TRANSFERS and dv_profile is None:
+            return []
+
+        hdr_format = f"Dolby Vision profile {dv_profile}" if dv_profile is not None else color_transfer
+        if ffmpeg_can_libplacebo():
+            custom_console.bot_log(f"HDR video ({hdr_format}): tone mapping the screenshots to SDR with libplacebo")
+            return ["-vf", LIBPLACEBO_FILTER]
+
         if color_transfer not in HDR_TRANSFERS:
+            custom_console.bot_warning_log(f"HDR video ({hdr_format}): ffmpeg without a working 'libplacebo' filter"
+                                           " (Vulkan), the screenshots have wrong colors")
             return []
 
         if not ffmpeg_can_tonemap():
@@ -201,7 +236,7 @@ class VideoFrame:
                                            " the screenshots are not tone mapped")
             return []
 
-        custom_console.bot_log(f"HDR video ({color_transfer}): tone mapping the screenshots to SDR")
+        custom_console.bot_log(f"HDR video ({hdr_format}): tone mapping the screenshots to SDR")
         return ["-vf", TONEMAP_FILTER]
 
     def _get_video_duration(self) -> float:

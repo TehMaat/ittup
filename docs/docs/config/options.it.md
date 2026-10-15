@@ -131,6 +131,8 @@ Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una 
 "WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
+"WATCHER_QUARANTINE_PATH": "no_path",
+"WATCHER_MAX_RETRIES": 5,
 ```
 
 | Chiave | Effetto |
@@ -139,6 +141,8 @@ Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una 
 | `WATCHER_TIMEOUT` | **Secondi** massimi per processare un singolo file o cartella: se è ancora in corso viene fermato e saltato. `0` = nessun limite |
 | `WATCHER_PATH` | Cartella monitorata (es. dove scarica il tuo client) |
 | `WATCHER_DESTINATION_PATH` | Cartella dove i file vengono spostati e poi caricati |
+| `WATCHER_QUARANTINE_PATH` | Cartella dove vengono spostati gli upload falliti, con un file `.error.txt` che dice perché ([Quarantena](../usage/watcher.md#quarantena)) |
+| `WATCHER_MAX_RETRIES` | Quante volte viene ritentato un upload fermato da un errore temporaneo (rete, rate limit, tracker offline), con un'attesa che raddoppia da 1 minuto a 1 ora. Poi va in quarantena |
 
 Come funziona: [Watcher](../usage/watcher.md).
 

@@ -14,6 +14,7 @@ from ittup.common import config_settings
 from ittup.core.pvtTorrent import Mytorrent
 from ittup.core.duplicate import Duplicate
 from ittup.core.media import Media
+from ittup.core.report import report
 
 from ittup.view import custom_console
 
@@ -116,6 +117,9 @@ class UserContent:
         Returns:
             bool: True if the torrent file exists otherwise False
         """
+
+        # Not uploaded yet: if the upload fails, the watcher deletes it before quarantining the content
+        report.torrent_created(this_path)
 
         if os.path.exists(this_path):
             custom_console.bot_warning_log(f"\n<> Reusing the existing torrent file..'{content.torrent_path}'\n")

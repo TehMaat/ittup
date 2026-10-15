@@ -29,6 +29,7 @@ from ittup.common.lookup_cache import LookupCache, DAY
 from ittup.common.utility import ManageTitles
 
 from ittup.core.media import Media
+from ittup.core.report import TemporaryFailure
 from ittup.view import custom_console
 
 from ittup.core import config_settings
@@ -526,7 +527,7 @@ class DbOnline(TmdbAPI):
         if results is None:
             custom_console.bot_error_log(
                 f"TMDB - No response from the remote host or the API key is invalid. Retry or update your key")
-            exit(1)
+            raise TemporaryFailure("TMDB - No response from the remote host or the API key is invalid")
 
         # not results found so try to initialize imdb
         custom_console.bot_warning_log(f"Title not found.What the bot has understood:")

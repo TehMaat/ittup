@@ -131,6 +131,8 @@ Before the upload, `ffprobe` reads every video file (the file, or each video of 
 "WATCHER_TIMEOUT": 3600,
 "WATCHER_PATH": "no_path",
 "WATCHER_DESTINATION_PATH": "no_path",
+"WATCHER_QUARANTINE_PATH": "no_path",
+"WATCHER_MAX_RETRIES": 5,
 ```
 
 | Key | Effect |
@@ -139,6 +141,8 @@ Before the upload, `ffprobe` reads every video file (the file, or each video of 
 | `WATCHER_TIMEOUT` | Maximum **seconds** to process a single file or folder: if it's still running, it's stopped and skipped. `0` = no limit |
 | `WATCHER_PATH` | Watched folder (e.g. where your client downloads) |
 | `WATCHER_DESTINATION_PATH` | Folder where files are moved and then uploaded |
+| `WATCHER_QUARANTINE_PATH` | Folder where the failed uploads are moved, with an `.error.txt` file that tells why ([Quarantine](../usage/watcher.md#quarantine)) |
+| `WATCHER_MAX_RETRIES` | How many times an upload stopped by a temporary error (network, rate limit, tracker offline) is retried, with a wait that doubles from 1 minute to 1 hour. Then it is quarantined |
 
 How it works: [Watcher](../usage/watcher.md).
 

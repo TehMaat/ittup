@@ -19,6 +19,7 @@ from ittup.core.upload import UploadBot
 from ittup.core import config_settings
 from ittup.core.pvtVideo import Video
 from ittup.core.media import Media
+from ittup.core.report import report
 
 from ittup.view import custom_console
 
@@ -99,6 +100,8 @@ class VideoManager:
         if errors:
             custom_console.bot_error_log(f"Skip the upload of '{content.display_name}'")
             custom_console.rule()
+            report.failed(content.display_name, "corrupted file: " + "; ".join(
+                f"{os.path.basename(file)}: {error}" for file, error in errors.items()))
         return bool(errors)
 
     @staticmethod
@@ -268,6 +271,8 @@ class VideoManager:
 
             # Do not upload if an error occurs
             if not processed_data:
+                report.failed(content.display_name, f"resolution '{content.resolution}' or category"
+                                                    f" '{content.category}' unknown to the tracker")
                 continue
 
             # Don't upload if -noup is set to True

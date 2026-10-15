@@ -70,6 +70,8 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `WATCHER_TIMEOUT` | numero | `3600` | Secondi massimi che il watcher dedica a un file o cartella prima di saltarlo (`0` = nessun limite) |
 | `WATCHER_PATH` | stringa | `no_path` | Cartella monitorata dal watcher |
 | `WATCHER_DESTINATION_PATH` | stringa | `no_path` | Destinazione dei file del watcher |
+| `WATCHER_QUARANTINE_PATH` | stringa | `no_path` | Cartella degli upload falliti del watcher |
+| `WATCHER_MAX_RETRIES` | numero | `5` | Nuovi tentativi di un upload fermato da un errore temporaneo |
 | `TORRENT_ARCHIVE_PATH` | stringa | `no_path` | Archivio dei `.torrent` generati |
 | `CACHE_PATH` | stringa | `no_path` | Cartella cache |
 | `COMPRESS_SCSHOT` | numero | `3` | Compressione screenshot |

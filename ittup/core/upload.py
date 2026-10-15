@@ -13,6 +13,7 @@ from ittup.core.pvtDocu import PdfImages
 from ittup.core import config_settings, Load
 from ittup.core.pvtVideo import Video
 from ittup.core.media import Media
+from ittup.core.report import report, TemporaryFailure
 
 from ittup.view import custom_console
 
@@ -32,7 +33,11 @@ class UploadBot:
 
         name_error = ''
         info_hash_error = ''
-        _message = json.loads(tracker_response.text)
+        try:
+            _message = json.loads(tracker_response.text)
+        except ValueError:
+            # An HTML error page (es. 502 Bad Gateway)
+            _message = {}
         if 'data' in _message:
             _message = _message['data']
 
@@ -50,7 +55,8 @@ class UploadBot:
 
         elif tracker_response.status_code == 401:
             custom_console.bot_error_log(_message)
-            exit(_message['message'])
+            # A wrong API key: the watcher retries later, after the configuration is fixed
+            raise TemporaryFailure(f"HTTP 401 {_message.get('message', '') if isinstance(_message, dict) else ''}")
 
         elif tracker_response.status_code == 403:
             error_message = f"{self.__class__.__name__} HTTP 403 Upload right disabled"
@@ -63,7 +69,12 @@ class UploadBot:
             custom_console.bot_error_log(f"{self.__class__.__name__} HTTP 500 Internal Tracker Error\n")
             pprint.pprint(self.tracker.data)
             custom_console.bot_error_log(self.content.file_name)
-            exit()
+            raise TemporaryFailure("HTTP 500 Internal Tracker Error")
+
+        elif tracker_response.status_code in (429, 502, 503, 504):
+            custom_console.bot_error_log(f"{self.__class__.__name__} HTTP {tracker_response.status_code}:"
+                                         f" the tracker is busy or offline\n")
+            raise TemporaryFailure(f"HTTP {tracker_response.status_code} from the tracker")
 
         else:
             if _message.get("name", None):
@@ -203,7 +214,12 @@ class UploadBot:
         tracker_response = self.tracker.upload_t(data=self.tracker.data, torrent_archive_path=torrent_archive,
                                                  nfo_path=nfo_path)
 
-        return self.message(tracker_response=tracker_response, torrent_archive=torrent_archive)
+        response, error = self.message(tracker_response=tracker_response, torrent_archive=torrent_archive)
+        if response:
+            report.uploaded(torrent_archive)
+        else:
+            report.failed(self.content.display_name, f"upload refused by the tracker: {error}")
+        return response, error
 
     @staticmethod
     def download_file(url: str, destination_path: str) -> bool:

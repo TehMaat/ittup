@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2](https://github.com/TehMaat/ittup/compare/1.5.1...1.5.2) (2026-10-15)
+
+
+### Documentation
+
+* list the new features in the README, the home page, the config folder and the FAQ ([f6abe1b](https://github.com/TehMaat/ittup/commit/f6abe1b7ff816613f0ceb352bd0455938dc26436))
+* list the new features in the README, the home page, the config folder and the FAQ ([be8c568](https://github.com/TehMaat/ittup/commit/be8c5680bbaf3d132c8664fffee1f2592210490b))
+
 ## [1.5.1](https://github.com/TehMaat/ittup/compare/1.5.0...1.5.1) (2026-10-15)
 
 

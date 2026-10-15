@@ -3,7 +3,7 @@
 When a new version is out:
 
 ```bash
-pip install --upgrade git+https://github.com/TehMaat/ittup
+pip install ittup --upgrade
 ```
 
 If you installed it with pipx (as in the [Linux](linux.md) guide):
@@ -17,6 +17,9 @@ If you installed it with uv (as in the [ultra.cc seedbox](seedbox.md) guide):
 ```bash
 uv tool upgrade ittup
 ```
+
+!!! note "Installed from GitHub?"
+    Up to 1.5.0 the bot was installed from GitHub (`git+https://github.com/TehMaat/ittup`). It is now on [PyPI](https://pypi.org/project/ittup/): switch to PyPI once with `pip install ittup --upgrade`, `pipx install --force ittup` or `uv tool install --force --python 3.12 ittup`, then upgrade with the commands above.
 
 The installed version is shown when the bot starts:
 
@@ -40,7 +43,7 @@ ITTup is a fork of [Unit3Dup](https://github.com/31December99/Unit3Dup) reduced 
 1. Install ITTup:
 
     ```bash
-    pip install git+https://github.com/TehMaat/ittup
+    pip install ittup
     ```
 
 2. Launch it once:
@@ -75,7 +78,7 @@ If you use both, keep in mind that:
 - If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries Unit3Dup depends on. To keep them isolated, install ITTup with pipx or in a virtualenv:
 
     ```bash
-    pipx install git+https://github.com/TehMaat/ittup
+    pipx install ittup
     ```
 
 When you no longer need Unit3Dup, remove it — this also removes the old top-level `common`, `view` and `unit3dup` modules it installed:

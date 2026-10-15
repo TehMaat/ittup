@@ -5,7 +5,6 @@
 - **Python 3.10 or newer** (recommended: 3.10 to 3.12 — newer versions may have issues with some libraries)
 - **FFmpeg** — used to extract screenshots from videos
 - **Poppler** — only if you want to create torrents for PDF documents
-- **Git** — `pip` uses it to install ITTup straight from GitHub: download it from [git-scm.com](https://git-scm.com/download/win)
 
 ## 1. Install FFmpeg
 
@@ -34,7 +33,7 @@ pdftocairo -v
 ## 3. Install ITTup
 
 ```bash
-pip install git+https://github.com/TehMaat/ittup
+pip install ittup
 ```
 
 ## 4. First run

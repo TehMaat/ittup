@@ -12,9 +12,15 @@ Gli dai un percorso — un file o una cartella — e lui fa il resto: analizza i
 - Cerca l'ID corrispondente su **TMDB**, **IMDB**, **TVDB**, **IGDB**
 - Aggiunge il trailer da TMDB o YouTube
 - Genera i tag del titolo: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`
+- Legge la sorgente dal MediaInfo quando il nome del file non ce l'ha ([dettagli](usage/tags.md#sorgente-dal-mediainfo))
+- Rinomina i file originali come il titolo del tracker, lasciando com'è un nome già completo ([`RENAME_FILES`](config/options.md))
+- Controlla i duplicati sul tracker per titolo e TMDB ID ([dettagli](config/options.md#duplicati))
+- Mette in cache su disco le ricerche su TMDB, TVDB e IGDB (`CACHE_DBONLINE`)
+- Carica come release internal (`-int`) o in freeleech (`-fl25`…`-fl100`)
 - Estrae la cover dai documenti PDF
 - Mette in seeding su **qBittorrent**, **Transmission** o **rTorrent**
 - Fa il reseed di uno o più torrent alla volta, anche tra OS diversi
+- Carica in automatico con il [watcher](usage/watcher.md): coda che sopravvive ai riavvii, nuovi tentativi dopo gli errori di rete, quarantena per gli upload falliti
 
 ## Quickstart
 
@@ -71,10 +77,12 @@ Creato per ogni file video incontrato:
 | `season_number` | Numero di stagione |
 | `episode_number` | Numero di episodio, `0` se è un torrent pack |
 | `personal_release` | Marca il torrent come personal release |
+| `internal` | Release internal (`-int`) |
+| `free` | Percentuale di freeleech (`-fl25`…`-fl100`) |
 
 ### Oggetto Documenti
 
-Ha meno proprietà del video: `name`, `tmdb`, `category_id`, `anonymous`, `description`, `type_id`, `resolution_id`, `personal_release`. I campi `tmdb` e `resolution_id` sono impostati a valori neutri perché il tracker li considera obbligatori. Vedi la guida [Documenti PDF](guides/documents.md).
+Ha meno proprietà del video: `name`, `tmdb`, `category_id`, `anonymous`, `description`, `type_id`, `resolution_id`, `personal_release`, `internal`, `free`. I campi `tmdb` e `resolution_id` sono impostati a valori neutri perché il tracker li considera obbligatori. Vedi la guida [Documenti PDF](guides/documents.md).
 
 ### Oggetto Game
 

@@ -12,9 +12,15 @@ Give it a path — a file or a folder — and it does the rest: it analyzes your
 - Looks up the matching ID on **TMDB**, **IMDB**, **TVDB**, **IGDB**
 - Adds the trailer from TMDB or YouTube
 - Generates the title tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`
+- Reads the source from MediaInfo when the file name has none ([details](usage/tags.md#source-from-mediainfo))
+- Renames the original files as the tracker title, keeping a name that is already complete ([`RENAME_FILES`](config/options.md))
+- Checks the tracker for duplicates by title and TMDB ID ([details](config/options.md#duplicates))
+- Caches the TMDB, TVDB and IGDB lookups on disk (`CACHE_DBONLINE`)
+- Uploads as internal release (`-int`) or freeleech (`-fl25`…`-fl100`)
 - Extracts the cover from PDF documents
 - Seeds with **qBittorrent**, **Transmission** or **rTorrent**
 - Reseeds one or more torrents at a time, even across different OSes
+- Uploads automatically with the [watcher](usage/watcher.md): a queue that survives restarts, retries after network errors, quarantine for the failed uploads
 
 ## Quickstart
 
@@ -71,10 +77,12 @@ Created for every video file found:
 | `season_number` | Season number |
 | `episode_number` | Episode number, `0` for a torrent pack |
 | `personal_release` | Marks the torrent as a personal release |
+| `internal` | Internal release (`-int`) |
+| `free` | Freeleech percentage (`-fl25`…`-fl100`) |
 
 ### Document object
 
-It has fewer properties than the video object: `name`, `tmdb`, `category_id`, `anonymous`, `description`, `type_id`, `resolution_id`, `personal_release`. The `tmdb` and `resolution_id` fields are set to neutral values because the tracker requires them. See the [PDF documents](guides/documents.md) guide.
+It has fewer properties than the video object: `name`, `tmdb`, `category_id`, `anonymous`, `description`, `type_id`, `resolution_id`, `personal_release`, `internal`, `free`. The `tmdb` and `resolution_id` fields are set to neutral values because the tracker requires them. See the [PDF documents](guides/documents.md) guide.
 
 ### Game object
 

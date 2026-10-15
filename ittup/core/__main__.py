@@ -11,23 +11,29 @@ except ImportError:
              "Install a Python that includes it, e.g. with uv: "
              "https://tehmaat.github.io/ittup/install/seedbox/")
 
-from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
 from ittup.common.command import CommandLine
-from ittup.common.settings import Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH, version
-from ittup.common.trackers import TRACKER_NAME
-from ittup.common.about import APP_NAME
-
-from ittup.core.torrent import View
-from ittup.core import pvtTracker
-from ittup.core.bot import Bot
-
-from ittup.view import custom_console
 
 
 def main():
     """
     Main function to handle the command line interface (CLI)
     """
+
+    # /// Initialize command line interface
+    # Parse the arguments before loading the config: '-h' prints the help and exits without a config file
+    cli = CommandLine()
+
+    # These modules load the user configuration on import
+    from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
+    from ittup.common.settings import Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH, version
+    from ittup.common.trackers import TRACKER_NAME
+    from ittup.common.about import APP_NAME
+
+    from ittup.core.torrent import View
+    from ittup.core import pvtTracker
+    from ittup.core.bot import Bot
+
+    from ittup.view import custom_console
 
     custom_console.welcome_message()
     custom_console.bot_question_log(f"{APP_NAME} {version} Checking your configuration file.. \n")
@@ -42,9 +48,6 @@ def main():
     custom_console.bot_log(f"[Preferred Language] '{config.user_preferences.PREFERRED_LANG}'")
     custom_console.bot_log(f"[Youtube Preferred Language] '{config.user_preferences.YOUTUBE_PREF_LANG}'")
     print()
-
-    # /// Initialize command line interface
-    cli = CommandLine()
 
     # Get the torrent archive path
     if config.user_preferences.TORRENT_ARCHIVE_PATH:

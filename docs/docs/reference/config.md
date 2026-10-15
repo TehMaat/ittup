@@ -82,6 +82,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `TMDB_DEBUG` | boolean | `False` | Logs TMDB title-matching scores (extra HTTP requests) |
 | `PERSONAL_RELEASE` | boolean | `False` | Personal release on every upload |
 | `RENAME_FILES` | boolean | `False` | Renames the original files as the tracker title before the upload |
+| `CHECK_CORRUPTED` | boolean | `True` | Skips the corrupted video files, checked with ffprobe before the upload |
 | `FAST_LOAD` | number | `0` | Caps the processed items (1–150; 0 = all) |
 | `RELEASER_SIGN` | string | empty | Releaser signature (max 20 characters) |
 

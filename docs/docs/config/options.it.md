@@ -18,6 +18,8 @@ Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Ne
 | `RESIZE_SCSHOT` | Ridimensiona gli screenshot prima dell'upload |
 | `WEBP_ENABLED` | Aggiunge una webp animata alla descrizione del torrent |
 
+Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video. Un frame troppo scuro viene sostituito con uno più luminoso lì vicino. I video HDR (HDR10, HDR10+, HLG, Dolby Vision con base layer HDR10) vengono convertiti in SDR con il tone mapping, così i colori non risultano slavati: serve un ffmpeg con il filtro `zscale` (libzimg), presente nelle build più comuni.
+
 ## Duplicati
 
 ```json
@@ -87,6 +89,14 @@ Per una cartella, la cartella prende il titolo; lo prende anche il file video di
 
 !!! warning "File in seed altrove"
     Un file rinominato non viene più trovato dai client che lo stavano già seedando con il vecchio nome.
+
+## File corrotti
+
+```json
+"CHECK_CORRUPTED": "True",
+```
+
+Prima dell'upload `ffprobe` legge ogni file video (il file, o ogni video di una cartella) e decodifica alcuni frame all'inizio, a metà e alla fine. Un file illeggibile, con dati danneggiati o troncato (per esempio un download non finito) non viene caricato: il bot mostra l'errore e passa al successivo. Serve meno di un secondo per file. Impostalo a `False` per saltare il controllo.
 
 ## Watcher
 

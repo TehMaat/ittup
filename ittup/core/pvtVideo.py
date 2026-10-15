@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import os.path
+from concurrent.futures import Future
 
 import diskcache
 
@@ -15,7 +16,8 @@ from ittup.core.media import Media
 class Video:
     """ Build a description for the torrent page: screenshots, mediainfo, trailers, metadata """
 
-    def __init__(self, media: Media,  tmdb_id: int, trailer_key=None):
+    def __init__(self, media: Media,  tmdb_id: int, trailer_key=None,
+                 screenshots: Future[tuple[list[bytes], int]] | None = None):
         self.media = media
         self.file_name: str = media.file_name
         self.display_name: str = media.display_name
@@ -29,18 +31,24 @@ class Video:
         self.cache_key = self.hash_key(self.key)
 
         # Load the video frames
-        # if web_enabled is off set the number of screenshots to an even number
-        if not config_settings.user_preferences.WEBP_ENABLED:
-            if config_settings.user_preferences.NUMBER_OF_SCREENSHOTS % 2 != 0:
-                config_settings.user_preferences.NUMBER_OF_SCREENSHOTS += 1
-
-        samples_n = max(2, min(config_settings.user_preferences.NUMBER_OF_SCREENSHOTS, 10))
-        self.video_frames: VideoFrame = VideoFrame(self.file_name, num_screenshots=samples_n)
+        self.video_frames: VideoFrame = VideoFrame(self.file_name, num_screenshots=self.screenshots_number())
+        # Screenshots already being extracted in the background (VideoManager), otherwise extracted here
+        self.screenshots = screenshots
 
         # Init
         self.is_hd: int = 0
         self.description: str = ''
         self.mediainfo: str = ''
+
+    @staticmethod
+    def screenshots_number() -> int:
+        """ How many screenshots: 2-10, an even number if the webp is off """
+        # if web_enabled is off set the number of screenshots to an even number
+        if not config_settings.user_preferences.WEBP_ENABLED:
+            if config_settings.user_preferences.NUMBER_OF_SCREENSHOTS % 2 != 0:
+                config_settings.user_preferences.NUMBER_OF_SCREENSHOTS += 1
+
+        return max(2, min(config_settings.user_preferences.NUMBER_OF_SCREENSHOTS, 10))
 
     @staticmethod
     def hash_key(key: str) -> str:
@@ -63,7 +71,7 @@ class Video:
             # If no description found generate it
             custom_console.bot_log(f"\n[GENERATING IMAGES..] [HD {'ON' if self.is_hd == 0 else 'OFF'}]")
             # Extract the frames
-            extracted_frames, is_hd = self.video_frames.create()
+            extracted_frames, is_hd = self.screenshots.result() if self.screenshots else self.video_frames.create()
             # Create a webp file if it's enabled in the config json
             extracted_frames_webp = []
             if config_settings.user_preferences.WEBP_ENABLED:

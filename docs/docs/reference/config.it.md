@@ -82,6 +82,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `TMDB_DEBUG` | booleano | `False` | Log dei punteggi di confronto titoli TMDB (richieste HTTP extra) |
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
 | `RENAME_FILES` | booleano | `False` | Rinomina i file originali come il titolo del tracker prima dell'upload |
+| `CHECK_CORRUPTED` | booleano | `True` | Salta i file video corrotti, controllati con ffprobe prima dell'upload |
 | `FAST_LOAD` | numero | `0` | Limita i contenuti processati (1–150; 0 = tutti) |
 | `RELEASER_SIGN` | stringa | vuota | Firma releaser (max 20 caratteri) |
 

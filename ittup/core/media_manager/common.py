@@ -163,6 +163,29 @@ class UserContent:
             return False
 
     @staticmethod
+    def not_duplicates(contents: list[Media], tracker_name: str, archive: str,
+                       cli: argparse.Namespace) -> list[Media]:
+        """
+           Check every content before the torrent files and the uploads, so the duplicate questions come first
+
+           Returns:
+               the contents to upload: not uploaded yet (watcher) and not skipped as duplicates
+        """
+        checked = []
+        for content in contents:
+            # Skip the old uploads
+            if cli.watcher and os.path.exists(os.path.join(archive, f"{content.torrent_name}.torrent")):
+                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+                continue
+
+            # Skip if it is a duplicate, before hashing the files
+            if ((cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
+                    and UserContent.is_duplicate(content=content, tracker_name=tracker_name, cli=cli)):
+                continue
+            checked.append(content)
+        return checked
+
+    @staticmethod
     def can_ressed(content: Media, tracker_name: str, cli: argparse.Namespace, tmdb_id: int) -> list[requests.Response]:
         """
            Search for a duplicate and compare with the user content. Delta = config.SIZE_TH

@@ -27,21 +27,15 @@ class DocuManager:
 
         #  Init the torrent list
         bittorrent_list = []
-        for content in self.contents:
-            # get the archive path
-            archive = os.path.join(tracker_archive, selected_tracker)
-            os.makedirs(archive, exist_ok=True)
-            torrent_filepath = os.path.join(tracker_archive,selected_tracker, f"{content.torrent_name}.torrent")
+        # get the archive path
+        archive = os.path.join(tracker_archive, selected_tracker)
+        os.makedirs(archive, exist_ok=True)
 
-            # Skip the old uploads
-            if self.cli.watcher and os.path.exists(torrent_filepath):
-                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
-                continue
-
-            # Skip if it is a duplicate, before hashing the files
-            if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                    and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
-                continue
+        # Every content is checked for duplicates before the first torrent file
+        contents = UserContent.not_duplicates(contents=self.contents, tracker_name=selected_tracker,
+                                              archive=archive, cli=self.cli)
+        for content in contents:
+            torrent_filepath = os.path.join(archive, f"{content.torrent_name}.torrent")
 
             torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
                                                    selected_tracker=selected_tracker, this_path=torrent_filepath)

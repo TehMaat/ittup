@@ -141,7 +141,7 @@ class UserContent:
         return None
 
     @staticmethod
-    def is_duplicate(content: Media, tracker_name: str, cli: argparse.Namespace) -> bool:
+    def is_duplicate(content: Media, tracker_name: str, cli: argparse.Namespace, tmdb_id: int | None = None) -> bool:
         """
            Search for a duplicate. Delta = config.SIZE_TH
 
@@ -149,10 +149,11 @@ class UserContent:
                cli: cli flags from the user
                content (Contents): The content object media
                tracker_name: The name of the tracker
+               tmdb_id: TMDB ID of the content, when it is known
            Returns:
                my_torrent object
         """
-        duplicate = Duplicate(content=content, tracker_name=tracker_name, cli=cli)
+        duplicate = Duplicate(content=content, tracker_name=tracker_name, cli=cli, tmdb_id=tmdb_id)
         if duplicate.process():
             custom_console.bot_error_log(
                 f"\n*** User chose to skip '{content.display_name}' ***\n"

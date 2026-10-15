@@ -34,6 +34,15 @@ Screenshots are taken evenly between 10% and 90% of the video. A frame that is t
 | `SKIP_DUPLICATE` | Skips the content when a duplicate is found, without asking |
 | `SIZE_TH` | Percentage threshold: a torrent on the tracker counts as "same content" if its size differs from your file within this percentage |
 
+How the check works:
+
+1. The bot searches the tracker for the title and, for movies and TV shows, for the **TMDB ID** too: it finds the torrents uploaded with a different title (e.g. the original title instead of the Italian one)
+2. It skips the torrents of another category and those with **another resolution** (a 720p is not a duplicate of a 1080p)
+3. It compares title and year (with the same TMDB ID it is enough to be the same movie or show), season and episode
+4. Last, it compares the size with `SIZE_TH`
+
+The log shows how many torrents it checked (`Duplicate check: N torrents on the tracker for '...'`) and, when there are none, `No duplicates of '...'`.
+
 ## Cache
 
 ```json

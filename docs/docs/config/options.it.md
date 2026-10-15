@@ -34,6 +34,15 @@ Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video
 | `SKIP_DUPLICATE` | Salta il contenuto se viene trovato un duplicato, senza chiedere |
 | `SIZE_TH` | Soglia percentuale: un torrent sul tracker è considerato "stesso contenuto" se la differenza di dimensione rispetto al tuo file è entro questa percentuale |
 
+Come funziona il controllo:
+
+1. Il bot cerca sul tracker il titolo e, per film e serie, anche il **TMDB ID**: così trova i torrent caricati con un titolo diverso (es. il titolo originale invece di quello italiano)
+2. Scarta i torrent di un'altra categoria e quelli con un'**altra risoluzione** (un 720p non è un duplicato di un 1080p)
+3. Confronta titolo e anno (con lo stesso TMDB ID basta che sia lo stesso film o la stessa serie), stagione ed episodio
+4. Infine confronta la dimensione con `SIZE_TH`
+
+Nel log trovi quanti torrent ha controllato (`Duplicate check: N torrents on the tracker for '...'`) e, se non ce ne sono, `No duplicates of '...'`.
+
 ## Cache
 
 ```json

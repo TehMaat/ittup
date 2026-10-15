@@ -64,10 +64,13 @@ class CompareTitles:
 
 class Duplicate:
 
-    def __init__(self, content: Media, tracker_name: str, cli: argparse.Namespace):
+    def __init__(self, content: Media, tracker_name: str, cli: argparse.Namespace, tmdb_id: int | None = None):
 
         # User content from the scan process
         self.content: Media = content
+
+        # TMDB ID of the content, when it is known: the tracker is searched by ID too
+        self.tmdb_id = int(tmdb_id or 0)
 
         # Get the user Cli
         self.cli = cli
@@ -85,7 +88,7 @@ class Duplicate:
         self.movie_category = tracker_data.category.get("movie")
 
         # Category TvShow
-        self.serie_category = tracker_data.category.get("tvshow")
+        self.serie_category = tracker_data.category.get("tv")
 
         # Category Game
         self.game_category = tracker_data.category.get("game")
@@ -95,6 +98,7 @@ class Duplicate:
 
         # Category that comes for the User's media
         self.category = content.category
+        self.category_id = tracker_data.category.get(content.category)
 
         # the user torrent title
         self.guess_filename = title.Guessit(self.content.display_name)
@@ -124,7 +128,25 @@ class Duplicate:
         self.DELTA_SIZE_WIDTH = 2
 
     def process(self):
-        return self.search(torrent=self.torrent_info.search(self.query.guessit_title))
+        return self.search(torrent={"data": self.tracker_results()})
+
+    def tracker_results(self) -> list[dict]:
+        """
+        The torrents on the tracker that may be the same content: the ones with the same title and,
+        for movies and tv shows, the ones with the same TMDB ID (their title may be in another language)
+        """
+        # Each search starts with no filters: the tracker client keeps the parameters of the previous one
+        self.torrent_info.tracker.params = {}
+        results = list(self.torrent_info.search(self.query.guessit_title).get("data", []))
+        if self.tmdb_id and self.category in {'movie', 'tv'}:
+            self.torrent_info.tracker.params = {"categories[]": self.category_id} if self.category_id else {}
+            results += self.torrent_info.get_by_tmdb_id(tmdb_id=self.tmdb_id).get("data", [])
+
+        # A torrent found by title and by ID is checked once
+        unique = list({str(torrent.get("id", index)): torrent for index, torrent in enumerate(results)}.values())
+        custom_console.bot_log(f"Duplicate check: {len(unique)} torrents on the tracker for"
+                               f" '{self.query.guessit_title}'{f' (TMDB ID {self.tmdb_id})' if self.tmdb_id else ''}")
+        return unique
 
     def process_dead_torrents(self, tmdb_id: int) -> list[requests.Response] | None:
         # Get the dead torrents
@@ -163,6 +185,7 @@ class Duplicate:
                 else:
                     # if skip_duplicate is on -> autoskip user choose
                     return True
+        custom_console.bot_log(f"No duplicates of '{self.content.display_name}'")
         return False
 
     @staticmethod
@@ -195,7 +218,8 @@ class Duplicate:
         # Skip duplicate check if the size is out of the threshold
 
         size = round(size / (1024 ** 3), 2) if self.size_unit == 'GB' else round(size / (1024 ** 2), 2)
-        return round(abs(self.content_size - size) / max(self.content_size, size) * 100, 2)
+        largest = max(self.content_size, size)
+        return round(abs(self.content_size - size) / largest * 100, 2) if largest else 0
 
     def _print_output(self, value: dict, delta_size: int, size_th: int):
 
@@ -207,7 +231,7 @@ class Duplicate:
         tmdb_id = value.get("tmdb_id", 0)
         igdb_id = value.get("igdb_id", 0)
 
-        if self.category != self.game_category:
+        if self.category != 'game':
             mediainfo_manager = MediaInfoManager(media_info_output=value)
             languages = mediainfo_manager.languages.upper()
         else:
@@ -252,12 +276,36 @@ class Duplicate:
 
         custom_console.bot_log(output)
 
-    def _process_tracker_data(self, data_from_the_tracker) -> bool:
+    def same_category(self, attributes: dict) -> bool:
+        """ False only when both categories are known and they differ """
+        tracker_category = attributes.get("category_id")
+        return not (tracker_category and self.category_id) or int(tracker_category) == int(self.category_id)
 
-        compare_title = CompareTitles(tracker_file=title.Guessit(data_from_the_tracker['attributes']['name']),
+    def same_resolution(self, attributes: dict) -> bool:
+        """
+        False only when both resolutions are known and they differ: a 720p is not a duplicate of a 1080p
+        """
+        if self.category not in {'movie', 'tv'}:
+            return True
+        content_resolution = self.resolutions.get(self.content.resolution)
+        tracker_resolution = attributes.get("resolution_id")
+        if not tracker_resolution and attributes.get("resolution"):
+            tracker_resolution = self.resolutions.get(str(attributes["resolution"]).lower())
+        if not content_resolution or not tracker_resolution:
+            return True
+        return int(content_resolution) == int(tracker_resolution)
+
+    def _process_tracker_data(self, data_from_the_tracker) -> bool:
+        attributes = data_from_the_tracker['attributes']
+        if not self.same_category(attributes) or not self.same_resolution(attributes):
+            return False
+
+        compare_title = CompareTitles(tracker_file=title.Guessit(attributes['name']),
                                       pack=self.content.pack, content_file=self.query)
 
-        if compare_title.process():
+        # The same TMDB ID is the same movie or show whatever its title: only the season and episode are compared
+        same_id = bool(self.tmdb_id) and int(attributes.get("tmdb_id") or 0) == self.tmdb_id
+        if compare_title.same_season() if same_id else compare_title.process():
             delta_size = self._calculate_threshold(size=data_from_the_tracker['attributes']["size"])
             if delta_size > config_settings.user_preferences.SIZE_TH:
                 # Not a Duplicate

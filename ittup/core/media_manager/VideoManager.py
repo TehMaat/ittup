@@ -204,7 +204,8 @@ class VideoManager:
         # Skip(S) if it is a duplicate or let the user choose to continue (C)
         # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
         if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
+                and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli,
+                                             tmdb_id=db.video_id)):
             return None
         return db
 

@@ -79,7 +79,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `ANON` | boolean | `False` | Anonymous upload |
 | `WEBP_ENABLED` | boolean | `False` | Animated webp in the description |
 | `CACHE_SCR` | boolean | `False` | Screenshot cache |
-| `CACHE_DBONLINE` | boolean | `False` | Online search cache |
+| `CACHE_DBONLINE` | boolean | `False` | Disk cache of the online lookups (TMDB/IMDB/TVDB/IGDB IDs) |
 | `TMDB_DEBUG` | boolean | `False` | Logs TMDB title-matching scores (extra HTTP requests) |
 | `PERSONAL_RELEASE` | boolean | `False` | Personal release on every upload |
 | `RENAME_FILES` | boolean | `False` | Renames the original files as the tracker title before the upload |

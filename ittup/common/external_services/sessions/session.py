@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import os
 
 import httpx
 import diskcache as dc
@@ -14,12 +15,25 @@ logging.getLogger("httpx").setLevel(logging.CRITICAL)
 class MyHttp:
     """Class to handle HTTP requests"""
 
-    def __init__(self, headers: dict, cache_dir: str = "http_cache"):
+    def __init__(self, headers: dict, cache_dir: str | None = None):
         self.session = httpx.Client(
             timeout=httpx.Timeout(30), headers=headers
         )
         self.headers = headers
-        self.cache = dc.Cache(cache_dir)
+        self.cache_dir = cache_dir
+        self._cache: dc.Cache | None = None
+
+    @property
+    def cache(self) -> dc.Cache:
+        """
+        Response cache for use_cache, opened at the first use: it no longer creates an 'http_cache' folder
+        in the current directory at every start
+        """
+        if self._cache is None:
+            from ittup.common import config_settings
+            self._cache = dc.Cache(self.cache_dir or os.path.join(str(config_settings.user_preferences.CACHE_PATH),
+                                                                  "http.cache"))
+        return self._cache
 
     def get_session(self) -> httpx.Client:
         """Returns the HTTP session"""
@@ -146,4 +160,5 @@ class MyHttp:
         """Closes the HTTP client session"""
         if self.session:
             self.session.close()
-        self.cache.close()
+        if self._cache is not None:
+            self._cache.close()

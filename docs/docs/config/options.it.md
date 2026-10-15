@@ -56,7 +56,7 @@ Nel log trovi quanti torrent ha controllato (`Duplicate check: N torrents on the
 |---|---|
 | `CACHE_PATH` | Cartella della cache (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Riusa gli screenshot già estratti |
-| `CACHE_DBONLINE` | Mette in cache i risultati di TMDB e delle ricerche online |
+| `CACHE_DBONLINE` | Mette in cache su disco le ricerche online: gli ID TMDB/IMDB/TVDB/IGDB trovati per ogni titolo e le risposte di TMDB, TVDB e IGDB. Un upload o una scansione ripetuta sugli stessi contenuti non rifà le stesse richieste. I dati restano validi 30 giorni (i dettagli di una serie, che cambiano con i nuovi episodi, un giorno); le ricerche senza risultati non vengono salvate |
 | `TMDB_DEBUG` | Mostra nel log i punteggi di confronto dei titoli TMDB (titolo, originale, titoli alternativi, traduzioni). Fa richieste HTTP extra: lascialo spento se non stai indagando un match sbagliato |
 
 ## Lingua, anonimato e firma

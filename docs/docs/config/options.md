@@ -56,7 +56,7 @@ The log shows how many torrents it checked (`Duplicate check: N torrents on the 
 |---|---|
 | `CACHE_PATH` | Cache folder (default: `ittup_config/cache_path`) |
 | `CACHE_SCR` | Reuses screenshots already extracted |
-| `CACHE_DBONLINE` | Caches TMDB results and online searches |
+| `CACHE_DBONLINE` | Caches the online lookups on disk: the TMDB/IMDB/TVDB/IGDB IDs found for each title and the answers of TMDB, TVDB and IGDB. An upload or a scan repeated on the same contents doesn't send the same requests again. The data is kept for 30 days (the details of a show, which change with its new episodes, for a day); searches with no results are not saved |
 | `TMDB_DEBUG` | Logs the TMDB title-matching scores (title, original, alternative titles, translations). Makes extra HTTP requests: keep it off unless you are debugging a wrong match |
 
 ## Language, anonymity and signature

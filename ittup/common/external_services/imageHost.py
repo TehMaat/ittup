@@ -272,6 +272,10 @@ class Build:
         self.IMARIDE_KEY = config_settings.tracker_config.IMARIDE_KEY
         self.extracted_frames = extracted_frames
 
+    @staticmethod
+    def has_key(key: str | None) -> bool:
+        # A host without an API key in settings.json ('no_key' or empty) can't upload
+        return bool(key and key.strip()) and 'no_key' not in key.lower()
 
     def description(self) -> str:
         description = "[center]\n"
@@ -292,6 +296,12 @@ class Build:
                 PassIMA(img_bytes, self.PASSIMA_KEY, image_name=image_name),
                 ImaRide(img_bytes, self.IMARIDE_KEY, image_name=image_name),
             ]
+
+            # Skip the hosts without an API key
+            master_uploaders = [uploader for uploader in master_uploaders if self.has_key(uploader.key)]
+            if not master_uploaders:
+                custom_console.bot_error_log("No image host API key found in settings.json, skip the upload")
+                break
 
             # Sorting list based on priority
             master_uploaders.sort(key=lambda uploader: uploader.priority)

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/TehMaat/ittup/compare/1.5.0...1.5.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* tone map Dolby Vision screenshots with libplacebo ([4005484](https://github.com/TehMaat/ittup/commit/4005484cf84dd4966ca2bcec0fb1af0fdb1cf876))
+* tone map Dolby Vision screenshots with libplacebo ([a127f48](https://github.com/TehMaat/ittup/commit/a127f489962aaa91cd192a0f2da5d769e0c5ee49))
+
 ## [1.5.0](https://github.com/TehMaat/ittup/compare/1.4.0...1.5.0) (2026-10-15)
 
 

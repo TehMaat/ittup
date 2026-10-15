@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/TehMaat/ittup/compare/1.4.0...1.5.0) (2026-10-15)
+
+
+### Features
+
+* add QBIT_ENABLED option to turn qBittorrent off ([fc57607](https://github.com/TehMaat/ittup/commit/fc5760700dd5496df8284b08258864bc5c088146))
+* add QBIT_ENABLED option to turn qBittorrent off ([a322306](https://github.com/TehMaat/ittup/commit/a322306e16bc3c0557a61405b93589c80d5a8537))
+* check every content for duplicates before starting the uploads ([98e0b45](https://github.com/TehMaat/ittup/commit/98e0b458101aff0f4cdc0d43d3cdbdae27f2d01c))
+* extract and upload the screenshots concurrently ([c40c9a6](https://github.com/TehMaat/ittup/commit/c40c9a6a89039d2e3fd06c44403f6c3f79e08cbd))
+* extract and upload the screenshots concurrently ([c4a8e7c](https://github.com/TehMaat/ittup/commit/c4a8e7cfbfd536e44c86cb193a97a2c88d54d356)), closes [#49](https://github.com/TehMaat/ittup/issues/49)
+* skip corrupted video files, checked with ffprobe ([e664d49](https://github.com/TehMaat/ittup/commit/e664d49806cf668fd3dc7baa6bf4eef58248f7f9))
+* tone map HDR screenshots and skip dark frames ([dc8867c](https://github.com/TehMaat/ittup/commit/dc8867c991c8890d392d26eafd175fc1dcedfc47))
+
+
+### Bug Fixes
+
+* run ffmpeg and ffprobe without stdin so the terminal keeps working ([88c2597](https://github.com/TehMaat/ittup/commit/88c259710ff168d637d5bc51e7db99571da03b74))
+* show --help without loading the config file ([65ab3fe](https://github.com/TehMaat/ittup/commit/65ab3fed948b7f6f4d87b1e298695be7eb98c938))
+* show --help without loading the config file ([afd66d2](https://github.com/TehMaat/ittup/commit/afd66d24bc87d59598c4f931a5d3c1896000c613))
+* skip image hosts without an API key ([f6d3f77](https://github.com/TehMaat/ittup/commit/f6d3f775bdc1cb9bd79e084117279132f2add2cb))
+
 ## [1.4.0](https://github.com/TehMaat/ittup/compare/1.3.0...1.4.0) (2026-10-14)
 
 

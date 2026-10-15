@@ -36,6 +36,12 @@ It performs the following tasks:
 - Reseeding one or more torrents at a time
 - Seed your torrents across different OS
 - Generate various tags for titles: ``version``, ``resolution``, ``uhd``, ``platform``, ``source``, ``remux``, ``multi``, ``acodec``, ``channels``, ``flag``, ``subtitle``, ``vcodec``, ``hdr``
+- Read the source from MediaInfo when the file name has none (release name in the metadata, Blu-ray/DVD rips)
+- Rename the original files as the tracker title (``RENAME_FILES``), keeping the names that are already complete
+- Check the tracker for duplicates by title and TMDB ID, skipping other resolutions and categories
+- Cache the TMDB, TVDB and IGDB lookups on disk (``CACHE_DBONLINE``)
+- Upload as internal release (``-int``) or freeleech (``-fl25`` .. ``-fl100``), with a warning when the tracker ignores them
+- Watcher: persistent upload queue, retries with exponential backoff after network errors, quarantine for the failed uploads
 
 
 ITTup can grab the first page, convert it to an image (using xpdf),
@@ -74,6 +80,8 @@ Configuration
 The configuration is stored in ``~/ittup_config/ittup.json``
 (Windows: ``%LOCALAPPDATA%\ittup_config\ittup.json``) together with
 ``tags_list.json``, ``sign_list.json`` and ``ban_list.json``.
+The same folder holds the default ``torrent_archive_path``, ``cache_path``, ``watcher_path``,
+``watcher_destination_path`` and ``watcher_quarantine_path`` folders and the watcher queue (``watcher_queue.json``).
 
 Coming from Unit3Dup? On the first run, if ``Unit3Dup_config`` exists and ``ittup_config`` does not,
 ITTup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``), tags, sign and ban lists
@@ -111,6 +119,8 @@ RUN
    ittup -u <filepath>
    ittup -f <folderpath>
    ittup -scan <folderpath>
+   ittup -watcher
+   ittup -u <filepath> -int -fl100
 
 Every upload goes to ItaTorrents: the ``-tracker`` and ``-mt`` options no longer exist.
 Run ``ittup -h`` for the full list of commands.

@@ -21,7 +21,7 @@ Folder contents:
 !!! note "Coming from Unit3Dup?"
     On the first run ITTup copies `Unit3Dup_config/Unit3Dbot.json` and the three lists into `ittup_config` (the old folder is left untouched). Details: [Upgrade](../install/upgrade.md#coming-from-unit3dup).
 
-In the same folder the bot also creates the default subfolders `torrent_archive_path` (where generated `.torrent` files are stored), `cache_path`, `watcher_path` and `watcher_destination_path` — all customizable (see [Advanced options](options.md)).
+In the same folder the bot also creates the default subfolders `torrent_archive_path` (where generated `.torrent` files are stored), `cache_path`, `watcher_path`, `watcher_destination_path` and `watcher_quarantine_path` (where the watcher moves the failed uploads) — all customizable (see [Advanced options](options.md)). The watcher also saves its upload queue here, `watcher_queue.json`.
 
 ## File structure
 
@@ -70,6 +70,7 @@ It validates the configuration files and the environment. On startup the bot alw
 [Images,Tmdb cache] '~/ittup_config/cache_path'
 [Watcher] '~/ittup_config/watcher_path'
 [Watcher] '~/ittup_config/watcher_destination_path'
+[Watcher quarantine] '~/ittup_config/watcher_quarantine_path'
 [Preferred Language] 'all'
 [Youtube Preferred Language] 'IT'
 ```

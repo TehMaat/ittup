@@ -67,6 +67,14 @@ Manca `tags_list.json` nella cartella di configurazione. Viene creato al primo a
 
 Usa `-notitle "Titolo Corretto"` per forzare la ricerca TMDB; ritocca `tags_list.json` e `ban_list.json` per correggere i tag. Vedi [Tag e titoli](../usage/tags.md).
 
+### `-int` o `-fl100` non vengono applicati
+
+Il tracker li accetta solo dallo staff e dai membri di un gruppo internal: per gli altri account carica il torrent senza, e senza errori. Dopo l'upload il bot rilegge il torrent e lo segnala con un avviso `-int: ...` o `-fl100: ...`. Vedi [Upload base](../usage/upload.md).
+
+### Il controllo duplicati non trova un torrent che è già sul tracker
+
+Il bot cerca per titolo e, per film e serie, per TMDB ID: controlla nel log `Duplicate check: N torrents on the tracker for '...'`. Un torrent con un'altra risoluzione o di un'altra categoria non è un duplicato, e uno con una dimensione fuori da `SIZE_TH` nemmeno. Vedi [Duplicati](../config/options.md#duplicati).
+
 ### Dove finiscono i `.torrent` creati?
 
 In `TORRENT_ARCHIVE_PATH`, nella sottocartella `ITT`: `<archivio>/ITT/nome.torrent`. Default: `ittup_config/torrent_archive_path/`.
@@ -76,6 +84,14 @@ In `TORRENT_ARCHIVE_PATH`, nella sottocartella `ITT`: `<archivio>/ITT/nome.torre
 ### `Watcher path does not exist or is not configured`
 
 `WATCHER_PATH` non esiste o è rimasto `no_path`. Configura entrambi i percorsi del watcher ([dettagli](../usage/watcher.md)).
+
+### Un file è finito in `watcher_quarantine_path`
+
+L'upload è fallito per un motivo che non si risolve da solo (file corrotto, upload rifiutato dal tracker…) oppure è fallito ancora dopo `WATCHER_MAX_RETRIES` tentativi. Il motivo è nel file `<nome>.error.txt` accanto. Sistemato il problema, rimetti il file in `WATCHER_PATH` o caricalo con `-u`. Vedi [Quarantena](../usage/watcher.md#quarantena).
+
+### `Retry 1/5 in 60 seconds`
+
+Un errore temporaneo (rete, tracker offline, rate limit): il watcher riprova da solo con un'attesa che raddoppia a ogni tentativo, e intanto carica gli altri file. Vedi [Coda persistente e nuovi tentativi](../usage/watcher.md#coda-persistente-e-nuovi-tentativi).
 
 ## Altro
 

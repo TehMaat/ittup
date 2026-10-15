@@ -67,6 +67,14 @@ Valid categories for `-force` are: `movie`, `tv`, `game`, `edicola`.
 
 Use `-notitle "Correct Title"` to force the TMDB search; tweak `tags_list.json` and `ban_list.json` to fix the tags. See [Tags and titles](../usage/tags.md).
 
+### `-int` or `-fl100` are not applied
+
+The tracker accepts them only from staff and from the members of an internal group: for the other accounts it uploads the torrent without them, with no error. After the upload the bot reads the torrent back and reports it with a `-int: ...` or `-fl100: ...` warning. See [Basic upload](../usage/upload.md).
+
+### The duplicate check doesn't find a torrent that is already on the tracker
+
+The bot searches by title and, for movies and TV shows, by TMDB ID: check `Duplicate check: N torrents on the tracker for '...'` in the log. A torrent with another resolution or of another category is not a duplicate, nor is one whose size is out of `SIZE_TH`. See [Duplicates](../config/options.md#duplicates).
+
 ### Where do the created `.torrent` files go?
 
 Into `TORRENT_ARCHIVE_PATH`, in the `ITT` subfolder: `<archive>/ITT/name.torrent`. Default: `ittup_config/torrent_archive_path/`.
@@ -76,6 +84,14 @@ Into `TORRENT_ARCHIVE_PATH`, in the `ITT` subfolder: `<archive>/ITT/name.torrent
 ### `Watcher path does not exist or is not configured`
 
 `WATCHER_PATH` doesn't exist or is still `no_path`. Configure both watcher paths ([details](../usage/watcher.md)).
+
+### A file ended up in `watcher_quarantine_path`
+
+The upload failed for a reason that doesn't go away by itself (corrupted file, upload refused by the tracker…) or still failed after `WATCHER_MAX_RETRIES` attempts. The reason is in the `<name>.error.txt` file next to it. Once the problem is fixed, put the file back in `WATCHER_PATH` or upload it with `-u`. See [Quarantine](../usage/watcher.md#quarantine).
+
+### `Retry 1/5 in 60 seconds`
+
+A temporary error (network, tracker offline, rate limit): the watcher retries by itself with a wait that doubles at every attempt, and meanwhile uploads the other files. See [Persistent queue and retries](../usage/watcher.md#persistent-queue-and-retries).
 
 ## Other
 

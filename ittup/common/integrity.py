@@ -30,7 +30,7 @@ class MediaIntegrity:
     @staticmethod
     def ffprobe(arguments: list[str]) -> tuple[int, str, str]:
         result = subprocess.run(["ffprobe", "-v", "error", *arguments], capture_output=True, text=True,
-                                timeout=FFPROBE_TIMEOUT)
+                                stdin=subprocess.DEVNULL, timeout=FFPROBE_TIMEOUT)
         return result.returncode, result.stdout, result.stderr.strip()
 
     @staticmethod

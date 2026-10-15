@@ -58,7 +58,7 @@ class PdfImages:
             output_name,
         ]
         try:
-            subprocess.run(command, capture_output=True, check=True, timeout=20)
+            subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True, timeout=20)
         except subprocess.CalledProcessError:
             custom_console.bot_error_log(f"It was not possible to extract any page from '{self.file_name}'")
             exit(1)

@@ -35,7 +35,8 @@ def ffmpeg_can_tonemap() -> bool:
     The tone mapping needs an ffmpeg build with the 'zscale' (libzimg) and 'tonemap' filters
     """
     try:
-        result = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, text=True, check=True)
+        result = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, text=True, check=True,
+                                stdin=subprocess.DEVNULL)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
     filters = {line.split()[1] for line in result.stdout.splitlines() if len(line.split()) > 2}
@@ -185,7 +186,7 @@ class VideoFrame:
             str(self.video_path),
         ]
         try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            result = subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, text=True, check=True)
             streams = json.loads(result.stdout).get("streams", [])
         except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
             # ffprobe errors are reported by _get_video_duration()
@@ -221,7 +222,7 @@ class VideoFrame:
             str(self.video_path),
         ]
         try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            result = subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, text=True, check=True)
             duration = float(result.stdout.strip())
         except subprocess.CalledProcessError:
             custom_console.bot_error_log(
@@ -259,7 +260,9 @@ class VideoFrame:
             "-",
         ]
         try:
-            result = subprocess.run(command, capture_output=True, check=True, timeout=20)
+            # No stdin: the ffmpeg processes running at the same time would change the terminal settings
+            # and leave it without echo and Enter, so the questions to the user could not be answered
+            result = subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True, timeout=20)
             return Image.open(io.BytesIO(result.stdout))
         except subprocess.CalledProcessError as e:
             custom_console.bot_error_log(f"IMAGES Error: Please verify if your file is corrupted")
@@ -309,7 +312,7 @@ class VideoFrame:
         ]
 
         try:
-            subprocess.run(command, capture_output=True, check=True)
+            subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True)
             if not os.path.isfile(output_path):
                 print(f"file {output_path} doesn't exist !")
                 exit(1)

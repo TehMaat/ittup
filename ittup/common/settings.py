@@ -96,6 +96,7 @@ class TorrentClientConfig(BaseModel):
     QBIT_PORT: int = 8080
     SHARED_QBIT_PATH: str | None = None
     QBIT_SKIP_CHECK: bool = True
+    QBIT_ENABLED: bool = True
     TRASM_USER: str | None = None
     TRASM_PASS: str | None = None
     TRASM_HOST: str = "http://localhost"
@@ -438,7 +439,7 @@ class Config(BaseModel):
                 if field in ['SHARED_TRASM_PATH', 'SHARED_QBIT_PATH', 'SHARED_RTORR_PATH']:
                     section[field] = Validate.shared_path(path=section[field], field_name=field)
 
-                if field == 'QBIT_SKIP_CHECK':
+                if field in ['QBIT_SKIP_CHECK', 'QBIT_ENABLED']:
                     # New attribute added to an existing json file with an empty value: use the default
                     if section[field] == '':
                         section[field] = 'True'
@@ -601,6 +602,7 @@ class Load:
                 "QBIT_PORT": "8080",
                 "SHARED_QBIT_PATH": "no_path",
                 "QBIT_SKIP_CHECK": "True",
+                "QBIT_ENABLED": "True",
                 "TRASM_USER": "admin",
                 "TRASM_PASS": "no_pass",
                 "TRASM_HOST": "127.0.0.1",

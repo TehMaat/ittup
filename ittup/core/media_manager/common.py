@@ -205,6 +205,14 @@ class UserContent:
             custom_console.bot_error_log(f"Error sending torrent {bittorrent_file.content.file_name}: {str(e)}")
 
     @staticmethod
+    def client_disabled() -> bool:
+        """
+        True when qBittorrent is the torrent client and 'QBIT_ENABLED' is False: the torrents are only uploaded
+        """
+        return (config_settings.torrent_client_config.TORRENT_CLIENT.lower() == 'qbittorrent'
+                and not config_settings.torrent_client_config.QBIT_ENABLED)
+
+    @staticmethod
     def get_client() -> QbittorrentClient | TransmissionClient:
 
         client = QbittorrentClient()
@@ -240,6 +248,10 @@ class UserContent:
         """
 
         if not bittorrent_list:
+            return None
+
+        if UserContent.client_disabled():
+            custom_console.bot_warning_log("qBittorrent is disabled (QBIT_ENABLED = False). No seeding")
             return None
 
         custom_console.bot_log(f"\nSending {message} torrents to the "

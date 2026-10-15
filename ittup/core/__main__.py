@@ -64,9 +64,12 @@ def main():
         if cli.args.scan or cli.args.upload or cli.args.folder or cli.args.watcher:
 
             if config.torrent_client_config.TORRENT_CLIENT.lower() == "qbittorrent":
-                test_client_torrent = QbittorrentClient()
-                if not test_client_torrent.connect():
-                    exit(1)
+                if not config.torrent_client_config.QBIT_ENABLED:
+                    custom_console.bot_warning_log("qBittorrent is disabled (QBIT_ENABLED = False). No seeding")
+                else:
+                    test_client_torrent = QbittorrentClient()
+                    if not test_client_torrent.connect():
+                        exit(1)
             elif config.torrent_client_config.TORRENT_CLIENT.lower() == "transmission":
                 test_client_torrent = TransmissionClient()
                 if not test_client_torrent.connect():

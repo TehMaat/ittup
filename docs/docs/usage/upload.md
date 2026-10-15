@@ -42,9 +42,13 @@ They combine with `-u`, `-f` and `-scan`:
 | `-dup` | Checks the tracker for [duplicates](../config/options.md#duplicates) before uploading |
 | `-personal` | Marks the upload as a **personal release** |
 | `-fl25` `-fl50` `-fl75` `-fl100` | Uploads as **freeleech** 25, 50, 75 or 100% (`--freeleech25`…). The tracker applies it only if your account can set the freeleech |
+| `-int` | Uploads as an **internal release** (`--internal`) |
 | `-force <category>` | Forces the category: `movie`, `tv`, `game`, `edicola` (without argument: `movie`) |
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
+
+!!! note "`-int` and freeleech need the permission"
+    The tracker applies `-int` and `-fl25`…`-fl100` only to staff and to the members of an internal group: for the other accounts it uploads the torrent without them, with no error. After the upload the bot reads the torrent back and warns you if they were not applied.
 
 ## Characters refused by the tracker
 

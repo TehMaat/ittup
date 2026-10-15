@@ -1,4 +1,5 @@
 import pprint
+import re
 from argparse import Namespace
 import requests
 import json
@@ -44,6 +45,7 @@ class UploadBot:
             # 08/09/2025
             # We have to download the torrent file to get the new random info_hash generated
             self.download_file(url=tracker_response_body["data"], destination_path=torrent_archive)
+            self.check_flags(download_url=tracker_response_body["data"])
             return tracker_response_body["data"], {}
 
         elif tracker_response.status_code == 401:
@@ -73,6 +75,40 @@ class UploadBot:
         custom_console.bot_error_log(f"\n[RESPONSE]-> '{error_message}\n\n")
         custom_console.rule()
         return {}, error_message
+
+    def check_flags(self, download_url: str) -> None:
+        """
+        The tracker applies -int and -fl25..-fl100 only if the account can set them (staff or internal group),
+        otherwise it uploads the torrent without them and doesn't say it: read the torrent back and warn
+        """
+        internal = bool(int(self.tracker.data.get("internal") or 0))
+        free = int(self.tracker.data.get("free") or 0)
+        if not internal and not free:
+            return
+
+        match = re.search(r"/download/(\d+)", str(download_url))
+        if not match:
+            return
+        try:
+            body = self.tracker.fetch_id(int(match.group(1))).json()
+            attributes = body.get("data", body)["attributes"]
+        except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError):
+            custom_console.bot_warning_log("Can't read the uploaded torrent to check -int and the freeleech")
+            return
+
+        if internal and not int(attributes.get("internal") or 0):
+            custom_console.bot_warning_log(
+                f"-int: '{self.tracker_name}' didn't upload the torrent as an internal release."
+                f" Only staff and the members of an internal group can set it")
+        applied_free = int(re.sub(r"\D", "", str(attributes.get("freeleech") or "")) or 0)
+        if free and applied_free != free:
+            custom_console.bot_warning_log(
+                f"-fl{free}: '{self.tracker_name}' set the freeleech to {applied_free}% instead of {free}%."
+                f" Only staff and the members of an internal group can set it")
+
+    def internal(self) -> int:
+        """ 1 with the -int flag: upload as an internal release """
+        return int(bool(getattr(self.cli, "internal", False)))
 
     def freeleech(self) -> int:
         """ Freeleech percentage from the -fl25, -fl50, -fl75, -fl100 flags, 0 without them """
@@ -111,7 +147,7 @@ class UploadBot:
         self.tracker.data["episode_number"] = (self.content.guess_episode if not self.content.torrent_pack else 0)
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
-        self.tracker.data["internal"] = int(self.cli.internal)
+        self.tracker.data["internal"] = self.internal()
         self.tracker.data["free"] = self.freeleech()
         self.tracker.data["mod_queue_opt_in"] = int(self.cli.moderation)
 
@@ -139,6 +175,7 @@ class UploadBot:
         self.tracker.data["description"] = igdb.description + self.sign if igdb else "Sorry, there is no valid IGDB"
         self.tracker.data["type_id"] = self.tracker_data.type_id.get(igdb_platform) if igdb_platform else 1
         self.tracker.data["igdb"] = igdb.id if igdb else 1  # need zero not one ( fix tracker)
+        self.tracker.data["internal"] = self.internal()
         self.tracker.data["free"] = self.freeleech()
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))
@@ -153,6 +190,7 @@ class UploadBot:
         self.tracker.data["description"] = document_info.description + self.sign
         self.tracker.data["type_id"] = self.tracker_data.filter_type(self.content.file_name)
         self.tracker.data["resolution_id"] = ""
+        self.tracker.data["internal"] = self.internal()
         self.tracker.data["free"] = self.freeleech()
         self.tracker.data["personal_release"] = (int(config_settings.user_preferences.PERSONAL_RELEASE)
                                                  or int(self.cli.personal))

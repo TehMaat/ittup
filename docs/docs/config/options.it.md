@@ -10,6 +10,7 @@ Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Ne
 "RESIZE_SCSHOT": "False",
 "TIMEOUT_SCSHOT": 120,
 "TONEMAP_SCSHOT": "False",
+"SCREENSHOTS_QUORUM": "False",
 "WEBP_ENABLED": "False",
 ```
 
@@ -21,6 +22,7 @@ Sezione `user_preferences` di `ittup.json` (più `console_options` in fondo). Ne
 | `TIMEOUT_SCSHOT` | **Secondi** massimi che ffmpeg può impiegare per un singolo screenshot (`0` = nessun limite) |
 | `TONEMAP_SCSHOT` | `True` = converte gli screenshot HDR in SDR. `False` (default) = frame HDR originali (più veloce, colori slavati) |
 | `WEBP_ENABLED` | Aggiunge una webp animata alla descrizione del torrent |
+| `SCREENSHOTS_QUORUM` | `True` = un contenuto viene caricato solo con tutti i suoi screenshot sugli image host, vedi [Image host](imagehosts.md#tutti-gli-screenshot-o-niente-upload). `False` (default) = caricato con gli screenshot riusciti |
 
 Gli screenshot vengono presi a intervalli regolari tra il 10% e il 90% del video. Un frame troppo scuro viene sostituito con uno più luminoso lì vicino. Con `TONEMAP_SCSHOT` impostato a `True`, i video HDR (HDR10, HDR10+, HLG, Dolby Vision con base layer HDR10) vengono convertiti in SDR con il tone mapping, così i colori non risultano slavati: serve un ffmpeg con il filtro `zscale` (libzimg), presente nelle build più comuni. Con una GPU Vulkan si usa invece il filtro `libplacebo`, che corregge anche i colori del Dolby Vision profile 5. Senza GPU (es. in un container) Vulkan gira sulla CPU e libplacebo è molto lento: si usa zscale, e libplacebo solo per quello che zscale non sa gestire. Se gli screenshot dei 4K HDR si fermano con `Time Out`, alza `TIMEOUT_SCSHOT`.
 

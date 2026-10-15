@@ -72,7 +72,7 @@ class VideoManager:
 
     def extract_screenshots(self, content: Media) -> Future[tuple[list[bytes], int]] | None:
         """
-        Start extracting the screenshots in the background, while TMDB is searched and the torrent is hashed
+        Start extracting the screenshots in the background, while the torrent is hashed
 
         :return: the screenshots, None if they are extracted later by Video
         """
@@ -134,9 +134,79 @@ class VideoManager:
             return f"S{season:02d}"
         return None
 
+    def check(self, content: Media, selected_tracker: str, archive: str):
+        """
+        Build the final title of the content and check it for duplicates on the tracker
+
+        :return: the TMDB result, None if the content is skipped
+        """
+        # Skip the old uploads before reading guessit, mediainfo and tags
+        if self.cli.watcher and os.path.exists(os.path.join(archive, f"{content.torrent_name}.torrent")):
+            custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+            return None
+
+        # /// User request to build the title; overwriting display_name
+        guess_filename = title.Guessit(content.title_sanitize_tags)
+        guess = guess_filename.guessit
+        tags_position = config_settings.user_preferences.TAGS_POSITION_SERIE if content.category=='tv'\
+            else config_settings.user_preferences.TAGS_POSITION_MOVIE
+        search_tags = SearchTags(filename=content.title,
+                                 # Keep the special characters of the title ('Spider-Man', 'Mission: Impossible')
+                                 title=ManageTitles.original_spelling(guess.get("title", None), content.title),
+                                 year=guess.get("year", ""),
+                                 season=content.guess_season,
+                                 episode=content.guess_episode,
+                                 releaser_sign=config_settings.user_preferences.RELEASER_SIGN,
+                                 tags_position=tags_position,
+                                 tags_list=self.tags_list,
+                                 sign_list=self.sign_list,
+                                 ban_list=self.ban_list,
+                                 media=content,
+                                 )
+        content.display_name, _ = search_tags.process()
+
+        # Filter contents based on the preferred language
+        if not UserContent.is_preferred_language(content=content):
+            return None
+
+        # Search for VIDEO ID
+        db_online = DbOnline(media=content, category=content.category, no_title=self.cli.notitle)
+        db = db_online.media_result
+
+        # If it is 'None' we skipped the imdb search (-notitle)
+        if not db:
+            return None
+
+        # The audio tags need the original language from TMDB
+        content.display_name, _ = search_tags.set_original_language(db.original_language)
+
+        # Details in Italian from TMDB
+        details = db_online.italian_details(video_id=db.video_id, category=content.category)
+
+        # The title in Italian from TMDB, with its punctuation
+        italian_title = self.italian_title(details)
+        if italian_title:
+            content.display_name, _ = search_tags.set_title(italian_title)
+
+        # A pack with every episode of a concluded season is the season: S04E01-10 -> S04
+        season_pack = self.full_season(pack=content.pack, details=details)
+        if season_pack:
+            custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
+            content.pack = season_pack
+            content.display_name, _ = search_tags.set_season(season_pack)
+
+        # Skip(S) if it is a duplicate or let the user choose to continue (C)
+        # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
+        if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
+                and UserContent.is_duplicate(content=content, tracker_name=selected_tracker, cli=self.cli)):
+            return None
+        return db
+
     def process(self, selected_tracker: str, tracker_name_list: list, tracker_archive: str) -> list[BittorrentData]:
         """
            Process the video contents to filter duplicates and create torrents
+           Every content is checked for duplicates first, so the questions to the user come before
+           the screenshots, the torrent files and the uploads
 
            Returns:
                list: List of Bittorrent objects created for each content
@@ -144,133 +214,77 @@ class VideoManager:
 
         #  Init the torrent list
         bittorrent_list = []
-        # One content at a time: the screenshots of a skipped content are never waited for
-        self.screenshots_executor = ThreadPoolExecutor(max_workers=1)
+        # get the archive path
+        archive = os.path.join(tracker_archive, selected_tracker)
+        os.makedirs(archive, exist_ok=True)
+
+        # The titles, TMDB and the duplicates of every content
+        checked = []
         for content in self.contents:
-            # get the archive path
-            archive = os.path.join(tracker_archive, selected_tracker)
-            os.makedirs(archive, exist_ok=True)
-            torrent_filepath = os.path.join(tracker_archive, selected_tracker, f"{content.torrent_name}.torrent")
+            db = self.check(content=content, selected_tracker=selected_tracker, archive=archive)
+            if db:
+                checked.append((content, db))
 
-            # Skip the old uploads before reading guessit, mediainfo and tags
-            if self.cli.watcher and os.path.exists(torrent_filepath):
-                custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
-                continue
-
+        # One content at a time: the screenshots are extracted while the torrent is hashed
+        self.screenshots_executor = ThreadPoolExecutor(max_workers=1)
+        for content, db in checked:
             # Skip the corrupted video files: ffprobe reads the container and decodes a few frames
             if config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
                 continue
 
             screenshots = self.extract_screenshots(content)
 
-            # /// User request to build the title; overwriting display_name
-            guess_filename = title.Guessit(content.title_sanitize_tags)
-            guess = guess_filename.guessit
-            tags_position = config_settings.user_preferences.TAGS_POSITION_SERIE if content.category=='tv'\
-                else config_settings.user_preferences.TAGS_POSITION_MOVIE
-            search_tags = SearchTags(filename=content.title,
-                                     # Keep the special characters of the title ('Spider-Man', 'Mission: Impossible')
-                                     title=ManageTitles.original_spelling(guess.get("title", None), content.title),
-                                     year=guess.get("year", ""),
-                                     season=content.guess_season,
-                                     episode=content.guess_episode,
-                                     releaser_sign=config_settings.user_preferences.RELEASER_SIGN,
-                                     tags_position=tags_position,
-                                     tags_list=self.tags_list,
-                                     sign_list=self.sign_list,
-                                     ban_list=self.ban_list,
-                                     media=content,
-                                     )
-            content.display_name, _ = search_tags.process()
+            # Rename the original files as the title shown on the tracker before creating the torrent
+            if config_settings.user_preferences.RENAME_FILES:
+                self.rename_files(content=content)
+            torrent_filepath = os.path.join(archive, f"{content.torrent_name}.torrent")
 
-            # Filter contents based on the preferred language or duplicates
-            if UserContent.is_preferred_language(content=content):
+            torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
+                                                   selected_tracker=selected_tracker, this_path=torrent_filepath)
 
-                # Search for VIDEO ID
-                db_online = DbOnline(media=content, category=content.category, no_title=self.cli.notitle)
-                db = db_online.media_result
+            # Get meta from the media video
+            video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key,
+                               screenshots=screenshots)
+            video_info.build_info()
 
-                # If it is 'None' we skipped the imdb search (-notitle)
-                if not db:
-                    continue
+            # Print the title shown on the torrent page on a single line
+            custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
+            custom_console.bot_log(f"'{content.display_name}'")
+            custom_console.bot_log(f"Done.\n")
 
-                # The audio tags need the original language from TMDB
-                content.display_name, _ = search_tags.set_original_language(db.original_language)
+            # Tracker instance
+            unit3d_up = UploadBot(content=content, tracker_name=selected_tracker, cli=self.cli)
 
-                # Details in Italian from TMDB
-                details = db_online.italian_details(video_id=db.video_id, category=content.category)
+            # Get the data
+            processed_data = unit3d_up.data(show_id=db.video_id, imdb_id=db.imdb_id, tvdb_id=db.tvdb_id,
+                           show_keywords_list=db.keywords_list, video_info=video_info)
 
-                # The title in Italian from TMDB, with its punctuation
-                italian_title = self.italian_title(details)
-                if italian_title:
-                    content.display_name, _ = search_tags.set_title(italian_title)
+            # Do not upload if an error occurs
+            if not processed_data:
+                continue
 
-                # A pack with every episode of a concluded season is the season: S04E01-10 -> S04
-                season_pack = self.full_season(pack=content.pack, details=details)
-                if season_pack:
-                    custom_console.bot_log(f"'{content.pack}' is the whole season on TMDB: '{season_pack}'")
-                    content.pack = season_pack
-                    content.display_name, _ = search_tags.set_season(season_pack)
+            # Don't upload if -noup is set to True
+            if self.cli.noup:
+                custom_console.bot_warning_log(f"No Upload active. Done.")
+                continue
 
-                # Skip(S) if it is a duplicate or let the user choose to continue (C)
-                # Checked with the final title and before hashing, so a skipped duplicate doesn't cost a torrent file
-                if ((self.cli.duplicate or config_settings.user_preferences.DUPLICATE_ON)
-                        and UserContent.is_duplicate(content=content, tracker_name=selected_tracker,
-                                                     cli=self.cli)):
-                    continue
+            # Send to the tracker
+            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath)
 
-                # Rename the original files as the title shown on the tracker before creating the torrent
-                if config_settings.user_preferences.RENAME_FILES:
-                    self.rename_files(content=content)
-                    torrent_filepath = os.path.join(archive, f"{content.torrent_name}.torrent")
+            # Store response for the torrent clients
+            bittorrent_list.append(
+                BittorrentData(
+                    tracker_response=tracker_response,
+                    torrent_response=torrent_response,
+                    content=content,
+                    tracker_message=tracker_message,
+                    archive_path=torrent_filepath,
+                ))
 
-                torrent_response = UserContent.torrent(content=content, tracker_name_list=tracker_name_list,
-                                                       selected_tracker=selected_tracker, this_path=torrent_filepath)
-
-                # Get meta from the media video
-                video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key,
-                                   screenshots=screenshots)
-                video_info.build_info()
-
-                # Print the title shown on the torrent page on a single line
-                custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")
-                custom_console.bot_log(f"'{content.display_name}'")
-                custom_console.bot_log(f"Done.\n")
-
-                # Tracker instance
-                unit3d_up = UploadBot(content=content, tracker_name=selected_tracker, cli=self.cli)
-
-                # Get the data
-                processed_data = unit3d_up.data(show_id=db.video_id, imdb_id=db.imdb_id, tvdb_id=db.tvdb_id,
-                               show_keywords_list=db.keywords_list, video_info=video_info)
-
-                # Do not upload if an error occurs
-                if not processed_data:
-                    continue
-
-                # Don't upload if -noup is set to True
-                if self.cli.noup:
-                    custom_console.bot_warning_log(f"No Upload active. Done.")
-                    continue
-
-                # Send to the tracker
-                tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath)
-
-                # Store response for the torrent clients
-                bittorrent_list.append(
-                    BittorrentData(
-                        tracker_response=tracker_response,
-                        torrent_response=torrent_response,
-                        content=content,
-                        tracker_message=tracker_message,
-                        archive_path=torrent_filepath,
-                    ))
-
-                # Send the torrent to the client as soon as it is uploaded
-                if self.on_upload:
-                    self.on_upload(bittorrent_list[-1])
+            # Send the torrent to the client as soon as it is uploaded
+            if self.on_upload:
+                self.on_upload(bittorrent_list[-1])
 
         # // end content
-        # Drop the screenshots of the skipped contents that are still waiting
         self.screenshots_executor.shutdown(wait=False, cancel_futures=True)
         return bittorrent_list

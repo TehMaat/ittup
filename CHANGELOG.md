@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.6.0](https://github.com/TehMaat/ittup/compare/1.5.2...1.6.0) (2026-10-15)
+
+
+### Features
+
+* cache the TMDB, TVDB and IGDB lookups on disk with CACHE_DBONLINE ([#43](https://github.com/TehMaat/ittup/issues/43)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+* check the original names before RENAME_FILES renames them ([#53](https://github.com/TehMaat/ittup/issues/53)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+* persistent watcher queue with retries, and a quarantine for the failed uploads ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64)), closes [#46](https://github.com/TehMaat/ittup/issues/46) [#51](https://github.com/TehMaat/ittup/issues/51)
+* read the source from MediaInfo when the file name has none ([#63](https://github.com/TehMaat/ittup/issues/63)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+* write the 1.0 channels of mono audio tracks in the title ([#60](https://github.com/TehMaat/ittup/issues/60)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+
+
+### Bug Fixes
+
+* find duplicates by TMDB ID and skip the ones with another resolution ([#45](https://github.com/TehMaat/ittup/issues/45)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+* read the source in the title when it is next to underscores or brackets ([#58](https://github.com/TehMaat/ittup/issues/58)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+* send -int for every upload and warn when the tracker ignores -int or the freeleech ([#52](https://github.com/TehMaat/ittup/issues/52)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+
+
+### Documentation
+
+* install and upgrade ITTup from PyPI ([#54](https://github.com/TehMaat/ittup/issues/54)) ([dc8a0cc](https://github.com/TehMaat/ittup/commit/dc8a0cc95327554d2cbab787545722eee7804e64))
+
 ## [1.5.2](https://github.com/TehMaat/ittup/compare/1.5.1...1.5.2) (2026-10-15)
 
 

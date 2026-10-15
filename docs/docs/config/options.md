@@ -88,6 +88,14 @@ For a folder, the folder takes the title; the video file of a movie folder takes
 !!! warning "Files seeded elsewhere"
     A renamed file is no longer found by the clients that were already seeding it with its old name.
 
+## Corrupted files
+
+```json
+"CHECK_CORRUPTED": "True",
+```
+
+Before the upload, `ffprobe` reads every video file (the file, or each video of a folder) and decodes a few frames at the start, middle and end. A file that can't be read, has damaged data or is truncated (e.g. a download that didn't finish) is not uploaded: the error is shown and the bot moves on to the next one. It takes less than a second per file. Set it to `False` to skip the check.
+
 ## Watcher
 
 ```json

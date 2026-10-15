@@ -6,6 +6,7 @@ import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
+from ittup.common.integrity import MediaIntegrity
 from ittup.common.tags import SearchTags
 from ittup.common.rename import rename_to_title
 from ittup.common.utility import ManageTitles, System
@@ -67,6 +68,24 @@ class VideoManager:
             content.renamed(path=new_path, renamed_files=renamed_files)
 
     @staticmethod
+    def corrupted(content: Media) -> bool:
+        """
+        True if the file, or a video file of the folder, is corrupted (CHECK_CORRUPTED)
+        """
+        try:
+            errors = MediaIntegrity.check(content.torrent_path)
+        except FileNotFoundError:
+            custom_console.bot_error_log("[FFMPEG-ffprobe not found] - Install ffmpeg or check your system path")
+            exit(1)
+
+        for file, error in errors.items():
+            custom_console.bot_error_log(f"Corrupted file '{os.path.basename(file)}': {error}")
+        if errors:
+            custom_console.bot_error_log(f"Skip the upload of '{content.display_name}'")
+            custom_console.rule()
+        return bool(errors)
+
+    @staticmethod
     def italian_title(details: dict | None) -> str | None:
         """
         Title (movie) or name (tv show) in Italian from the TMDB details, None if it is unknown
@@ -119,6 +138,10 @@ class VideoManager:
             # Skip the old uploads before reading guessit, mediainfo and tags
             if self.cli.watcher and os.path.exists(torrent_filepath):
                 custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
+                continue
+
+            # Skip the corrupted video files: ffprobe reads the container and decodes a few frames
+            if config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
                 continue
 
             # /// User request to build the title; overwriting display_name

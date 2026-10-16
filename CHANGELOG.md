@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/TehMaat/ittup/compare/1.7.0...1.8.0) (2026-10-16)
+
+
+### Features
+
+* configurable range for the corrupted file check and option to ignore Dolby Vision RPU errors ([1cc140a](https://github.com/TehMaat/ittup/commit/1cc140a30f75f4d055daeb31ad9c03c296b5b7f9))
+* configurable range for the corrupted file check and option to ignore Dolby Vision RPU errors ([51dd6b0](https://github.com/TehMaat/ittup/commit/51dd6b024afe9fc28a0d0d74d4deac4d5efcf4c8))
+
 ## [1.7.0](https://github.com/TehMaat/ittup/compare/1.6.1...1.7.0) (2026-10-16)
 
 

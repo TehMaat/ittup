@@ -20,6 +20,12 @@ RESOLUTION_THRESHOLDS = (
     ("576p", 960, 540),
 )
 
+# The interlaced resolutions of the tracker: 2160p and 720p are always progressive
+INTERLACED_RESOLUTIONS = {"1080p": "1080i", "576p": "576i", "480p": "480i"}
+
+# MediaInfo 'Scan type' of an interlaced video (MBAFF/PAFF: interlaced H.264). 'Mixed' is progressive
+INTERLACED_SCAN_TYPES = {"interlaced", "mbaff", "paff"}
+
 
 class Media:
     def __init__(self, folder: str, subfolder: str):
@@ -371,14 +377,14 @@ class Media:
         return self._languages
 
     @staticmethod
-    def resolution_from_size(width: int, height: int | None) -> str:
+    def resolution_from_size(width: int, height: int | None, interlaced: bool = False) -> str:
         """
-        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), the height under 576p
+        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), the height under 576p.
+        An interlaced video is 1080i, 576i or 480i (INTERLACED_RESOLUTIONS)
         """
-        for resolution, min_width, min_height in RESOLUTION_THRESHOLDS:
-            if width >= min_width or (height and height >= min_height):
-                return resolution
-        return f"{height}p"
+        resolution = next((resolution for resolution, min_width, min_height in RESOLUTION_THRESHOLDS
+                           if width >= min_width or (height and height >= min_height)), f"{height}p")
+        return INTERLACED_RESOLUTIONS.get(resolution, resolution) if interlaced else resolution
 
     @property
     def _resolution2(self):
@@ -393,7 +399,8 @@ class Media:
                     height = int(self.mediafile.video_height)
                 except (TypeError, ValueError):
                     height = None
-                return self.resolution_from_size(width, height)
+                interlaced = str(self.mediafile.video_scan_type or "").lower() in INTERLACED_SCAN_TYPES
+                return self.resolution_from_size(width, height, interlaced)
         return None
 
     @property

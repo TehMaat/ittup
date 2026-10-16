@@ -11,6 +11,7 @@ from ittup.core.upload import UploadBot
 from ittup.core import config_settings
 from ittup.core.media import Media
 
+from ittup.core.report import report
 from ittup.view import custom_console
 
 class GameManager:
@@ -76,6 +77,7 @@ class GameManager:
 
             # Skip the upload if there is no valid IGDB
             if not game_data_results:
+                report.failed(content.display_name, "not found on IGDB")
                 continue
 
             # Tracker instance

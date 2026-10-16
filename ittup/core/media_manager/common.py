@@ -69,6 +69,9 @@ class UserContent:
             "[UserContent] ** Your preferred lang is not in your media being uploaded, skipping ! **\n"
         )
         custom_console.rule()
+        # Discarded: the watcher moves it to the quarantine
+        report.failed(content.display_name, f"audio languages {content.audio_languages} not in PREFERRED_LANG"
+                                            f" '{preferred_lang}'")
         return False
 
     @staticmethod
@@ -163,6 +166,8 @@ class UserContent:
                 f"\n*** User chose to skip '{content.display_name}' ***\n"
             )
             custom_console.rule()
+            # Discarded: the watcher moves it to the quarantine
+            report.failed(content.display_name, "duplicate of a torrent already on the tracker")
             return True
         else:
             return False

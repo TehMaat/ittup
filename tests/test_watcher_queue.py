@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import os
 import json
 
 import pytest
@@ -208,3 +209,39 @@ def test_the_watcher_resumes_the_queue_at_start(tmp_path):
     assert resumed == [str(movie)]
     assert json.loads((tmp_path / "queue.json").read_text()) == []
     assert not left.exists()
+
+
+def test_an_entry_without_media_is_discarded(tmp_path):
+    # Issue #75: a discarded entry must reach the quarantine, not stay in the destination folder
+    (tmp_path / "notes.txt").write_text("not a video")
+    bot = Bot(path=str(tmp_path), cli=argparse.Namespace(), mode="auto", trackers_name_list=["ITT"])
+    report.reset()
+    assert bot.run(include_paths=[str(tmp_path / "notes.txt")]) is False
+    assert report.failures == ["'notes.txt': no media to upload: no video file or an unsupported type"]
+    assert run_outcome(0, reason="", failures=report.failures, errors=[]).status == "failed"
+    report.reset()
+
+
+def test_a_content_in_another_language_is_discarded(monkeypatch):
+    from ittup.core import config_settings
+    from ittup.core.media_manager.common import UserContent
+
+    monkeypatch.setattr(config_settings.user_preferences, "PREFERRED_LANG", "IT")
+    content = argparse.Namespace(audio_languages=["en"], file_name="Movie.mkv", display_name="Movie")
+    report.reset()
+    assert UserContent.is_preferred_language(content) is False
+    assert len(report.failures) == 1 and report.failures[0].startswith("'Movie': audio languages")
+    report.reset()
+
+
+def test_the_quarantine_path_of_the_config(tmp_path):
+    from ittup.common.settings import Validate
+
+    missing = tmp_path / "discarded"
+    # Created when the first entry is quarantined: the folder doesn't need to exist yet
+    assert Validate.unit3dup_path(str(missing), "WATCHER_QUARANTINE_PATH", "default", must_exist=False) == str(missing)
+    assert Validate.unit3dup_path(str(missing), "WATCHER_PATH", "default") == "default"
+    # '~' is expanded: the watcher would otherwise create a '~' folder in the working directory
+    assert Validate.unit3dup_path("~/discarded", "WATCHER_QUARANTINE_PATH", "default",
+                                  must_exist=False) == os.path.expanduser("~/discarded")
+    assert Validate.unit3dup_path("", "WATCHER_QUARANTINE_PATH", "default", must_exist=False) == "default"

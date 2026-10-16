@@ -125,13 +125,13 @@ class QbittorrentClient(TorrClient):
         except requests.exceptions.HTTPError:
             custom_console.bot_error_log(
                 f"{self.__class__.__name__} HTTP Error. "
-                f"Check IP/port or run qBittorrent"
+                f"Check QBIT_HOST/QBIT_PORT or run qBittorrent"
             )
 
         except requests.exceptions.ConnectionError:
             custom_console.bot_error_log(
                 f"{self.__class__.__name__} Connection Error. "
-                f"Check IP/port or run qBittorrent"
+                f"Check QBIT_HOST/QBIT_PORT or run qBittorrent"
             )
 
         except qbittorrentapi.LoginFailed:

@@ -97,7 +97,8 @@ class TorrentClientConfig(BaseModel):
     QBIT_USER: str | None = None
     QBIT_PASS: str | None = None
     QBIT_HOST: str = "http://localhost"
-    QBIT_PORT: int = 8080
+    # None: the port of QBIT_HOST or of its scheme (reverse proxy)
+    QBIT_PORT: int | None = 8080
     SHARED_QBIT_PATH: str | None = None
     QBIT_SKIP_CHECK: bool = True
     QBIT_ENABLED: bool = True
@@ -356,6 +357,41 @@ class Validate:
             exit(1)
 
     @staticmethod
+    def host(value: str, field_name: str, default_value: str) -> str:
+        """
+        Validates a host: an IP, a hostname or a FQDN, with an optional scheme, port and path
+        e.g. '127.0.0.1', 'seedbox.example.com', 'https://seedbox.example.com/qbittorrent/' (reverse proxy)
+        """
+        if not value or not value.strip():
+            return default_value
+        value = value.strip()
+        try:
+            # An IPv6 without the square brackets
+            ipaddress.ip_address(value)
+            return value
+        except ValueError:
+            pass
+        # urlparse needs a scheme to read the host
+        url = urlparse(value if value.lower().startswith(("http://", "https://")) else f"//{value}")
+        try:
+            hostname = url.hostname
+            # Raises ValueError for a port that is not a number
+            url.port
+        except ValueError:
+            hostname = None
+        if hostname and not url.netloc.endswith(':') and not url.query and not url.fragment:
+            try:
+                ipaddress.ip_address(hostname)
+                return value
+            except ValueError:
+                # Hostname or FQDN: letters, digits and '-' in each label
+                if all(re.fullmatch(r"(?!-)[a-z0-9-]{1,63}(?<!-)", label)
+                       for label in hostname.rstrip(".").split(".")):
+                    return value
+        print(f"-> Please Fix '{field_name}' ['{value}'] in settings.json")
+        exit(1)
+
+    @staticmethod
     def sign(sign: str) -> str | None:
 
         title = unicodedata.normalize("NFKD", sign)
@@ -437,10 +473,16 @@ class Config(BaseModel):
             else:
                 field = field.upper()
 
-                if field in ['QBIT_HOST', 'TRASM_HOST']:
+                if field == 'QBIT_HOST':
+                    section[field] = Validate.host(value=section[field], field_name=field, default_value="127.0.0.1")
+
+                if field == 'TRASM_HOST':
                     section[field] = Validate.ip(value=section[field], field_name=field, default_value="127.0.0.1")
 
-                if field in ['QBIT_PORT', 'TRASM_PORT', 'RTORR_PORT']:
+                # No port: QBIT_HOST behind a reverse proxy
+                if field == 'QBIT_PORT' and str(section[field]).strip() == '':
+                    section[field] = None
+                elif field in ['QBIT_PORT', 'TRASM_PORT', 'RTORR_PORT']:
                     section[field] = Validate.integer(value=section[field], field_name=field)
 
                 if field in ['QBIT_PASS', 'TRASM_PASS', 'RTORR_PASS', 'QBIT_USER', 'TRASM_USER', 'RTORR_USER',

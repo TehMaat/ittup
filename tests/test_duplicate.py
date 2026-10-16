@@ -102,3 +102,21 @@ def test_another_episode_of_the_same_show_is_not_a_duplicate():
 def test_empty_sizes():
     dup = duplicate("Movie 2020 1080p", FakeTorrent([], []), size_gb=0)
     assert dup._calculate_threshold(0) == 0
+
+
+def test_output_uses_the_content_size_unit_and_aligns_the_titles(monkeypatch):
+    from ittup.core import duplicate as module
+    lines = []
+    monkeypatch.setattr(module, "custom_console", SimpleNamespace(bot_log=lines.append))
+    monkeypatch.setattr(module, "MediaInfoManager",
+                        lambda media_info_output: SimpleNamespace(languages="english,italian"))
+    dup = duplicate("Show S01E01 1080p WEB-DL", FakeTorrent([], []), category="tv", size_gb=722.53)
+    dup.size_unit = "MB"
+    del dup._print_output
+    tracker = {"name": "Show S01E01 1080p WEB-DL", "size": int(722.53 * 1024 ** 2), "resolution": "1080p",
+               "tmdb_id": 123}
+    dup._print_output(value=tracker, delta_size=0.0, size_th=1)
+    assert lines == ["Size_TH: 1% - Delta: 0.0%",
+                     "YourFile - size: '722.53 MB' - 'Show S01E01 1080p WEB-DL'",
+                     "Tracker  - size: '722.53 MB' - 'Show S01E01 1080p WEB-DL'",
+                     "           1080p - ENGLISH,ITALIAN - TMDB-ID 123"]

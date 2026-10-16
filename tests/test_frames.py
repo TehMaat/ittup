@@ -6,6 +6,7 @@ import pytest
 
 from ittup.common import config_settings, frames
 from ittup.common.frames import VideoFrame, vulkan_device_type, LIBPLACEBO_FILTER, TONEMAP_FILTER
+from ittup.common.settings import Load, UserPreferences
 
 # ffmpeg 8.1 verbose log of the libplacebo test frame
 GPU_LOG = """\
@@ -37,10 +38,12 @@ def test_device_type_not_logged():
     assert vulkan_device_type("[libplacebo @ 0x1] GPU information:\n") == "unknown"
 
 
-def video_filter(monkeypatch, color_transfer, dv_profile=None, device_type="discrete", can_tonemap=True):
+def video_filter(monkeypatch, color_transfer, dv_profile=None, device_type="discrete", can_tonemap=True,
+                 tonemap=True):
     """
     Filter chosen for a video with this ffprobe output, libplacebo device and zscale support
     """
+    monkeypatch.setattr(config_settings.user_preferences, "TONEMAP_SCSHOT", tonemap)
     stream = {"color_transfer": color_transfer}
     if dv_profile is not None:
         stream["side_data_list"] = [{"dv_profile": dv_profile}]
@@ -58,8 +61,12 @@ def test_sdr_video_is_not_tone_mapped(monkeypatch):
 
 @pytest.mark.parametrize("color_transfer, dv_profile", [("smpte2084", None), ("unknown", 5)])
 def test_tone_mapping_disabled(monkeypatch, color_transfer, dv_profile):
-    monkeypatch.setattr(config_settings.user_preferences, "TONEMAP_SCSHOT", False)
-    assert video_filter(monkeypatch, color_transfer, dv_profile=dv_profile) == []
+    assert video_filter(monkeypatch, color_transfer, dv_profile=dv_profile, tonemap=False) == []
+
+
+def test_tone_mapping_is_off_by_default():
+    assert UserPreferences.model_fields["TONEMAP_SCSHOT"].default is False
+    assert Load.default_config()["user_preferences"]["TONEMAP_SCSHOT"] == "False"
 
 
 @pytest.mark.parametrize("device_type", ["discrete", "integrated", "unknown"])

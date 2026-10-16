@@ -77,7 +77,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `COMPRESS_SCSHOT` | numero | `3` | Compressione screenshot |
 | `RESIZE_SCSHOT` | booleano | `False` | Ridimensiona gli screenshot |
 | `TIMEOUT_SCSHOT` | numero | `120` | Secondi massimi per un singolo screenshot (`0` = nessun limite) |
-| `TONEMAP_SCSHOT` | booleano | `True` | Converte gli screenshot HDR in SDR |
+| `TONEMAP_SCSHOT` | booleano | `False` | Converte gli screenshot HDR in SDR |
 | `TORRENT_COMMENT` | stringa | `no_comment` | Commento nel file `.torrent` |
 | `PREFERRED_LANG` | stringa | `all` | Lingua preferita (ISO 3166) o `all` |
 | `ANON` | booleano | `False` | Upload anonimo |

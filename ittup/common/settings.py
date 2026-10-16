@@ -160,7 +160,7 @@ class UserPreferences(BaseModel):
     COMPRESS_SCSHOT: int = 4
     RESIZE_SCSHOT: bool = False
     TIMEOUT_SCSHOT: int = 120
-    TONEMAP_SCSHOT: bool = True
+    TONEMAP_SCSHOT: bool = False
     TORRENT_COMMENT: str | None = "no_comment"
     PREFERRED_LANG: str | None = "all"
     RELEASER_SIGN: str | None = None
@@ -533,9 +533,10 @@ class Config(BaseModel):
                 field = field.upper()
 
                 # New attribute added to an existing json file with an empty value: use the default
-                if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV'] and section[field] == '':
+                if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV',
+                             'TONEMAP_SCSHOT'] and section[field] == '':
                     section[field] = 'False'
-                if field in ['CHECK_CORRUPTED', 'TONEMAP_SCSHOT'] and section[field] == '':
+                if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
                 if field in ['WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES', 'CHECK_CORRUPTED_START',
                              'CHECK_CORRUPTED_END', 'TIMEOUT_SCSHOT'] and section[field] == '':
@@ -742,7 +743,7 @@ class Load:
                 "COMPRESS_SCSHOT": 3,
                 "RESIZE_SCSHOT": "False",
                 "TIMEOUT_SCSHOT": 120,
-                "TONEMAP_SCSHOT": "True",
+                "TONEMAP_SCSHOT": "False",
                 "TORRENT_COMMENT": "no_comment",
                 "PREFERRED_LANG": "all",
                 "ANON": "False",

@@ -113,6 +113,6 @@ def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
     data = JsonConfig(path).process()
 
     saved = json.loads(path.read_text(encoding="utf-8"))["user_preferences"]
-    assert (saved["TIMEOUT_SCSHOT"], saved["TONEMAP_SCSHOT"]) == (120, "True")
+    assert (saved["TIMEOUT_SCSHOT"], saved["TONEMAP_SCSHOT"]) == (120, "False")
     preferences = Config(**data).user_preferences
-    assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT) == (120, True)
+    assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT) == (120, False)

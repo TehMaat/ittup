@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0](https://github.com/TehMaat/ittup/compare/1.6.1...1.7.0) (2026-10-16)
+
+
+### Features
+
+* accept a hostname, a FQDN or a reverse proxy URL in QBIT_HOST ([3c934b8](https://github.com/TehMaat/ittup/commit/3c934b828ebf087f2def2238dc0d557da515ce7d))
+* accept a hostname, a FQDN or a reverse proxy URL in QBIT_HOST ([a05aaf9](https://github.com/TehMaat/ittup/commit/a05aaf9459051df490059b07149b79b5c5e71ff4)), closes [#77](https://github.com/TehMaat/ittup/issues/77)
+
+
+### Bug Fixes
+
+* move the discarded watcher entries to the quarantine folder ([1dcc276](https://github.com/TehMaat/ittup/commit/1dcc2760ff15a8e1504c64feb593b4944cc55d15))
+* move the discarded watcher entries to the quarantine folder ([0abef53](https://github.com/TehMaat/ittup/commit/0abef5345f6e64b7194f8e6e0a3a6cd81a461f95)), closes [#75](https://github.com/TehMaat/ittup/issues/75)
+
 ## [1.6.1](https://github.com/TehMaat/ittup/compare/1.6.0...1.6.1) (2026-10-15)
 
 

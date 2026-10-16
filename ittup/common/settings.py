@@ -64,7 +64,8 @@ EMPTY_MEANS_DEFAULT: dict[str, set[str]] = {
     "user_preferences": {"TMDB_DEBUG", "RENAME_FILES", "CHECK_CORRUPTED", "CHECK_CORRUPTED_START",
                          "CHECK_CORRUPTED_END", "CHECK_CORRUPTED_IGNORE_DV", "WATCHER_TIMEOUT",
                          "WATCHER_MAX_RETRIES", "WATCHER_PATH", "WATCHER_DESTINATION_PATH",
-                         "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH", "TIMEOUT_SCSHOT"},
+                         "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH", "TIMEOUT_SCSHOT",
+                         "TONEMAP_SCSHOT"},
 }
 
 
@@ -159,6 +160,7 @@ class UserPreferences(BaseModel):
     COMPRESS_SCSHOT: int = 4
     RESIZE_SCSHOT: bool = False
     TIMEOUT_SCSHOT: int = 120
+    TONEMAP_SCSHOT: bool = False
     TORRENT_COMMENT: str | None = "no_comment"
     PREFERRED_LANG: str | None = "all"
     RELEASER_SIGN: str | None = None
@@ -531,7 +533,8 @@ class Config(BaseModel):
                 field = field.upper()
 
                 # New attribute added to an existing json file with an empty value: use the default
-                if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV'] and section[field] == '':
+                if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV',
+                             'TONEMAP_SCSHOT'] and section[field] == '':
                     section[field] = 'False'
                 if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
@@ -541,7 +544,7 @@ class Config(BaseModel):
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
-                             'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV']:
+                             'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV', 'TONEMAP_SCSHOT']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
@@ -740,6 +743,7 @@ class Load:
                 "COMPRESS_SCSHOT": 3,
                 "RESIZE_SCSHOT": "False",
                 "TIMEOUT_SCSHOT": 120,
+                "TONEMAP_SCSHOT": "False",
                 "TORRENT_COMMENT": "no_comment",
                 "PREFERRED_LANG": "all",
                 "ANON": "False",

@@ -89,12 +89,18 @@ class VideoManager:
         """
         True if the file, or a video file of the folder, is corrupted (CHECK_CORRUPTED)
         """
+        preferences = config_settings.user_preferences
         try:
-            errors = MediaIntegrity.check(content.torrent_path)
+            errors, ignored = MediaIntegrity.check(content.torrent_path, preferences.CHECK_CORRUPTED_START,
+                                                   preferences.CHECK_CORRUPTED_END,
+                                                   preferences.CHECK_CORRUPTED_IGNORE_DV)
         except FileNotFoundError:
             custom_console.bot_error_log("[FFMPEG-ffprobe not found] - Install ffmpeg or check your system path")
             exit(1)
 
+        for file, error in ignored.items():
+            custom_console.bot_warning_log(f"Dolby Vision metadata error ignored in '{os.path.basename(file)}' "
+                                           f"(CHECK_CORRUPTED_IGNORE_DV): {error}")
         for file, error in errors.items():
             custom_console.bot_error_log(f"Corrupted file '{os.path.basename(file)}': {error}")
         if errors:

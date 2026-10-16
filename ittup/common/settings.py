@@ -157,6 +157,9 @@ class UserPreferences(BaseModel):
     PERSONAL_RELEASE: bool = False
     RENAME_FILES: bool = False
     CHECK_CORRUPTED: bool = True
+    CHECK_CORRUPTED_START: int = 10
+    CHECK_CORRUPTED_END: int = 90
+    CHECK_CORRUPTED_IGNORE_DV: bool = False
     FAST_LOAD: int = 0
     MY_SIGN: str | None = None
     MY_URL: str | None = None
@@ -515,16 +518,17 @@ class Config(BaseModel):
                 field = field.upper()
 
                 # New attribute added to an existing json file with an empty value: use the default
-                if field in ['TMDB_DEBUG', 'RENAME_FILES'] and section[field] == '':
+                if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV'] and section[field] == '':
                     section[field] = 'False'
                 if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
-                if field in ['WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES'] and section[field] == '':
+                if field in ['WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES', 'CHECK_CORRUPTED_START',
+                             'CHECK_CORRUPTED_END'] and section[field] == '':
                     section[field] = UserPreferences.model_fields[field].default
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
-                             'RENAME_FILES', 'CHECK_CORRUPTED']:
+                             'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
@@ -532,8 +536,13 @@ class Config(BaseModel):
 
                 if field in ['NUMBER_OF_SCREENSHOTS', 'COMPRESS_SCSHOT', 'IMGBB_PRIORITY', 'FREE_IMAGE_PRIORITY',
                              'LENSDUMP_PRIORITY', 'PASSIMA_PRIORITY', 'IMARIDE_PRIORITY', 'WATCHER_INTERVAL', 'SIZE_TH',
-                             'FAST_LOAD', 'WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES']:
+                             'FAST_LOAD', 'WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES', 'CHECK_CORRUPTED_START',
+                             'CHECK_CORRUPTED_END']:
                     section[field] = Validate.integer(value=section[field], field_name=field)
+
+                if field in ['CHECK_CORRUPTED_START', 'CHECK_CORRUPTED_END'] and not 0 <= section[field] <= 100:
+                    print(f"-> Please Fix '{field}' ['{section[field]}'] in settings.json: a percentage from 0 to 100")
+                    exit(1)
 
                 if field in ['PREFERRED_LANG', 'YOUTUBE_PREF_LANG']:
                     section[field] = Validate.iso3166(value=section[field], field_name=field)
@@ -569,6 +578,12 @@ class Config(BaseModel):
                 if field in ['TAGS_POSITION_SERIE']:
                     section[field] = Validate.validate_tags_position(position_list=section[field])
 
+        start = section.get('CHECK_CORRUPTED_START', UserPreferences.model_fields['CHECK_CORRUPTED_START'].default)
+        end = section.get('CHECK_CORRUPTED_END', UserPreferences.model_fields['CHECK_CORRUPTED_END'].default)
+        if start >= end:
+            print(f"-> Please Fix 'CHECK_CORRUPTED_START' ['{start}'] and 'CHECK_CORRUPTED_END' ['{end}'] "
+                  f"in settings.json: the start must be lower than the end")
+            exit(1)
         return v
 
     @model_validator(mode='before')
@@ -722,6 +737,9 @@ class Load:
                 "PERSONAL_RELEASE": "False",
                 "RENAME_FILES": "False",
                 "CHECK_CORRUPTED": "True",
+                "CHECK_CORRUPTED_START": 10,
+                "CHECK_CORRUPTED_END": 90,
+                "CHECK_CORRUPTED_IGNORE_DV": "False",
                 "FAST_LOAD": "0",
                 "RELEASER_SIGN": "",
                 "MY_SIGN": "",

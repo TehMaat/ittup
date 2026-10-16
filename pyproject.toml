@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 dynamic = ["dependencies"]
 name = "ittup"
-version = "1.10.0"
+version = "1.10.1"
 description = "ItaTorrents uploader"
 readme = "README.rst"
 requires-python = ">=3.10"

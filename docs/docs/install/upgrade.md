@@ -2,6 +2,9 @@
 
 When a new version is out:
 
+!!! tip
+    At every start the bot asks PyPI for the latest version and, when a newer one is out, shows `ITTup X.Y.Z is available (installed: ...)` after the configuration summary. It is only a message: the bot goes on with the installed version, and without an answer from PyPI within a second nothing is shown.
+
 ```bash
 pip install ittup --upgrade
 ```

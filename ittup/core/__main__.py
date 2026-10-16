@@ -23,6 +23,10 @@ def main():
     # Parse the arguments before loading the config: '-h' prints the help and exits without a config file
     cli = CommandLine()
 
+    # Ask PyPI for a newer version while the bot starts: the answer is shown after the configuration
+    from ittup.common.update_check import UpdateCheck, UPGRADE_DOCS_URL
+    update_check = UpdateCheck().start()
+
     # These modules load the user configuration on import
     from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
     from ittup.common.settings import (Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH,
@@ -50,6 +54,12 @@ def main():
     custom_console.bot_log(f"[Preferred Language] '{config.user_preferences.PREFERRED_LANG}'")
     custom_console.bot_log(f"[Youtube Preferred Language] '{config.user_preferences.YOUTUBE_PREF_LANG}'")
     print()
+
+    # Only a message: the bot goes on with the installed version
+    newer_version = update_check.newer_version()
+    if newer_version:
+        custom_console.bot_warning_log(f"{APP_NAME} {newer_version} is available (installed: {version}). "
+                                       f"How to upgrade: {UPGRADE_DOCS_URL}\n")
 
     # Get the torrent archive path
     if config.user_preferences.TORRENT_ARCHIVE_PATH:

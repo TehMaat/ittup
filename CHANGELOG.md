@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/TehMaat/ittup/compare/1.8.1...1.9.0) (2026-10-16)
+
+
+### Features
+
+* show when a newer version is on PyPI at startup ([8f69256](https://github.com/TehMaat/ittup/commit/8f69256d5f38a01d0899d05bd4966c5a52252025))
+
 ## [1.8.1](https://github.com/TehMaat/ittup/compare/1.8.0...1.8.1) (2026-10-16)
 
 

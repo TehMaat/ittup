@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.10.1](https://github.com/TehMaat/ittup/compare/1.10.0...1.10.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* duplicate check shows the content size in its own unit, titles aligned ([d1d8433](https://github.com/TehMaat/ittup/commit/d1d8433c5a8bf33d0be0e73e75b7690a76dcb3c8))
+* duplicate check shows the content size in its own unit, titles aligned ([0ffac25](https://github.com/TehMaat/ittup/commit/0ffac25c4428f4ede5844ef4d8b21a0519ae378b)), closes [#78](https://github.com/TehMaat/ittup/issues/78)
+* require ffprobe 5.1 for the corrupted files check ([0301cd5](https://github.com/TehMaat/ittup/commit/0301cd5369a07dbf71c9e0a4fa28a693377a60ad))
+* require ffprobe 5.1 for the corrupted files check ([c7a57ef](https://github.com/TehMaat/ittup/commit/c7a57ef7b28a46bbf13ab432309bde7792b0976f)), closes [#79](https://github.com/TehMaat/ittup/issues/79)
+
 ## [1.10.0](https://github.com/TehMaat/ittup/compare/1.9.0...1.10.0) (2026-10-16)
 
 

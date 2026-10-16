@@ -33,6 +33,8 @@ La risoluzione (tag `resolution`, tag `uhd` e risoluzione sul tracker) viene let
 
 Sotto il `576p` la risoluzione è l'altezza (`720×480` → `480p`).
 
+Un video interlacciato (*Scan type* del MediaInfo `Interlaced`, `MBAFF` o `PAFF`) è `1080i`, `576i` o `480i`, le risoluzioni interlacciate del tracker: `2160p` e `720p` restano progressive.
+
 ## Codec video
 
 La famiglia del codec (264, 265 o altro) viene letta dal nome del file (`x264`, `x265`, `H264`, `H.265`, `AVC`, `HEVC`…) o, se manca, dal MediaInfo. Se i due non concordano vince il MediaInfo e il bot mostra un avviso.

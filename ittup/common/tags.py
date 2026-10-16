@@ -628,9 +628,12 @@ class SearchTags(object):
         mapping = {
             '2160p': 'UHD',
             '1080p': 'FullHD',
+            '1080i': 'FullHD',
             '720p': 'HD',
             '576p': 'SD',
+            '576i': 'SD',
             '480p': 'SD',
+            '480i': 'SD',
         }
         return {
             'resolution': self.media.resolution,

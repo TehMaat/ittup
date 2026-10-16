@@ -3,6 +3,7 @@ import json
 import os
 import re
 import subprocess
+from functools import cache
 
 from ittup.common.utility import ManageTitles, System
 
@@ -12,6 +13,8 @@ DEFAULT_START = 10
 DEFAULT_END = 90
 SAMPLE_FRAMES = 3
 FFPROBE_TIMEOUT = 120
+# ffprobe 4.4 reads only the first of the -read_intervals: every file would look truncated
+MIN_FFPROBE_VERSION = (5, 1)
 # A truncated file has no frames this far before the end position: 5% of the duration, at least 10s because
 # ffprobe seeks to the keyframe before each position
 TRUNCATED_MARGIN = 0.05
@@ -19,6 +22,14 @@ TRUNCATED_MARGIN_SECONDS = 10
 
 # ffmpeg logs a malformed Dolby Vision RPU as an error, drops that frame's metadata and still decodes the frame
 DOLBY_VISION_ERROR = re.compile(r"\bRPU\b|DOVI|Dolby Vision", re.IGNORECASE)
+# 'ffprobe version 4.4.2-0ubuntu0.22.04.1', 'ffprobe version n6.1.1'; the git builds ('N-112345-g...') have no number
+FFPROBE_VERSION = re.compile(r"^ffprobe version n?(\d+)\.(\d+)")
+
+
+class UnsupportedFFprobe(Exception):
+    """
+    The installed ffprobe is older than MIN_FFPROBE_VERSION
+    """
 
 
 class MediaIntegrity:
@@ -41,6 +52,18 @@ class MediaIntegrity:
         result = subprocess.run(["ffprobe", "-v", "error", *arguments], capture_output=True, text=True,
                                 stdin=subprocess.DEVNULL, timeout=FFPROBE_TIMEOUT)
         return result.returncode, result.stdout, result.stderr.strip()
+
+    @staticmethod
+    @cache
+    def ffprobe_version() -> tuple[str, tuple[int, int] | None]:
+        """
+        'ffprobe version ...' and its (major, minor), None if the version has no number
+        """
+        result = subprocess.run(["ffprobe", "-version"], capture_output=True, text=True,
+                                stdin=subprocess.DEVNULL, timeout=FFPROBE_TIMEOUT)
+        line = (result.stdout.splitlines() or [""])[0].split(" Copyright")[0].strip()
+        match = FFPROBE_VERSION.match(line)
+        return line, (int(match.group(1)), int(match.group(2))) if match else None
 
     @staticmethod
     def first_error(stderr: str, returncode: int) -> str:
@@ -119,7 +142,11 @@ class MediaIntegrity:
         :return: ({file: error} for the corrupted files, empty if they are all fine;
                   {file: Dolby Vision error} for the fine files with ignored Dolby Vision errors)
         :raises FileNotFoundError: ffprobe is not installed
+        :raises UnsupportedFFprobe: ffprobe is older than MIN_FFPROBE_VERSION
         """
+        line, version = MediaIntegrity.ffprobe_version()
+        if version is not None and version < MIN_FFPROBE_VERSION:
+            raise UnsupportedFFprobe(line)
         errors, ignored = {}, {}
         for file in MediaIntegrity.video_files(path):
             try:

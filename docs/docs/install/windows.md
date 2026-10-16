@@ -3,7 +3,7 @@
 ## Requirements
 
 - **Python 3.10 or newer** (recommended: 3.10 to 3.12 — newer versions may have issues with some libraries)
-- **FFmpeg** — used to extract screenshots from videos
+- **FFmpeg 5.1 or newer** — used to extract screenshots from videos and to check the corrupted files
 - **Poppler** — only if you want to create torrents for PDF documents
 
 ## 1. Install FFmpeg

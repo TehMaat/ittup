@@ -41,6 +41,10 @@ Sì: `-noseed` carica senza seeding, `-noup` crea solo il `.torrent`. Differenza
 
 FFmpeg non è nel PATH. [Windows](../install/windows.md#1-installa-ffmpeg) · [Linux](../install/linux.md): `sudo apt install ffmpeg`. Dopo averlo aggiunto al PATH, chiudi e riapri il terminale.
 
+### `[FFMPEG-ffprobe too old]`
+
+Il controllo dei file corrotti (`CHECK_CORRUPTED`) richiede ffprobe 5.1 o successivo. Su Ubuntu 22.04 `apt` installa la 4.4: [installa una build statica](../install/linux.md#1-installa-le-dipendenze), oppure imposta `CHECK_CORRUPTED` a `False`.
+
 ### `pdftocairo` non riconosciuto
 
 Poppler manca o non è nel PATH — serve solo per i PDF. [Windows](../install/windows.md#2-poppler-solo-per-i-pdf) · Linux: `sudo apt install poppler-utils`.

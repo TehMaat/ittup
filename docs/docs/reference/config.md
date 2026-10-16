@@ -85,7 +85,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `TMDB_DEBUG` | boolean | `False` | Logs TMDB title-matching scores (extra HTTP requests) |
 | `PERSONAL_RELEASE` | boolean | `False` | Personal release on every upload |
 | `RENAME_FILES` | boolean | `False` | Renames the original files as the tracker title before the upload |
-| `CHECK_CORRUPTED` | boolean | `True` | Skips the corrupted video files, checked with ffprobe before the upload |
+| `CHECK_CORRUPTED` | boolean | `True` | Skips the corrupted video files, checked with ffprobe (5.1 or newer) before the upload |
 | `CHECK_CORRUPTED_START` | number | `10` | Start of the checked range, in percent of the duration |
 | `CHECK_CORRUPTED_END` | number | `90` | End of the checked range, in percent of the duration |
 | `CHECK_CORRUPTED_IGNORE_DV` | boolean | `False` | Dolby Vision RPU metadata errors don't make the file corrupted |

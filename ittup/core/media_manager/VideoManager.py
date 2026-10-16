@@ -8,7 +8,7 @@ import unicodedata
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.frames import VideoFrame
-from ittup.common.integrity import MediaIntegrity
+from ittup.common.integrity import MediaIntegrity, MIN_FFPROBE_VERSION, UnsupportedFFprobe
 from ittup.common.tags import SearchTags
 from ittup.common.rename import rename_to_title
 from ittup.common.utility import ManageTitles, System
@@ -96,6 +96,11 @@ class VideoManager:
                                                    preferences.CHECK_CORRUPTED_IGNORE_DV)
         except FileNotFoundError:
             custom_console.bot_error_log("[FFMPEG-ffprobe not found] - Install ffmpeg or check your system path")
+            exit(1)
+        except UnsupportedFFprobe as version:
+            custom_console.bot_error_log(f"[FFMPEG-ffprobe too old] - '{version}': the corrupted files check needs "
+                                         f"ffprobe {'.'.join(map(str, MIN_FFPROBE_VERSION))} or newer. "
+                                         f"Update ffmpeg or set CHECK_CORRUPTED to False")
             exit(1)
 
         for file, error in ignored.items():

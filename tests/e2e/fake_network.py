@@ -133,6 +133,9 @@ def route(method: str, url: str, form: dict | None = None) -> tuple[int, object 
         answer = image_host(parts.hostname)
     elif parts.hostname == "image.tmdb.org":
         answer = 200, b"\x89PNG\r\n\x1a\n"
+    elif parts.hostname == "pypi.org":
+        # The update check at startup: no newer version
+        answer = 200, {"info": {"version": "0.0.0"}}
     log(method, url, unmatched=answer is None, form=form)
     return answer or (404, {"message": "no route in the e2e fake network"})
 

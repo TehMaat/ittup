@@ -6,6 +6,8 @@ import shutil
 import re
 import unicodedata
 
+from datetime import datetime
+
 from pydantic import BaseModel, model_validator
 from pathvalidate import sanitize_filepath
 from urllib.parse import urlparse
@@ -53,6 +55,16 @@ LEGACY_CONFIG_FILES: dict[str, Path] = {
     user_tags_file: USER_TAGS_PATH,
     user_sign_file: USER_SIGN_PATH,
     bane_file: BAN_TAGS_PATH,
+}
+
+# Attributes where '' already means the default value: older versions added the new attributes to the
+# user's json file with an empty value. The config file is rewritten with the default value
+EMPTY_MEANS_DEFAULT: dict[str, set[str]] = {
+    "torrent_client_config": {"QBIT_SKIP_CHECK", "QBIT_ENABLED"},
+    "user_preferences": {"TMDB_DEBUG", "RENAME_FILES", "CHECK_CORRUPTED", "CHECK_CORRUPTED_START",
+                         "CHECK_CORRUPTED_END", "CHECK_CORRUPTED_IGNORE_DV", "WATCHER_TIMEOUT",
+                         "WATCHER_MAX_RETRIES", "WATCHER_PATH", "WATCHER_DESTINATION_PATH",
+                         "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH"},
 }
 
 
@@ -648,12 +660,11 @@ class Load:
             json.dump(BAN_LIST, ban_list_file, ensure_ascii=False, indent=4)
 
     @staticmethod
-    def create_default_json_file(path: Path):
+    def default_config() -> dict:
         """
-        Creates a default configuration file if it doesn't already exist
+        The default configuration: the sections and attributes of the config file, in their order
         """
-
-        default_content = {
+        return {
             "tracker_config": {
                 "ITT_URL": "https://itatorrents.xyz",
                 "ITT_APIKEY": "no_key",
@@ -770,6 +781,13 @@ class Load:
             }
         }
 
+    @staticmethod
+    def create_default_json_file(path: Path):
+        """
+        Creates a default configuration file if it doesn't already exist
+        """
+        default_content = Load.default_config()
+
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as json_file:
             # pycharm type checking issue (json_file)
@@ -855,8 +873,8 @@ class Load:
 
 class JsonConfig:
     """
-    Update the config json with the new attributes
-
+    Rebuild the config json from the default one at every version, keeping the user's values:
+    the new attributes get their default value, the obsolete ones are dropped (they stay in the backup)
     """
 
     def __init__(self, default_json_path: Path):
@@ -867,85 +885,46 @@ class JsonConfig:
         # Load the file json
         self.file_config_data = self.validate_json()
 
-        # Flag Update
-        # true if any diff is found
-        self.updated = False
+        # section -> {attribute: default value} for the attributes added with their default value
+        self.new_keys: dict[str, dict] = {}
 
-        # Load the json sections from the file ( add section man)
-        self.tracker_config = self.file_config_data["tracker_config"]
-        self.torrent_config = self.file_config_data["torrent_client_config"]
-        self.user_preferences_config = self.file_config_data["user_preferences"]
-        self.options_config = self.file_config_data["options"]
-        self.console_options_config = self.file_config_data["console_options"]
+        # section -> {attribute: default value} for the empty attributes set to their default value
+        self.filled_keys: dict[str, dict] = {}
 
-        # New tracker attribute
-        self.tracker_diff_keys = TrackerConfig.model_fields.keys() - self.tracker_config.keys()
-
-        # New torrent attribute
-        self.torrent_diff_keys = TorrentClientConfig.model_fields.keys() - self.torrent_config.keys()
-
-        # New user preferences attribute
-        self.user_preferences_diff_keys = UserPreferences.model_fields.keys() - self.user_preferences_config.keys()
-
-        # New options attribute
-        self.options_diff_keys = Options.model_fields.keys() - self.options_config.keys()
-
-        # New console options attribute
-        self.console_options_diff_keys = ConsoleOptions.model_fields.keys() - self.console_options_config.keys()
-
-    def update_tracker_config(self):
-        # Add the new attributes in 'tracker config'
-        if self.tracker_diff_keys:
-            self.updated = True
-            missing_keys_dict = {key: 'no_key' for key in self.tracker_diff_keys}
-            self.tracker_config.update(missing_keys_dict)
-
-    def update_torrent_client_config(self):
-        # Add the new attributes in 'torrent client'
-        if self.torrent_diff_keys:
-            self.updated = True
-            missing_keys_dict = {key: '' for key in self.torrent_diff_keys}
-            self.torrent_config.update(missing_keys_dict)
-
-    def update_user_preferences_config(self):
-        # Add the new attributes in 'user preferences'
-        if self.user_preferences_diff_keys:
-            self.updated = True
-            missing_keys_dict = {key: '' for key in self.user_preferences_diff_keys}
-            self.user_preferences_config.update(missing_keys_dict)
-
-    def update_options_config(self):
-        # Add the new attributes in 'options'
-        if self.options_diff_keys:
-            self.updated = True
-            missing_keys_dict = {key: '' for key in self.options_diff_keys}
-            self.options_config.update(missing_keys_dict)
-
-    def update_console_options_config(self):
-        # Add the new attributes in 'console options'
-        if self.console_options_diff_keys:
-            self.updated = True
-            missing_keys_dict = {key: '' for key in self.console_options_diff_keys}
-            self.console_options_config.update(missing_keys_dict)
+        # section -> [attribute] for the attributes, or the sections, not used anymore
+        self.obsolete_keys: dict[str, list] = {}
 
     def get_config_updated(self) -> dict:
+        """
+        The default config with the user's values, in the order of the default config
+        """
+        rebuilt = {}
+        for section, defaults in Load.default_config().items():
+            user_section = self.file_config_data.get(section)
+            if not isinstance(user_section, dict):
+                user_section = {}
+            # The attributes are read case-insensitively
+            user_values = {key.upper(): value for key, value in user_section.items()}
 
-        # Update the loaded file json section 'tracker'
-        self.update_tracker_config()
+            rebuilt[section] = {}
+            for key, default in defaults.items():
+                if key not in user_values:
+                    self.new_keys.setdefault(section, {})[key] = default
+                    rebuilt[section][key] = default
+                elif user_values[key] == '' and key in EMPTY_MEANS_DEFAULT.get(section, set()) and default != '':
+                    self.filled_keys.setdefault(section, {})[key] = default
+                    rebuilt[section][key] = default
+                else:
+                    rebuilt[section][key] = user_values[key]
 
-        # Update the loaded file json section 'user preferences'
-        self.update_user_preferences_config()
+            obsolete = [key for key in user_section if key.upper() not in defaults]
+            if obsolete:
+                self.obsolete_keys[section] = obsolete
 
-        # Update the loaded file json section 'client_config'
-        self.update_torrent_client_config()
+        for section in self.file_config_data.keys() - rebuilt.keys():
+            self.obsolete_keys[section] = ["(whole section)"]
 
-        # Update the loaded file json section 'options'
-        self.update_options_config()
-
-        # Update the loaded file json section 'console options'
-        self.update_console_options_config()
-
-        return self.file_config_data
+        return rebuilt
 
     def validate_json(self) -> dict:
         try:
@@ -966,47 +945,42 @@ class JsonConfig:
 
     def process(self) -> dict:
 
-        # Json validated and updated data
+        # Json validated and rebuilt data
         json_updated = self.get_config_updated()
 
-        # Make backup if there are any updates
-        if self.updated:
-            # Advise the user
-            self.json_message_new_attributes()
-
-            # Write the content to another file with *.backup extension
-            shutil.copy2(self.default_json_path, f"{self.default_json_path}.backup")
-            print(f"-> Backup the current json file..{self.default_json_path}.backup")
-
-            # Update the current json file
-            with open(f"{self.default_json_path}", 'w', encoding='utf-8') as file_w:
-                # pycharm issue type checking ( file_w)
-                json.dump(json_updated, file_w, ensure_ascii=False, indent=4)
-
-            # Validate the file
-            print(f"-> Json file updated and validated {self.default_json_path}")
-            return self.validate_json()
-        else:
+        # Same attributes, values and order: nothing to rewrite
+        if json.dumps(json_updated) == json.dumps(self.file_config_data):
             return self.file_config_data
+
+        # Advise the user
+        self.json_message_new_attributes()
+
+        # Keep every previous file: one backup for each rewrite
+        backup_path = f"{self.default_json_path}.bak-{datetime.now():%Y%m%d%H%M%S}"
+        shutil.copy2(self.default_json_path, backup_path)
+        print(f"-> Backup the current json file..{backup_path}")
+
+        # Update the current json file
+        with open(f"{self.default_json_path}", 'w', encoding='utf-8') as file_w:
+            # pycharm issue type checking ( file_w)
+            json.dump(json_updated, file_w, ensure_ascii=False, indent=4)
+
+        # Validate the file
+        print(f"-> Json file updated and validated {self.default_json_path}")
+        return self.validate_json()
 
     def json_message_new_attributes(self):
 
-        print("-- ** New attributes have been added since the last bot version  ** --")
+        print("-- ** The configuration file has been rebuilt for this version, with your values ** --")
         message = ''
-        if self.tracker_diff_keys:
-            message += f"New Tracker Configuration attribute: {self.tracker_diff_keys}\n"
+        for section, keys in self.new_keys.items():
+            message += f"New '{section}' attributes, with the default value: {keys}\n"
 
-        if self.torrent_diff_keys:
-            message += f"New Torrent Configuration attribute: {self.torrent_diff_keys}\n"
+        for section, keys in self.filled_keys.items():
+            message += f"Empty '{section}' attributes, set to the default value: {keys}\n"
 
-        if self.user_preferences_diff_keys:
-            message += f"New User Preferences attribute: {self.user_preferences_diff_keys}\n"
-
-        if self.options_diff_keys:
-            message += f"New Options attribute: {self.options_diff_keys}\n"
-
-        if self.console_options_diff_keys:
-            message += f"New Console Options attribute: {self.console_options_diff_keys}\n"
+        for section, keys in self.obsolete_keys.items():
+            message += f"Obsolete '{section}' attributes, removed (they are kept in the backup): {keys}\n"
 
         print(message)
 

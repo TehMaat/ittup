@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import json
 import subprocess
 import io
@@ -23,6 +24,11 @@ TONEMAP_FILTER = ("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
 # profile 5 (IPTPQc2, no HDR10 base layer): without it the colors are green and purple
 LIBPLACEBO_FILTER = ("libplacebo=tonemapping=auto:colorspace=bt709:color_primaries=bt709:color_trc=bt709:"
                      "range=tv:format=yuv420p")
+
+# libplacebo lists the Vulkan devices as 'GPU 0: <name> v<api version> (<type>)', then logs the one it uses as
+# 'Device Name: <name>'. The type is 'software' for the CPU emulation (lavapipe/llvmpipe, e.g. a container
+# without a GPU): there a 4K frame takes far longer than with zscale
+VULKAN_DEVICE_LINE = re.compile(r"GPU \d+: (?P<name>.+) v[\d.]+ \((?P<type>[\w ]+)\)")
 
 # A frame with a mean luminance (0-255) below this value is considered too dark for a screenshot
 DARK_FRAME_THRESHOLD = 40
@@ -49,18 +55,39 @@ def ffmpeg_can_tonemap() -> bool:
 
 
 @cache
-def ffmpeg_can_libplacebo() -> bool:
+def libplacebo_device_type() -> str | None:
     """
     The 'libplacebo' filter needs an ffmpeg build with libplacebo and a working Vulkan device:
     try it on a test frame
+
+    :return: The type of the Vulkan device used ('discrete', 'integrated', 'software'...), 'unknown' if
+             libplacebo doesn't log it, None if libplacebo doesn't work
     """
-    command = ["ffmpeg", "-hide_banner", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=64x64:d=0.1",
+    command = ["ffmpeg", "-hide_banner", "-v", "verbose", "-f", "lavfi", "-i", "testsrc2=s=64x64:d=0.1",
                "-vf", LIBPLACEBO_FILTER, "-frames:v", "1", "-f", "null", "-"]
     try:
-        subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True, timeout=30)
+        result = subprocess.run(command, capture_output=True, text=True, errors="replace",
+                                stdin=subprocess.DEVNULL, check=True, timeout=30)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-        return False
-    return True
+        return None
+    return vulkan_device_type(result.stderr)
+
+
+def vulkan_device_type(ffmpeg_log: str) -> str:
+    """
+    Type of the Vulkan device chosen by libplacebo, from the ffmpeg verbose log
+
+    :return: The device type, 'unknown' if it's not in the log
+    """
+    devices: dict[str, str] = {}
+    for line in ffmpeg_log.splitlines():
+        # Drop the '[libplacebo @ 0x...] ' prefix
+        message = line.split("] ", 1)[-1].strip()
+        if match := VULKAN_DEVICE_LINE.fullmatch(message):
+            devices.setdefault(match["name"], match["type"])
+        elif message.startswith("Device Name: "):
+            return devices.get(message.removeprefix("Device Name: "), "unknown")
+    return "unknown"
 
 
 class VideoFrame:
@@ -76,6 +103,9 @@ class VideoFrame:
         self.num_screenshots = num_screenshots
         # ffmpeg '-vf' option for the screenshots, set by create()
         self.video_filter: list[str] = []
+        # Max seconds for a single screenshot, None = no limit
+        timeout = config_settings.user_preferences.TIMEOUT_SCSHOT
+        self.timeout: int | None = timeout if timeout > 0 else None
 
     def create(self):
         """
@@ -191,7 +221,8 @@ class VideoFrame:
         """
         ffmpeg options for the screenshots: HDR videos are tone mapped to SDR, otherwise the colors look washed out.
         Dolby Vision profile 5 has no HDR transfer (it is 'unknown') and without the RPU reshaping the colors
-        are green and purple: only libplacebo can fix it
+        are green and purple: only libplacebo can fix it.
+        libplacebo on a software Vulkan device is much slower than zscale: it's used only when zscale can't help
 
         :return: The '-vf' option or an empty list
         """
@@ -222,8 +253,15 @@ class VideoFrame:
             return []
 
         hdr_format = f"Dolby Vision profile {dv_profile}" if dv_profile is not None else color_transfer
-        if ffmpeg_can_libplacebo():
+        device_type = libplacebo_device_type()
+        if device_type not in (None, "software"):
             custom_console.bot_log(f"HDR video ({hdr_format}): tone mapping the screenshots to SDR with libplacebo")
+            return ["-vf", LIBPLACEBO_FILTER]
+
+        if device_type == "software" and (color_transfer not in HDR_TRANSFERS or not ffmpeg_can_tonemap()):
+            custom_console.bot_warning_log(f"HDR video ({hdr_format}): tone mapping the screenshots to SDR with"
+                                           " libplacebo on a software Vulkan device (no GPU), it's slow: raise"
+                                           " TIMEOUT_SCSHOT if the screenshots time out")
             return ["-vf", LIBPLACEBO_FILTER]
 
         if color_transfer not in HDR_TRANSFERS:
@@ -297,13 +335,15 @@ class VideoFrame:
         try:
             # No stdin: the ffmpeg processes running at the same time would change the terminal settings
             # and leave it without echo and Enter, so the questions to the user could not be answered
-            result = subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True, timeout=20)
+            result = subprocess.run(command, capture_output=True, stdin=subprocess.DEVNULL, check=True,
+                                    timeout=self.timeout)
             return Image.open(io.BytesIO(result.stdout))
         except subprocess.CalledProcessError as e:
             custom_console.bot_error_log(f"IMAGES Error: Please verify if your file is corrupted")
             exit(1)
         except subprocess.TimeoutExpired:
-            custom_console.bot_error_log(f"IMAGES Error: Time Out. Please verify if your file is corrupted")
+            custom_console.bot_error_log(f"IMAGES Error: Time Out after {self.timeout} seconds. Please verify if"
+                                         " your file is corrupted or raise TIMEOUT_SCSHOT")
             exit(1)
         except FileNotFoundError:
             custom_console.bot_error_log(

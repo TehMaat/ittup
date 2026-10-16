@@ -97,3 +97,22 @@ def test_the_rebuilt_config_is_valid(tmp_path):
     assert config.user_preferences.CHECK_CORRUPTED_END == 90
     assert config.user_preferences.CHECK_CORRUPTED_IGNORE_DV is False
     assert config.torrent_client_config.QBIT_ENABLED is True
+
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
+    config = Load.default_config()
+    for field in ("TIMEOUT_SCSHOT", "TONEMAP_SCSHOT"):
+        if missing:
+            del config["user_preferences"][field]
+        else:
+            # Added with an empty value by the older versions
+            config["user_preferences"][field] = ""
+    path = write(tmp_path / "ittup.json", config)
+
+    data = JsonConfig(path).process()
+
+    saved = json.loads(path.read_text(encoding="utf-8"))["user_preferences"]
+    assert (saved["TIMEOUT_SCSHOT"], saved["TONEMAP_SCSHOT"]) == (120, "True")
+    preferences = Config(**data).user_preferences
+    assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT) == (120, True)

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0](https://github.com/TehMaat/ittup/compare/1.9.0...1.10.0) (2026-10-16)
+
+
+### Features
+
+* interlaced resolutions 1080i, 576i and 480i from the MediaInfo scan type ([aed3844](https://github.com/TehMaat/ittup/commit/aed3844d29a633e28d72c4506414af1359da596e))
+* interlaced resolutions 1080i, 576i and 480i from the MediaInfo scan type ([15faf6a](https://github.com/TehMaat/ittup/commit/15faf6a6a4e38d4df84529d61920261121664675))
+
 ## [1.9.0](https://github.com/TehMaat/ittup/compare/1.8.1...1.9.0) (2026-10-16)
 
 

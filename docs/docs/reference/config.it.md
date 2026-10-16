@@ -86,6 +86,9 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
 | `RENAME_FILES` | booleano | `False` | Rinomina i file originali come il titolo del tracker prima dell'upload |
 | `CHECK_CORRUPTED` | booleano | `True` | Salta i file video corrotti, controllati con ffprobe prima dell'upload |
+| `CHECK_CORRUPTED_START` | numero | `10` | Inizio dell'intervallo controllato, in percentuale della durata |
+| `CHECK_CORRUPTED_END` | numero | `90` | Fine dell'intervallo controllato, in percentuale della durata |
+| `CHECK_CORRUPTED_IGNORE_DV` | booleano | `False` | Gli errori dei metadati RPU Dolby Vision non rendono il file corrotto |
 | `FAST_LOAD` | numero | `0` | Limita i contenuti processati (1–150; 0 = tutti) |
 | `RELEASER_SIGN` | stringa | vuota | Firma releaser (max 20 caratteri) |
 

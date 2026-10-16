@@ -6,10 +6,19 @@ import subprocess
 
 from ittup.common.utility import ManageTitles, System
 
-# Where a few frames are decoded, as a fraction of the duration: the last one finds the truncated files
-SAMPLE_POSITIONS = (0.10, 0.50, 0.95)
+# Where a few frames are decoded, in percent of the duration (CHECK_CORRUPTED_START/END): the frames at the end
+# find the truncated files
+DEFAULT_START = 10
+DEFAULT_END = 90
 SAMPLE_FRAMES = 3
 FFPROBE_TIMEOUT = 120
+# A truncated file has no frames this far before the end position: 5% of the duration, at least 10s because
+# ffprobe seeks to the keyframe before each position
+TRUNCATED_MARGIN = 0.05
+TRUNCATED_MARGIN_SECONDS = 10
+
+# ffmpeg logs a malformed Dolby Vision RPU as an error, drops that frame's metadata and still decodes the frame
+DOLBY_VISION_ERROR = re.compile(r"\bRPU\b|DOVI|Dolby Vision", re.IGNORECASE)
 
 
 class MediaIntegrity:
@@ -43,52 +52,82 @@ class MediaIntegrity:
         return re.sub(r"^\[[^]]*@ 0x[0-9a-f]+\]\s*", "", stderr.splitlines()[0])
 
     @staticmethod
-    def check_file(path: str) -> str | None:
+    def sample_positions(start: int, end: int) -> tuple[float, float, float]:
         """
-        Read the container and decode a few frames at the start, middle and end of the video
+        Start, middle and end of the checked range, as fractions of the duration
+        """
+        return start / 100, (start + end) / 200, end / 100
 
-        :return: the error, None if the file is fine
+    @staticmethod
+    def split_dolby_vision(stderr: str) -> tuple[str, list[str]]:
+        """
+        The ffprobe errors without the Dolby Vision metadata ones, and the Dolby Vision ones
+        """
+        lines = stderr.splitlines()
+        dolby_vision = [line for line in lines if DOLBY_VISION_ERROR.search(line)]
+        return "\n".join(line for line in lines if line not in dolby_vision).strip(), dolby_vision
+
+    @staticmethod
+    def check_file(path: str, start: int = DEFAULT_START, end: int = DEFAULT_END,
+                   ignore_dolby_vision: bool = False) -> tuple[str | None, str | None]:
+        """
+        Read the container and decode a few frames at the start, middle and end of the checked range
+
+        :param start: start of the checked range, in percent of the duration
+        :param end: end of the checked range, in percent of the duration
+        :param ignore_dolby_vision: the Dolby Vision metadata errors don't make the file corrupted
+        :return: (the error, None if the file is fine; the ignored Dolby Vision error, if any)
         """
         returncode, stdout, stderr = MediaIntegrity.ffprobe(
             ["-show_entries", "format=duration", "-of", "json", path])
         if returncode != 0:
-            return MediaIntegrity.first_error(stderr, returncode)
+            return MediaIntegrity.first_error(stderr, returncode), None
         try:
             duration = float(json.loads(stdout)["format"]["duration"])
         except (KeyError, ValueError, json.JSONDecodeError):
-            return "unknown duration"
+            return "unknown duration", None
         if duration <= 0:
-            return "unknown duration"
+            return "unknown duration", None
 
-        intervals = ",".join(f"{duration * position:.2f}%+#{SAMPLE_FRAMES}" for position in SAMPLE_POSITIONS)
+        intervals = ",".join(f"{duration * position:.2f}%+#{SAMPLE_FRAMES}"
+                             for position in MediaIntegrity.sample_positions(start, end))
         returncode, stdout, stderr = MediaIntegrity.ffprobe(
             ["-select_streams", "v:0", "-read_intervals", intervals,
              "-show_entries", "frame=best_effort_timestamp_time", "-of", "csv=p=0", path])
+        ignored = None
+        if ignore_dolby_vision and returncode == 0:
+            stderr, dolby_vision = MediaIntegrity.split_dolby_vision(stderr)
+            if dolby_vision:
+                ignored = MediaIntegrity.first_error(dolby_vision[0], returncode)
         if returncode != 0 or stderr:
-            return MediaIntegrity.first_error(stderr, returncode)
+            return MediaIntegrity.first_error(stderr, returncode), None
 
         timestamps = [float(line.strip(" ,")) for line in stdout.splitlines() if line.strip(" ,") not in ("", "N/A")]
         if not timestamps:
-            return "no video frame decoded"
+            return "no video frame decoded", None
         # The duration in the header is still the full one: a truncated file has no frames near the end
-        if max(timestamps) < duration * 0.90:
-            return f"truncated: no frames after {max(timestamps):.0f}s of {duration:.0f}s"
-        return None
+        if max(timestamps) < duration * end / 100 - max(duration * TRUNCATED_MARGIN, TRUNCATED_MARGIN_SECONDS):
+            return f"truncated: no frames after {max(timestamps):.0f}s of {duration:.0f}s", None
+        return None, ignored
 
     @staticmethod
-    def check(path: str) -> dict[str, str]:
+    def check(path: str, start: int = DEFAULT_START, end: int = DEFAULT_END,
+              ignore_dolby_vision: bool = False) -> tuple[dict[str, str], dict[str, str]]:
         """
         Check the file or every video file of a folder
 
-        :return: {file: error} for the corrupted files, empty if they are all fine
+        :return: ({file: error} for the corrupted files, empty if they are all fine;
+                  {file: Dolby Vision error} for the fine files with ignored Dolby Vision errors)
         :raises FileNotFoundError: ffprobe is not installed
         """
-        errors = {}
+        errors, ignored = {}, {}
         for file in MediaIntegrity.video_files(path):
             try:
-                error = MediaIntegrity.check_file(file)
+                error, dolby_vision = MediaIntegrity.check_file(file, start, end, ignore_dolby_vision)
             except subprocess.TimeoutExpired:
-                error = f"ffprobe timeout ({FFPROBE_TIMEOUT}s)"
+                error, dolby_vision = f"ffprobe timeout ({FFPROBE_TIMEOUT}s)", None
             if error:
                 errors[file] = error
-        return errors
+            elif dolby_vision:
+                ignored[file] = dolby_vision
+        return errors, ignored

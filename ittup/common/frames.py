@@ -253,6 +253,10 @@ class VideoFrame:
             return []
 
         hdr_format = f"Dolby Vision profile {dv_profile}" if dv_profile is not None else color_transfer
+        if not config_settings.user_preferences.TONEMAP_SCSHOT:
+            custom_console.bot_log(f"HDR video ({hdr_format}): tone mapping disabled (TONEMAP_SCSHOT)")
+            return []
+
         device_type = libplacebo_device_type()
         if device_type not in (None, "software"):
             custom_console.bot_log(f"HDR video ({hdr_format}): tone mapping the screenshots to SDR with libplacebo")

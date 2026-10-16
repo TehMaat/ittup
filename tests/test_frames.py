@@ -56,6 +56,12 @@ def test_sdr_video_is_not_tone_mapped(monkeypatch):
     assert video_filter(monkeypatch, "bt709") == []
 
 
+@pytest.mark.parametrize("color_transfer, dv_profile", [("smpte2084", None), ("unknown", 5)])
+def test_tone_mapping_disabled(monkeypatch, color_transfer, dv_profile):
+    monkeypatch.setattr(config_settings.user_preferences, "TONEMAP_SCSHOT", False)
+    assert video_filter(monkeypatch, color_transfer, dv_profile=dv_profile) == []
+
+
 @pytest.mark.parametrize("device_type", ["discrete", "integrated", "unknown"])
 def test_libplacebo_on_a_gpu(monkeypatch, device_type):
     assert video_filter(monkeypatch, "smpte2084", device_type=device_type) == ["-vf", LIBPLACEBO_FILTER]

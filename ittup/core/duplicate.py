@@ -118,15 +118,6 @@ class Duplicate:
         # Final result
         self.flag_already = False
 
-        # For printing output
-        self.TMDB_ID_WIDTH = 6
-        self.IGDB_ID_WIDTH = 6
-        self.SIZE_WIDTH = 4
-        self.NAME_WIDTH = 30
-        self.RESOLUTION_WIDTH = 5
-        self.INFO_HASH_WIDTH = 40
-        self.DELTA_SIZE_WIDTH = 2
-
     def process(self):
         return self.search(torrent={"data": self.tracker_results()})
 
@@ -213,68 +204,38 @@ class Duplicate:
     def get_resolution_by_num(self, res_id: int) -> str:
         return next((key for key, value in self.resolutions.items() if value == res_id), None)
 
-    def _calculate_threshold(self, size: int) -> int:
-        # Size in GB
-        # Skip duplicate check if the size is out of the threshold
+    def _size_in_unit(self, size: int) -> float:
+        """
+        Bytes in the unit of the user's content size (GB or MB), so the two sizes can be compared
+        """
+        return round(size / (1024 ** 3), 2) if self.size_unit == 'GB' else round(size / (1024 ** 2), 2)
 
-        size = round(size / (1024 ** 3), 2) if self.size_unit == 'GB' else round(size / (1024 ** 2), 2)
+    def _calculate_threshold(self, size: int) -> int:
+        # Skip duplicate check if the size is out of the threshold
+        size = self._size_in_unit(size)
         largest = max(self.content_size, size)
         return round(abs(self.content_size - size) / largest * 100, 2) if largest else 0
 
     def _print_output(self, value: dict, delta_size: int, size_th: int):
-
-        name = value["name"]
-        resolution = value.get("resolution", "[n/a]")
-        size = value.get("size", 0)
-        # Convert to GB
-        size = round(size / (1024 ** 3), 2)
-        tmdb_id = value.get("tmdb_id", 0)
-        igdb_id = value.get("igdb_id", 0)
-
-        if self.category != 'game':
-            mediainfo_manager = MediaInfoManager(media_info_output=value)
-            languages = mediainfo_manager.languages.upper()
-        else:
-            languages = "[n/a]"
-
-        formatted_tmdb_id = f"{tmdb_id:>{self.TMDB_ID_WIDTH}}"
-        formatted_size = f"{size:>{self.SIZE_WIDTH}.2f} GB"
-        formatted_name = f"{name:<{self.NAME_WIDTH}}"
-        formatted_resolution = f"{resolution:<{self.RESOLUTION_WIDTH}}" if resolution else ''
-        formatted_size_th = f"{delta_size:<{self.DELTA_SIZE_WIDTH}}"
-        output = 'not available'
+        """
+        The user's file and the tracker torrent one under the other, with the same labels width and size unit
+        """
+        size = self._size_in_unit(value.get("size", 0))
 
         if self.category in {'movie', 'tv'}:
-            output = (
-                f"Tracker - size: '{formatted_size}' "
-                f"delta={formatted_size_th}% - "
-                f"{formatted_name} "
-                f"{formatted_resolution} "
-                f"{languages}' - "
-                f"TMDB-ID {formatted_tmdb_id}"
+            languages = MediaInfoManager(media_info_output=value).languages.upper()
+            details = [value.get("resolution") or "[n/a]", languages, f"TMDB-ID {value.get('tmdb_id', 0)}"]
+        elif self.category == 'game':
+            details = [f"IGDB-ID {value.get('igdb_id', 0)}"]
+        else:
+            details = []
 
-            )
-
-        if self.category in {'edicola'}:
-            output = (
-                f"Tracker - size: '{formatted_size}' "
-                f"delta={formatted_size_th}% - "
-                f"{formatted_name} "
-            )
-
-        if self.category in {'game'}:
-            formatted_igdb_id = f"{igdb_id:>{self.IGDB_ID_WIDTH}}"
-            output = (
-                f"- IGDB-ID {formatted_igdb_id} - "
-                f"{formatted_size} delta={formatted_size_th}% - "
-                f"{formatted_name}"
-            )
-
-        custom_console.bot_log(f"Size_TH: {size_th}%")
-        custom_console.bot_log(f"Your file - size: '{self.content_size} GB' - "
-                               f"'{self.content.display_name}' - ")
-
-        custom_console.bot_log(output)
+        custom_console.bot_log(f"Size_TH: {size_th}% - Delta: {delta_size}%")
+        custom_console.bot_log(f"YourFile - size: '{self.content_size:.2f} {self.size_unit}' - "
+                               f"'{self.content.display_name}'")
+        custom_console.bot_log(f"Tracker  - size: '{size:.2f} {self.size_unit}' - '{value['name']}'")
+        if details:
+            custom_console.bot_log(" " * len("Tracker  - ") + " - ".join(details))
 
     def same_category(self, attributes: dict) -> bool:
         """ False only when both categories are known and they differ """

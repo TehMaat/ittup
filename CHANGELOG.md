@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/TehMaat/ittup/compare/1.10.1...1.11.0) (2026-10-16)
+
+
+### Features
+
+* configurable screenshot timeout and zscale instead of software Vulkan ([c7de421](https://github.com/TehMaat/ittup/commit/c7de42160bfaaf4f31b3fa3d2567d5f0b99dac2b))
+* configurable screenshot timeout and zscale instead of software Vulkan ([1ab2ba4](https://github.com/TehMaat/ittup/commit/1ab2ba4bc2c33a62220393311691bd7397d80a79))
+
 ## [1.10.1](https://github.com/TehMaat/ittup/compare/1.10.0...1.10.1) (2026-10-16)
 
 

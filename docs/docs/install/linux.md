@@ -3,11 +3,11 @@
 ## Requirements
 
 - **Python 3.10 or newer** (recommended: 3.10 to 3.12 — newer versions may have issues with some libraries)
-- **FFmpeg** — used to extract screenshots from videos
+- **FFmpeg 5.1 or newer** — used to extract screenshots from videos and to check the corrupted files
 - **Poppler** — only if you want to create torrents for PDF documents
 - **pipx** — installs ITTup in its own environment, separate from the system Python
 
-Tested distributions: Ubuntu 22, Debian 12.
+Tested distributions: Ubuntu 24.04, Debian 12.
 
 ## 1. Install the dependencies
 
@@ -17,6 +17,16 @@ pipx ensurepath
 ```
 
 `pipx ensurepath` adds `~/.local/bin` to your `PATH`: open a new terminal afterwards.
+
+!!! warning "Ubuntu 22.04"
+    `apt` installs FFmpeg 4.4, too old for the [corrupted files check](../config/options.md#corrupted-files). Install a recent static build in `/usr/local/bin`, which comes before `/usr/bin` in the `PATH`:
+    ```bash
+    wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+    tar xf ffmpeg-release-amd64-static.tar.xz
+    sudo cp ffmpeg-*-amd64-static/ffmpeg ffmpeg-*-amd64-static/ffprobe /usr/local/bin/
+    ```
+
+    `ffprobe -version` must then show 5.1 or newer.
 
 Only if you upload PDF documents:
 

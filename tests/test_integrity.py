@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from ittup.common.integrity import MediaIntegrity
+from ittup.common.integrity import MediaIntegrity, UnsupportedFFprobe
 
 DURATION = 1000.0
 RPU_ERROR = "[hevc @ 0x55d0c0a1b2c0] RPU validation failed: 0 <= el_bit_depth_minus8 = 32 <= 8"
@@ -23,6 +23,7 @@ def fake_ffprobe(monkeypatch, frames_stderr: str = "", last_frame: float = 900.0
         return 0, json.dumps({"format": {"duration": str(DURATION)}}), ""
 
     monkeypatch.setattr(MediaIntegrity, "ffprobe", staticmethod(ffprobe))
+    monkeypatch.setattr(MediaIntegrity, "ffprobe_version", staticmethod(lambda: ("ffprobe version 8.1.3", (8, 1))))
     return calls
 
 
@@ -71,3 +72,28 @@ def test_check_splits_errors_and_ignored(monkeypatch, tmp_path):
     errors, ignored = MediaIntegrity.check(str(video), ignore_dolby_vision=True)
     assert errors == {}
     assert list(ignored) == [str(video)]
+
+
+def fake_ffprobe_version(monkeypatch, line: str):
+    class Result:
+        stdout = f"{line} Copyright (c) 2007-2026 the FFmpeg developers\nbuilt with gcc 15\n"
+
+    monkeypatch.setattr("ittup.common.integrity.subprocess.run", lambda *args, **kwargs: Result())
+    MediaIntegrity.ffprobe_version.cache_clear()
+
+
+@pytest.mark.parametrize("line, version", [
+    ("ffprobe version 4.4.2-0ubuntu0.22.04.1", (4, 4)),
+    ("ffprobe version 5.1.9-0+deb12u1", (5, 1)),
+    ("ffprobe version n6.1.1", (6, 1)),
+    ("ffprobe version N-112345-g0123abcd", None),
+])
+def test_ffprobe_version(monkeypatch, line, version):
+    fake_ffprobe_version(monkeypatch, line)
+    assert MediaIntegrity.ffprobe_version() == (line, version)
+
+
+def test_ffprobe_4_4_is_unsupported(monkeypatch, tmp_path):
+    fake_ffprobe_version(monkeypatch, "ffprobe version 4.4.2-0ubuntu0.22.04.1")
+    with pytest.raises(UnsupportedFFprobe, match="4.4.2"):
+        MediaIntegrity.check(str(tmp_path / "video.mkv"))

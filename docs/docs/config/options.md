@@ -127,6 +127,8 @@ Renamed 'movie.2021.1080p.ddp5.1.h.264-grp.mkv' -> 'movie.2021.1080p.WEB-DL.ddp5
 
 Before the upload, `ffprobe` reads every video file (the file, or each video of a folder) and decodes a few frames at the start, middle and end of the range from `CHECK_CORRUPTED_START` to `CHECK_CORRUPTED_END` percent of the duration (10% and 90% by default). A file that can't be read, has damaged data or is truncated (e.g. a download that didn't finish) is not uploaded: the error is shown and the bot moves on to the next one. It takes less than a second per file. Set it to `False` to skip the check.
 
+The check needs ffprobe 5.1 or newer: ffprobe 4.4 (e.g. Ubuntu 22.04) decodes only the first of the frames, so every file would look truncated. With an older ffprobe the bot stops with `[FFMPEG-ffprobe too old]`.
+
 `CHECK_CORRUPTED_IGNORE_DV` (`False` by default): some Dolby Vision files have malformed RPU metadata on a few frames, and ffmpeg logs it as an error (e.g. `RPU validation failed: 0 <= el_bit_depth_minus8 = 32 <= 8`) even though the video decodes fine. With `True` these Dolby Vision metadata errors don't make the file corrupted: the bot shows a warning and uploads it. Any other error still skips the file.
 
 ## Watcher

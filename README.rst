@@ -90,6 +90,8 @@ into the new folder. The old folder is left untouched. Settings of the removed t
 
 Windows Dependencies
 --------------------
+FFmpeg 5.1 or newer is required.
+
 1. Download and unzip https://www.ffmpeg.org/download.html and add its folder to
    PATH environment user variable
 
@@ -104,7 +106,8 @@ Only for pdf
 
 Ubuntu/Debian Dependencies
 --------------------------
-- sudo apt install ffmpeg
+- sudo apt install ffmpeg (Ubuntu 22.04 installs FFmpeg 4.4, too old: use a static build from
+  https://johnvansickle.com/ffmpeg/ in /usr/local/bin)
 
 Only for pdf
 ~~~~~~~~~~~~

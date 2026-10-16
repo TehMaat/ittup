@@ -85,7 +85,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `TMDB_DEBUG` | booleano | `False` | Log dei punteggi di confronto titoli TMDB (richieste HTTP extra) |
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
 | `RENAME_FILES` | booleano | `False` | Rinomina i file originali come il titolo del tracker prima dell'upload |
-| `CHECK_CORRUPTED` | booleano | `True` | Salta i file video corrotti, controllati con ffprobe prima dell'upload |
+| `CHECK_CORRUPTED` | booleano | `True` | Salta i file video corrotti, controllati con ffprobe (5.1 o successivo) prima dell'upload |
 | `CHECK_CORRUPTED_START` | numero | `10` | Inizio dell'intervallo controllato, in percentuale della durata |
 | `CHECK_CORRUPTED_END` | numero | `90` | Fine dell'intervallo controllato, in percentuale della durata |
 | `CHECK_CORRUPTED_IGNORE_DV` | booleano | `False` | Gli errori dei metadati RPU Dolby Vision non rendono il file corrotto |

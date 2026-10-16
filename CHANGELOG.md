@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.1](https://github.com/TehMaat/ittup/compare/1.8.0...1.8.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* read the resolution from the width and the height, not from the width only ([fcd01cd](https://github.com/TehMaat/ittup/commit/fcd01cdde81e6ff4b4b0f88f9a8a67159686f370))
+* read the resolution from the width and the height, not from the width only ([34ed272](https://github.com/TehMaat/ittup/commit/34ed272e4855b9bbf824906af880e3d081321972)), closes [#84](https://github.com/TehMaat/ittup/issues/84)
+* rebuild the config file at every upgrade with the user's values and the defaults for the new attributes ([9d55c1f](https://github.com/TehMaat/ittup/commit/9d55c1fd3fcf6553bff4bd5cb9d507cdbd36ee6f))
+* rebuild the config file at every upgrade with the user's values and the defaults for the new attributes ([18e2d37](https://github.com/TehMaat/ittup/commit/18e2d37a8ecf5ea7ea81f931ce8acb9f4cddf4ce))
+
 ## [1.8.0](https://github.com/TehMaat/ittup/compare/1.7.0...1.8.0) (2026-10-16)
 
 

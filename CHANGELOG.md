@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.0](https://github.com/TehMaat/ittup/compare/1.11.0...1.12.0) (2026-10-16)
+
+
+### Features
+
+* HDR screenshot tone mapping off by default ([b2ed030](https://github.com/TehMaat/ittup/commit/b2ed030aa2f70eab64a6fb971272d255f8ab07a2))
+* TONEMAP_SCSHOT to turn off the HDR screenshot tone mapping ([519804f](https://github.com/TehMaat/ittup/commit/519804fb208bbd9bfeb90351e60ede913fe2a9b7))
+* TONEMAP_SCSHOT to turn off the HDR screenshot tone mapping ([91b8ae9](https://github.com/TehMaat/ittup/commit/91b8ae9320e494030c9e297edbfbd447609d68da))
+
 ## [1.11.0](https://github.com/TehMaat/ittup/compare/1.10.1...1.11.0) (2026-10-16)
 
 

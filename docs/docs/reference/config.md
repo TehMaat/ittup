@@ -76,6 +76,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `CACHE_PATH` | string | `no_path` | Cache folder |
 | `COMPRESS_SCSHOT` | number | `3` | Screenshot compression |
 | `RESIZE_SCSHOT` | boolean | `False` | Resizes screenshots |
+| `TIMEOUT_SCSHOT` | number | `120` | Max seconds for a single screenshot (`0` = no limit) |
 | `TORRENT_COMMENT` | string | `no_comment` | Comment inside the `.torrent` file |
 | `PREFERRED_LANG` | string | `all` | Preferred language (ISO 3166) or `all` |
 | `ANON` | boolean | `False` | Anonymous upload |

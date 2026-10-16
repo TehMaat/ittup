@@ -64,7 +64,7 @@ EMPTY_MEANS_DEFAULT: dict[str, set[str]] = {
     "user_preferences": {"TMDB_DEBUG", "RENAME_FILES", "CHECK_CORRUPTED", "CHECK_CORRUPTED_START",
                          "CHECK_CORRUPTED_END", "CHECK_CORRUPTED_IGNORE_DV", "WATCHER_TIMEOUT",
                          "WATCHER_MAX_RETRIES", "WATCHER_PATH", "WATCHER_DESTINATION_PATH",
-                         "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH"},
+                         "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH", "TIMEOUT_SCSHOT"},
 }
 
 
@@ -158,6 +158,7 @@ class UserPreferences(BaseModel):
     CACHE_PATH: str | None = None
     COMPRESS_SCSHOT: int = 4
     RESIZE_SCSHOT: bool = False
+    TIMEOUT_SCSHOT: int = 120
     TORRENT_COMMENT: str | None = "no_comment"
     PREFERRED_LANG: str | None = "all"
     RELEASER_SIGN: str | None = None
@@ -535,7 +536,7 @@ class Config(BaseModel):
                 if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
                 if field in ['WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES', 'CHECK_CORRUPTED_START',
-                             'CHECK_CORRUPTED_END'] and section[field] == '':
+                             'CHECK_CORRUPTED_END', 'TIMEOUT_SCSHOT'] and section[field] == '':
                     section[field] = UserPreferences.model_fields[field].default
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
@@ -549,7 +550,7 @@ class Config(BaseModel):
                 if field in ['NUMBER_OF_SCREENSHOTS', 'COMPRESS_SCSHOT', 'IMGBB_PRIORITY', 'FREE_IMAGE_PRIORITY',
                              'LENSDUMP_PRIORITY', 'PASSIMA_PRIORITY', 'IMARIDE_PRIORITY', 'WATCHER_INTERVAL', 'SIZE_TH',
                              'FAST_LOAD', 'WATCHER_TIMEOUT', 'WATCHER_MAX_RETRIES', 'CHECK_CORRUPTED_START',
-                             'CHECK_CORRUPTED_END']:
+                             'CHECK_CORRUPTED_END', 'TIMEOUT_SCSHOT']:
                     section[field] = Validate.integer(value=section[field], field_name=field)
 
                 if field in ['CHECK_CORRUPTED_START', 'CHECK_CORRUPTED_END'] and not 0 <= section[field] <= 100:
@@ -738,6 +739,7 @@ class Load:
                 "CACHE_PATH": "no_path",
                 "COMPRESS_SCSHOT": 3,
                 "RESIZE_SCSHOT": "False",
+                "TIMEOUT_SCSHOT": 120,
                 "TORRENT_COMMENT": "no_comment",
                 "PREFERRED_LANG": "all",
                 "ANON": "False",

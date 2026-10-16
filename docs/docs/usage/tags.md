@@ -20,6 +20,19 @@ A season pack is written `S04`, an episode pack `S04E01-06`, also when the name 
 
 It **does not rename your file**: it only builds the torrent title shown on the tracker page, unless you turn on [`RENAME_FILES`](../config/options.md#rename-the-files-as-the-title).
 
+## Resolution
+
+The resolution (`resolution` tag, `uhd` tag and resolution on the tracker) is read from the width and the height in MediaInfo, not from the file name. A video that is not 16:9 is reduced on one side only, so the resolution is the highest one reached by either side: a 1920×800 scope movie and a 1440×1080 4:3 or anamorphic one are both `1080p`.
+
+| Resolution | `uhd` | Width ≥ | or height ≥ |
+|---|---|---|---|
+| `2160p` | UHD | 3200 | 1800 |
+| `1080p` | FullHD | 1600 | 900 |
+| `720p` | HD | 1100 | 600 |
+| `576p` | SD | 960 | 540 |
+
+Below `576p` the resolution is the height (`720×480` → `480p`).
+
 ## Video codec
 
 The codec family (264, 265 or other) is read from the file name (`x264`, `x265`, `H264`, `H.265`, `AVC`, `HEVC`…) or, when missing, from MediaInfo. When the two don't agree MediaInfo wins and the bot shows a warning.

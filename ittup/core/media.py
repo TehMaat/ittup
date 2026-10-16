@@ -10,6 +10,16 @@ from ittup.common.mediainfo import MediaFile
 from ittup.common import title
 from ittup.view import custom_console
 
+# Resolution, minimum width, minimum height. A video that is not 16:9 is reduced on one side only: the height for
+# the scope movies (1920x800), the width for the 4:3 and the anamorphic ones (1440x1080). The resolution is the
+# highest one reached by either side
+RESOLUTION_THRESHOLDS = (
+    ("2160p", 3200, 1800),
+    ("1080p", 1600, 900),
+    ("720p", 1100, 600),
+    ("576p", 960, 540),
+)
+
 
 class Media:
     def __init__(self, folder: str, subfolder: str):
@@ -360,6 +370,16 @@ class Media:
             self._languages = self.mediafile.available_languages
         return self._languages
 
+    @staticmethod
+    def resolution_from_size(width: int, height: int | None) -> str:
+        """
+        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), the height under 576p
+        """
+        for resolution, min_width, min_height in RESOLUTION_THRESHOLDS:
+            if width >= min_width or (height and height >= min_height):
+                return resolution
+        return f"{height}p"
+
     @property
     def _resolution2(self):
         if self.mediafile:
@@ -369,16 +389,11 @@ class Media:
                 print(f"{self.file_name} Video width unknown or file corrupted")
                 exit()
             if self.mediafile.video_width:
-                if width >= 3200:
-                    return "2160p"
-                elif width >= 1600:
-                    return "1080p"
-                elif width >= 1100:
-                    return "720p"
-                elif width >= 960:
-                    return "576p"
-                else:
-                    return f"{self.mediafile.video_height}p"
+                try:
+                    height = int(self.mediafile.video_height)
+                except (TypeError, ValueError):
+                    height = None
+                return self.resolution_from_size(width, height)
         return None
 
     @property

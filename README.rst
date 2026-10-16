@@ -51,7 +51,19 @@ and then the bot can upload it to an image host, then add the link to the torren
 Install and Upgrade
 ===================
 
-- pip install ittup --upgrade
+On Linux, install ITTup with pipx (``sudo apt install pipx``, then ``pipx ensurepath``)::
+
+    pipx install ittup
+    pipx upgrade ittup
+
+On Debian 12+ and Ubuntu 23.04+ a plain ``pip install`` stops with ``externally-managed-environment``:
+use pipx or a virtualenv instead, not ``--break-system-packages``.
+
+On Windows, or inside a virtualenv::
+
+    pip install ittup --upgrade
+
+See https://tehmaat.github.io/ittup/ for the full install guides.
 
 Keeping Unit3Dup
 ----------------

@@ -40,4 +40,8 @@ In `user_preferences` ogni host ha una priorità — **0 = primo tentativo**:
 
 Il bot tenta gli host in ordine di priorità crescente; al primo errore (chiave non valida, servizio giù, limite raggiunto) passa al successivo.
 
+## Tutti gli screenshot o niente upload
+
+Un contenuto viene caricato solo se **tutti** i suoi screenshot (`NUMBER_OF_SCREENSHOTS`) sono su un image host, su uno o più host. Se uno screenshot non si riesce a caricare su nessun host, il bot non carica quel contenuto: lo segnala, rimuove dagli host gli screenshot già caricati con il loro link di cancellazione e passa al contenuto successivo. Uno screenshot che non si riesce a rimuovere viene riportato nel log con il link di cancellazione, per rimuoverlo a mano.
+
 Le opzioni sugli screenshot (`NUMBER_OF_SCREENSHOTS`, compressione, resize, webp) sono nelle [Opzioni avanzate](options.md).

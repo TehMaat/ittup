@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.1](https://github.com/TehMaat/ittup/compare/1.12.0...1.12.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* screenshots lost on a temporary image host error ([102b7a3](https://github.com/TehMaat/ittup/commit/102b7a3816b4f8d8e5cb5e46615c208c4f016b4b))
+* screenshots lost on a temporary image host error ([6e4d004](https://github.com/TehMaat/ittup/commit/6e4d00473fda5f54c85ca859cf647a3f775af1a9))
+
 ## [1.12.0](https://github.com/TehMaat/ittup/compare/1.11.0...1.12.0) (2026-10-16)
 
 

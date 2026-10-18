@@ -1,0 +1,79 @@
+name: 🗓️ Milestone
+description: Tracking issue of a milestone (team only)
+title: "[Milestone]: X.Y.0"
+labels: ["milestone"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One milestone = one version. Create the GitHub milestone with the same name (`X.Y.0`, the release date as
+        due date), then this issue, and assign it to the milestone. Process: CONTRIBUTING.md and RELEASING.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "1.13.0"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: 1-2 sentences on the value this version brings.
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Owner
+      description: Milestone owner and release manager. The other developer is the reference reviewer.
+      placeholder: "@TehMaat"
+    validations:
+      required: true
+  - type: input
+    id: freeze
+    attributes:
+      label: Feature freeze
+      description: The day the first rc branch X.Y.0-rc1 is cut from dev
+      placeholder: "2026-11-08"
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release
+      placeholder: "2026-11-15"
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      value: |
+        ### Opening
+        - [ ] Items triaged: priority and mode (ai-agent / ai-assisted / manual)
+        - [ ] Acceptance criteria written for the AI items
+        - [ ] Capacity ≤ 80%, review included in the estimates
+
+        ### Feature freeze → rc (branch X.Y.0-rcN from dev)
+        - [ ] P0/P1 done or explicitly postponed (rc.yml blocks on open P0/P1 and blocking/critical bugs)
+        - [ ] No AI PR pending for this milestone
+        - [ ] rc.yml green: tests, matrix, tag, PyPI pre-release, smoke
+        - [ ] `pip install --pre ittup==X.Y.0rcN` checked in a clean environment
+        - [ ] Testers told, docs/release-testing.md shared
+
+        ### rc → release
+        - [ ] Soak period (3-5 days) passed, manual tests done
+        - [ ] No open blocking/critical bug, pip-audit clean (rc run)
+        - [ ] PR X.Y.0-rcN → main merged with a merge commit
+        - [ ] Release PR of release-please reviewed and merged, `pypi` deployment approved
+        - [ ] Smoke after publishing green, GitHub release published
+        - [ ] Back-merge PR main → dev merged (merge commit)
+
+        ### Closing
+        - [ ] Leftover items moved (automatic at release) and re-planned
+        - [ ] Retrospective: what slipped, how much AI code needed rework and why
+        - [ ] Branch report reviewed
+        - [ ] Backlog idle for 6 months re-evaluated
+    validations:
+      required: true

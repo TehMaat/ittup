@@ -1,0 +1,78 @@
+name: Prune branches
+
+# Weekly report of the obsolete branches (CONTRIBUTING.md, "Branches"). A branch is deleted only when it is
+# merged (into dev or main) AND has had no commits for more than 90 days. Branches not merged are never deleted:
+# the inactive ones are only listed, to be checked by hand.
+# The schedule only reports: deleting needs a manual run with dry_run unchecked.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only report, delete nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find the obsolete branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == false && 'false' || 'true' }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          # On a fork, the branches with an open PR to the original repository are active too
+          PARENT: ${{ github.event.repository.parent.full_name }}
+          INACTIVE_DAYS: 90
+        run: |
+          open=$(gh pr list -R "$REPO" --state open --limit 500 --json headRefName --jq '.[].headRefName')
+          keep=$(gh pr list -R "$REPO" --state all --label keep --limit 500 --json headRefName --jq '.[].headRefName')
+          if [ -z "$PARENT" ]; then
+            PARENT=$(gh api "repos/$REPO" --jq '.parent.full_name // empty')
+          fi
+          if [ -n "$PARENT" ]; then
+            open+=$'\n'$(gh pr list -R "$PARENT" --state open --limit 500 --json headRefName,headRepositoryOwner \
+              --jq ".[] | select(.headRepositoryOwner.login == \"$OWNER\") | .headRefName")
+          fi
+          now=$(date +%s)
+          {
+            echo "### Obsolete branches (dry run: $DRY_RUN)"
+            echo
+            echo "Deleted: merged into \`dev\` or \`main\` and no commits for more than $INACTIVE_DAYS days."
+            echo
+            echo "| Branch | Last commit | Days | Author | Merged | Action |"
+            echo "|---|---|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          git for-each-ref --format='%(refname:short) %(committerdate:unix) %(committerdate:short) %(authorname)' refs/remotes/origin |
+          while read -r ref ts date author; do
+            branch=${ref#origin/}
+            case "$branch" in "$DEFAULT"|main|dev|HEAD|origin|gh-pages|release-please--*) continue ;; esac
+            grep -qxF "$branch" <<<"$open" && continue
+            grep -qxF "$branch" <<<"$keep" && continue
+            age=$(( (now - ts) / 86400 ))
+            [ "$age" -gt "$INACTIVE_DAYS" ] || continue
+            # Work branches are merged into dev, rc and hotfix branches into main
+            if git merge-base --is-ancestor "$ref" origin/dev 2>/dev/null || git merge-base --is-ancestor "$ref" origin/main; then
+              merged=yes action=delete
+            else
+              # Never deleted: someone decides by hand
+              merged=no action="check by hand"
+            fi
+            echo "$action: $branch (${age} days, merged: $merged)"
+            echo "| \`$branch\` | $date | $age | $author | $merged | $action |" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$action" = delete ] && [ "$DRY_RUN" != "true" ]; then
+              git push origin --delete "$branch"
+            fi
+          done

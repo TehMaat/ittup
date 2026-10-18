@@ -1,0 +1,114 @@
+name: Dev build
+
+# The dev channel: every commit on dev that passed the tests becomes X.Y.Z.devN.
+# The wheel is always kept as a workflow artifact; it goes to TestPyPI only when the repository
+# variable TESTPYPI_PUBLISH is 'true' (trusted publisher: this workflow, environment 'dev').
+on:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+    branches: [dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Only the tests of a push on dev (not nightly, not pull requests), and only when they passed
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0   # the dev version needs the release tags and the commit count
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine packaging
+
+      - id: version
+        name: Dev version
+        run: |
+          version=$(.github/scripts/dev-version.sh)
+          .github/scripts/set-version.sh "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "### Dev build \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check distributions
+        run: twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-dev
+          path: dist/
+
+  # The end-to-end and smoke tests on the installed wheel, not on the sources:
+  # they catch files missing from the package, a wrong entry point and undeclared dependencies
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-dev
+          path: dist/
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install the wheel in a clean virtualenv
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install dist/*.whl pytest
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Smoke and end-to-end tests on the wheel
+        env:
+          ITTUP_EXPECTED_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          # Out of the checkout, so 'import ittup' can only find the installed package
+          cp -r tests "$RUNNER_TEMP/tests"
+          cd "$RUNNER_TEMP"
+          python -c "import ittup, sys; print(ittup.__file__); sys.exit('ittup imported from the sources' if '/site-packages/' not in ittup.__file__ else 0)"
+          pytest -v tests/smoke tests/e2e
+
+  publish:
+    needs: [build, verify]
+    if: vars.TESTPYPI_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://test.pypi.org/project/ittup/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-dev
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

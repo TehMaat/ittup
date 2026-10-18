@@ -1,5 +1,7 @@
 name: Publish
 
+# main only receives an rc branch (X.Y.Z-rcN) or a hotfix (hotfix/*), always with a merge commit, so release-please
+# still finds every feat:/fix: commit made on dev (RELEASING.md)
 on:
   push:
     branches: [main]
@@ -24,6 +26,8 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Always main: without it release-please works on the default branch, which is dev
+          target-branch: main
 
   build:
     needs: release-please
@@ -33,6 +37,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
+          fetch-depth: 0   # the rc tags, for the rc check
 
       - uses: actions/setup-python@v5
         with:
@@ -48,6 +53,36 @@ jobs:
             exit 1
           fi
 
+      # The release should be the code of its last rc: only the version and the changelog may differ.
+      # A warning, so a release without an rc still goes out; the repository variable STRICT_RELEASE='true'
+      # makes it an error. A patch release without an rc is a hotfix: only a notice
+      - name: Check the release is its last rc
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+          STRICT: ${{ vars.STRICT_RELEASE == 'true' }}
+        run: |
+          level=warning; [ "$STRICT" = true ] && level=error
+          rc=$(git tag --list "${TAG}rc*" | sort -V | tail -1)
+          if [ -z "$rc" ] && [ "${TAG##*.}" != 0 ]; then
+            echo "::notice::$TAG has no rc: a hotfix"
+            exit 0
+          elif [ -z "$rc" ]; then
+            echo "::$level::$TAG has no rc tag (${TAG}rc1, ...): it is released without a release candidate"
+          elif ! git diff --quiet "$rc" HEAD -- . ':(exclude)CHANGELOG.md' ':(exclude).release-please-manifest.json' ':(exclude)pyproject.toml' \
+               || git diff "$rc" HEAD -- pyproject.toml | grep -E '^[-+][^-+]' | grep -qvE '^[-+]version = '; then
+            echo "::$level::$TAG differs from its last rc $rc beyond the version and the changelog"
+            git diff --stat "$rc" HEAD
+          else
+            echo "$TAG is the code of $rc"
+            exit 0
+          fi
+          [ "$level" = warning ]
+
+      # Known vulnerabilities in the pinned dependencies: a warning here, rc.yml already blocks on them
+      - name: pip-audit
+        continue-on-error: true
+        run: pip install pip-audit && pip-audit -r requirements.txt
+
       - name: Install build tools
         run: pip install build twine
 
@@ -62,6 +97,8 @@ jobs:
           name: dist
           path: dist/
 
+  # The production channel: the 'pypi' environment requires the approval of the maintainers (RELEASING.md).
+  # Its name is the one in the PyPI trusted publisher: don't rename it
   publish:
     needs: build
     runs-on: ubuntu-latest
@@ -78,3 +115,111 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  # The released version installs from PyPI and starts
+  smoke:
+    needs: [release-please, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install from PyPI in a clean virtualenv
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          # PyPI can take a few minutes to serve a new version
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            "$RUNNER_TEMP/venv/bin/pip" install --no-cache-dir "ittup==$VERSION" pytest && break
+            sleep 30
+          done
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Smoke test
+        env:
+          ITTUP_EXPECTED_VERSION: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          cp -r tests/smoke tests/conftest.py "$RUNNER_TEMP/"
+          cd "$RUNNER_TEMP" && pytest -v smoke
+
+  # main goes back into dev after every change (rc merged, release, hotfix), so dev always contains main.
+  # A PR, because dev accepts only PRs: merge it with a merge commit, never squash.
+  # The PR comes from a copy of main (back-merge/main), never from main itself: "Automatically delete head
+  # branches" deletes the head of a merged PR, and it once deleted main this way
+  back-merge:
+    needs: release-please
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Open the PR main → dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! git rev-parse -q --verify origin/dev >/dev/null; then
+            echo "No dev branch yet"
+            exit 0
+          fi
+          if git merge-base --is-ancestor origin/main origin/dev; then
+            echo "dev already contains main"
+            exit 0
+          fi
+          branch=back-merge/main
+          # Create the copy of main, or move it forward to main (main only moves forward)
+          git push origin "origin/main:refs/heads/$branch"
+          if [ -n "$(gh pr list --base dev --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            echo "The back-merge PR is already open: $branch now has the new commits of main"
+            exit 0
+          fi
+          gh pr create --base dev --head "$branch" --label chore \
+            --title "chore: back-merge main into dev" \
+            --body "main changed (rc merged, release or hotfix): bring it back into dev. **Merge with a merge commit, not squash**, so the history of main stays in dev. The branch $branch is a copy of main and is deleted after the merge."
+
+  # The milestone of a release is done: close it and move what is still open to the next milestone (or out of
+  # any milestone, back to the backlog), with a comment. The tracking issue (label milestone) stays: it holds
+  # the closing checklist
+  milestone:
+    needs: [release-please, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Close the milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          milestones=$(gh api "repos/$GITHUB_REPOSITORY/milestones?state=open&sort=due_on&direction=asc&per_page=100")
+          number=$(jq -r ".[] | select(.title == \"$TAG\") | .number" <<<"$milestones")
+          if [ -z "$number" ]; then
+            echo "::notice::No open milestone $TAG"
+            exit 0
+          fi
+          next=$(jq -r ".[] | select(.title != \"$TAG\") | .number" <<<"$milestones" | head -1)
+          next_title=$(jq -r ".[] | select(.number == ${next:-0}) | .title" <<<"$milestones")
+          for issue in $(gh api "repos/$GITHUB_REPOSITORY/issues?milestone=$number&state=open&per_page=100" --paginate \
+              --jq '.[] | select([.labels[].name] | index("milestone") | not) | .number'); do
+            if [ -n "$next" ]; then
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/$issue" -F milestone="$next" --silent
+              gh api "repos/$GITHUB_REPOSITORY/issues/$issue/comments" -f body="Not done in $TAG: moved to the milestone $next_title. Re-plan it at the next triage." --silent
+            else
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/$issue" --input - --silent <<<'{"milestone": null}'
+              gh api "repos/$GITHUB_REPOSITORY/issues/$issue/comments" -f body="Not done in $TAG and no next milestone yet: back to the backlog. Re-plan it at the next triage." --silent
+            fi
+            echo "#$issue → ${next_title:-backlog}"
+          done
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/milestones/$number" -f state=closed --silent
+          echo "Milestone $TAG closed"

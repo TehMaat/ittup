@@ -1,0 +1,79 @@
+name: 🐛 Bug
+description: Report something ITTup does wrong
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search the existing issues first to avoid duplicates.
+        **Hide your secrets**: API keys, passkeys, passwords and tracker URLs must not appear in configs or logs.
+  - type: input
+    id: version
+    attributes:
+      label: ITTup version
+      description: Shown when ITTup starts, or the output of `pip show ittup`
+      placeholder: "1.13.0rc2"
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Channel
+      options: [release, rc, dev]
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Operating system and Python version
+      placeholder: "Debian 12, Python 3.12.6"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands, the relevant part of the config (without secrets), the input used.
+      placeholder: |
+        1. ittup -u /path/to/Movie.2024.1080p.mkv
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log / traceback
+      render: shell
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact for you
+      options:
+        - It blocks my work
+        - There is a workaround
+        - Minor annoyance
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues
+          required: true
+        - label: The bug happens with the latest version
+          required: false

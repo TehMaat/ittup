@@ -32,3 +32,34 @@ dependencies = { file = ["requirements.txt"] }
 
 [project.scripts]
 ittup = "ittup.core.__main__:main"
+
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests with external dependencies (ffmpeg, filesystem, simulated network)",
+    "e2e: tests of the ittup command as a user runs it",
+    "smoke: the installed package starts",
+    "slow: slow tests",
+    "flaky: known flaky test, tracked by a P2 issue",
+]
+
+[tool.coverage.run]
+source = ["ittup"]
+
+[tool.coverage.report]
+# Never lower: raise it when the coverage of main goes up
+fail_under = 53
+
+[tool.ruff]
+target-version = "py310"
+extend-exclude = ["build", "docs"]
+
+[tool.ruff.lint]
+# The rules CI enforces with a baseline (.github/quality-baseline.conf): new code must not add errors
+select = ["E4", "E7", "E9", "F"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "docs"]
+# B402: FTP is a feature the user enables (-ftp), not an accident
+# B324: MD5 makes cache keys and file names, it doesn't protect anything
+skips = ["B402", "B324"]

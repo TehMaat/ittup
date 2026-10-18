@@ -1,0 +1,244 @@
+name: Release candidate
+
+# The rc channel. At the feature freeze of milestone X.Y.Z, cut the branch X.Y.Z-rcN from dev:
+#   git fetch origin && git push origin origin/dev:refs/heads/1.13.0-rc1
+# This workflow checks the branch and the milestone, runs the full tests, tags X.Y.ZrcN and publishes it on
+# PyPI as a pre-release: pip installs it only with --pre, so normal users never get it by mistake.
+# An rc branch is never changed: a problem is fixed on dev and a new rc (X.Y.Z-rcN+1) is cut from dev.
+# PyPI needs a trusted publisher for this workflow (rc.yml) and the environment 'staging'.
+on:
+  push:
+    branches: ["[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rc-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        name: Check the branch
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if ! [[ "$BRANCH" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-rc([0-9]+)$ ]]; then
+            echo "::error::'$BRANCH' is not an rc branch: expected X.Y.Z-rcN, e.g. 1.13.0-rc1"
+            exit 1
+          fi
+          base="${BASH_REMATCH[1]}" version="${BASH_REMATCH[1]}rc${BASH_REMATCH[2]}"
+          # An rc is cut from dev, never committed to
+          if ! git merge-base --is-ancestor HEAD origin/dev; then
+            echo "::error::$BRANCH is not a commit of dev: an rc branch is cut from dev and never changed"
+            exit 1
+          fi
+          current=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          if [ -n "$current" ] && [ "$(printf '%s\n%s\n' "$current" "$base" | sort -V | tail -1)" = "$current" ]; then
+            echo "::error::$base is not newer than the released $current"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "::error::The tag $version already exists: cut the next rc"
+            exit 1
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # The exit criteria of the milestone (CONTRIBUTING.md): the milestone X.Y.Z exists and has no open
+      # P0/P1 issue and no open blocking or critical bug
+      - name: Check the milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ steps.check.outputs.base }}
+        run: |
+          number=$(gh api "repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100" \
+            --jq ".[] | select(.title == \"$BASE\") | .number")
+          if [ -z "$number" ]; then
+            echo "::error::No open milestone '$BASE': every rc belongs to the milestone of its version"
+            exit 1
+          fi
+          open=$(gh api "repos/$GITHUB_REPOSITORY/issues?milestone=$number&state=open&per_page=100" --paginate \
+            --jq '.[] | select(.pull_request | not) | select([.labels[].name] | any(. == "P0" or . == "P1" or . == "sev:blocker" or . == "sev:critical")) | "#\(.number) \(.title)"')
+          if [ -n "$open" ]; then
+            echo "::error::Milestone $BASE still has open P0/P1 or blocking/critical issues:"
+            echo "$open"
+            exit 1
+          fi
+          echo "Milestone $BASE: no open P0/P1 or blocking/critical issue"
+
+  # Full matrix, pip-audit blocking
+  tests:
+    needs: validate
+    uses: ./.github/workflows/tests.yml
+
+  # The supported operating systems besides Linux. The end-to-end tests need ffmpeg and run on Linux only.
+  # Not blocking yet: make it blocking (remove continue-on-error) once it is green
+  windows:
+    needs: validate
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install ITTup
+        run: pip install -e . pytest
+
+      - name: Unit tests
+        run: pytest -q --ignore=tests/e2e --ignore=tests/smoke
+
+  build:
+    needs: [validate, tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine packaging
+
+      - name: Set the rc version
+        run: .github/scripts/set-version.sh "${{ needs.validate.outputs.version }}"
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check distributions
+        run: twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-rc
+          path: dist/
+
+  verify:
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-rc
+          path: dist/
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install the wheel in a clean virtualenv
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install dist/*.whl pytest
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Smoke and end-to-end tests on the wheel
+        env:
+          ITTUP_EXPECTED_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          cp -r tests "$RUNNER_TEMP/tests"
+          cd "$RUNNER_TEMP"
+          python -c "import ittup, sys; print(ittup.__file__); sys.exit('ittup imported from the sources' if '/site-packages/' not in ittup.__file__ else 0)"
+          pytest -v tests/smoke tests/e2e
+
+  # The tag X.Y.ZrcN marks the tested commit: the release check of publish.yml compares the release with it
+  tag:
+    needs: [validate, verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag the rc
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          git tag "$VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$VERSION"
+
+  publish:
+    needs: [validate, tag]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://pypi.org/project/ittup/${{ needs.validate.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-rc
+          path: dist/
+
+      - name: Publish to PyPI (pre-release)
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  smoke:
+    needs: [validate, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install from PyPI in a clean virtualenv
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          # PyPI can take a few minutes to serve a new version
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            "$RUNNER_TEMP/venv/bin/pip" install --no-cache-dir --pre "ittup==$VERSION" pytest && break
+            sleep 30
+          done
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Smoke test
+        env:
+          ITTUP_EXPECTED_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          cp -r tests/smoke tests/conftest.py "$RUNNER_TEMP/"
+          cd "$RUNNER_TEMP" && pytest -v smoke
+
+      - name: Tell the testers
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          {
+            echo "### ittup $VERSION is on PyPI"
+            echo
+            echo '```'
+            echo "pip install --upgrade --pre \"ittup==$VERSION\""
+            echo '```'
+            echo
+            echo "Soak period: at least 3-5 days of real use, checklist in docs/release-testing.md."
+            echo "OK: open a PR $BRANCH → main (merge commit). KO: fix on dev and cut the next rc from dev."
+          } >> "$GITHUB_STEP_SUMMARY"

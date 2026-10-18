@@ -1,0 +1,26 @@
+# pip install pre-commit && pre-commit install --hook-type pre-commit --hook-type pre-push
+# The same checks as CI, so the code (also the AI's) is clean before it reaches a PR
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      # Only the errors CI never allows; the full rule set runs in CI against the baseline
+      - id: ruff
+        args: [--select, "E9,F63,F7,F82"]
+  - repo: local
+    hooks:
+      - id: unit-tests
+        name: unit tests
+        entry: pytest -q -x --ignore=tests/e2e --ignore=tests/smoke
+        language: system
+        pass_filenames: false
+        types: [python]
+        stages: [pre-push]

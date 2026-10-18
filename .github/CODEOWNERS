@@ -1,0 +1,8 @@
+# Changes to these paths need the review of the team (CONTRIBUTING.md, "External contributions")
+*                       @xTheDoctah @TehMaat
+/.github/               @xTheDoctah @TehMaat
+/pyproject.toml         @xTheDoctah @TehMaat
+/requirements.txt       @xTheDoctah @TehMaat
+/release-please-config.json @xTheDoctah @TehMaat
+/tests/conftest.py      @xTheDoctah @TehMaat
+/.pre-commit-config.yaml @xTheDoctah @TehMaat

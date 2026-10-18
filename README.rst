@@ -174,3 +174,11 @@ united by a shared passion for torrents and more
 .. image:: https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white&style=flat
    :target: https://discord.gg/VMYaVzq2AF
    :alt: Discord Server
+
+Contributing and releases
+=========================
+
+- `CONTRIBUTING.md <CONTRIBUTING.md>`_: issues, priorities, branches, pull requests, tests and AI rules
+- `RELEASING.md <RELEASING.md>`_: the dev, rc and release channels. Release candidates install with
+  ``pip install --upgrade --pre ittup``
+- `SECURITY.md <SECURITY.md>`_: report vulnerabilities privately

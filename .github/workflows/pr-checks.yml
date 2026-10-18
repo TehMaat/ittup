@@ -1,0 +1,118 @@
+name: PR checks
+
+# Uses pull_request, never pull_request_target: the code of a fork runs without secrets and with a read-only token
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  # main receives only an rc branch (X.Y.Z-rcN, cut from dev), a hotfix (hotfix/*), release-please's release PR
+  # and nothing else; every other PR targets dev (RELEASING.md). The label main-exception, set by a maintainer,
+  # lets a PR through (e.g. a broken workflow on main)
+  target-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the base and head branches
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          [ "$BASE" = main ] || exit 0
+          if grep -qE '(^|,)main-exception(,|$)' <<<"$LABELS"; then
+            echo "::warning::main-exception: this PR goes to main without passing through dev and an rc"
+            exit 0
+          fi
+          if [ "$HEAD_REPO" = "$GITHUB_REPOSITORY" ] && [[ "$HEAD_REF" =~ ^([0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+|hotfix/.+|release-please--.+)$ ]]; then
+            exit 0
+          fi
+          echo "::error::PRs to main come only from an rc branch (X.Y.Z-rcN) or a hotfix (hotfix/*). Change the base of this PR to dev"
+          exit 1
+
+  # release-please picks the version from the commit subjects on main (CLAUDE.md): the PR title (the subject
+  # of a squash merge) and every commit (kept by a merge commit) must be Conventional Commits
+  conventional-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check the title and the commit subjects
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          pattern='^(feat|fix|docs|ci|refactor|chore|test|build|perf|style|revert)(\([^)]+\))?!?: .+'
+          failed=0
+          if ! grep -qE "$pattern" <<<"$TITLE"; then
+            echo "::error::PR title '$TITLE' is not a Conventional Commit (e.g. 'fix: ...', 'feat: ...', see CLAUDE.md)"
+            failed=1
+          fi
+          while IFS= read -r subject; do
+            if ! grep -qE "$pattern" <<<"$subject"; then
+              echo "::error::Commit '$subject' is not a Conventional Commit: reword it (git rebase -i)"
+              failed=1
+            fi
+          done < <(git log --no-merges --format=%s "$BASE..$HEAD")
+          exit $failed
+
+  # Developer Certificate of Origin (CONTRIBUTING.md): every commit is signed off with git commit -s
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check Signed-off-by
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          failed=0
+          for commit in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            author=$(git log -1 --format='%an <%ae>' "$commit")
+            # Bots (release-please, dependabot) don't sign
+            case "$author" in *"[bot]"*) continue ;; esac
+            if ! git log -1 --format=%B "$commit" | grep -qiF "Signed-off-by: $author"; then
+              echo "::error::$(git log -1 --format='%h %s' "$commit"): no 'Signed-off-by: $author'. Fix with: git rebase --signoff $BASE"
+              failed=1
+            fi
+          done
+          exit $failed
+
+  # Reminders from CONTRIBUTING.md: warnings, they don't block
+  conventions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Linked issue, AI label and size
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          ADDITIONS: ${{ github.event.pull_request.additions }}
+          DELETIONS: ${{ github.event.pull_request.deletions }}
+        run: |
+          # Release PRs and rc branches carry many issues: no single "Closes #N"
+          case "$HEAD_REF" in release-please--*|[0-9]*-rc[0-9]*) exit 0 ;; esac
+          # Every change starts from an issue, except typos and trivial fixes
+          if ! grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) +#[0-9]+' <<<"$BODY"; then
+            echo "::warning::No 'Closes #N' in the PR description: link the issue this PR resolves"
+          fi
+          ai=$(grep -qiE '^\s*- \[[xX]\] .*(AI|agent)' <<<"$BODY" && echo yes || true)
+          if [ -n "$ai" ] && ! grep -qE '(^|,)(ai-generated|ai-assisted|ai-agent)(,|$)' <<<"$LABELS"; then
+            echo "::warning::The description declares AI use: add the ai-generated or ai-assisted label"
+          fi
+          CHANGES=$((ADDITIONS + DELETIONS))
+          if [ "$CHANGES" -gt 400 ]; then
+            echo "::warning::$CHANGES changed lines: PRs should stay under ~400, consider splitting it"
+          fi

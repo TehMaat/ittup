@@ -1,0 +1,42 @@
+name: 🛠️ Task
+description: Work planned by the team (feature, refactoring, tests, maintenance), also for AI agents
+title: "[Task]: "
+labels: ["needs-triage"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What must be true when the issue is closed.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checkable list (input, expected output, edge cases). Required for work done by an AI agent.
+      placeholder: |
+        - [ ] `ittup -scan <folder>` skips the files already uploaded
+        - [ ] A clear error when the folder doesn't exist
+        - [ ] Unit and e2e tests for both cases
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Technical context
+      description: Modules and files involved, constraints, things NOT to touch.
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Proposed mode
+      options: [ai-agent, ai-assisted, manual]
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Estimated size (review included)
+      options: ["S (< half a day)", "M (1-2 days)", "L (> 2 days: split it)"]
+    validations:
+      required: true

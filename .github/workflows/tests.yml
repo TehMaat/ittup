@@ -2,15 +2,20 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   pull_request:
+  # Nightly on the default branch (dev), with the dependencies at their latest version
+  schedule:
+    - cron: "0 3 * * *"
   workflow_dispatch:
+  # The rc pipeline (rc.yml) runs these same checks before publishing
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.ref }}
+  group: tests-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -19,8 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The oldest Python the dependencies install on (patool 4 needs 3.11) and the newest one
-        python-version: ["3.11", "3.14"]
+        # Pull requests: the oldest Python the dependencies install on (patool 4 needs 3.11) and the newest one.
+        # dev, main, nightly and rc: every version in between too
+        python-version: ${{ fromJSON(github.event_name == 'pull_request' && '["3.11", "3.14"]' || '["3.11", "3.12", "3.13", "3.14"]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,11 +41,79 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
 
       - name: Install ITTup
-        run: pip install -e . pytest
+        if: github.event_name != 'schedule'
+        run: pip install -e . pytest pytest-cov
 
+      # Nightly: every dependency at its latest release, to see a breaking update before the users do
+      - name: Install ITTup with the latest dependencies
+        if: github.event_name == 'schedule'
+        run: |
+          sed -E 's/[=<>~!].*//' requirements.txt | grep -v '^\s*$' > "$RUNNER_TEMP/latest-requirements.txt"
+          pip install --upgrade -r "$RUNNER_TEMP/latest-requirements.txt" pytest pytest-cov
+          pip install --no-deps -e .
+          pip list
+
+      # The coverage must not fall below fail_under in pyproject.toml
       - name: Unit tests
-        run: pytest -q --ignore=tests/e2e
+        run: pytest -q --ignore=tests/e2e --cov --cov-report=term
 
       # The ittup command on dummy files, with a fake tracker, TMDB, TVDB and image hosts
       - name: End-to-end tests
         run: pytest -v tests/e2e
+
+  # Lint, types and security. The code on main already has ruff and mypy errors:
+  # they fail only when a change adds new ones (.github/quality-baseline.conf)
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install tools
+        # Pinned: a new release must not move the baselines
+        run: pip install -e . ruff==0.17.1 mypy==2.4.0 types-requests==2.33.0.20261006 bandit==1.9.4 pip-audit
+
+      - name: Load the baselines
+        run: grep -E '^[A-Z_]+=' .github/quality-baseline.conf >> "$GITHUB_ENV"
+
+      - name: ruff (syntax errors and undefined names, never allowed)
+        run: ruff check --select E9,F63,F7,F82 .
+
+      - name: ruff
+        run: |
+          count=$(ruff check --output-format concise --quiet . | grep -c ':' || true)
+          .github/scripts/ratchet.sh ruff "$count" "$RUFF_MAX"
+
+      - name: mypy
+        run: |
+          count=$(mypy 2>&1 | sed -nE 's/^Found ([0-9]+) errors?.*/\1/p')
+          .github/scripts/ratchet.sh mypy "${count:-0}" "$MYPY_MAX"
+
+      - name: bandit (high severity)
+        run: bandit -q -c pyproject.toml -r ittup -lll
+
+      # Known vulnerabilities in the pinned dependencies: a warning on pull requests and main,
+      # an error nightly and on an rc tag
+      - name: pip-audit
+        continue-on-error: ${{ github.event_name != 'schedule' && github.ref_type != 'tag' }}
+        run: pip-audit -r requirements.txt
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: pip install build twine && python -m build
+
+      - name: Check distributions
+        run: twine check --strict dist/*

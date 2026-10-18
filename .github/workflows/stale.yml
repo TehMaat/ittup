@@ -1,0 +1,39 @@
+name: Stale
+
+# CONTRIBUTING.md: needs-info issues and inactive pull requests are marked stale, then closed.
+# P0, P1, epic and keep are never touched
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-label: stale
+          stale-pr-label: stale
+          # Issues: only the ones waiting for information from the reporter
+          only-issue-labels: needs-info
+          days-before-issue-stale: 14
+          days-before-issue-close: 14
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          exempt-issue-labels: P0,P1,epic,keep
+          exempt-pr-labels: "P0,P1,epic,keep,autorelease: pending"
+          stale-issue-message: >
+            This issue has been waiting for information for 14 days and is now stale.
+            It will be closed in 14 days unless there is an update.
+          close-issue-message: >
+            Closed for lack of information: comment with the details to reopen it.
+          stale-pr-message: >
+            This pull request has had no activity for 30 days and is now stale.
+            It will be closed in 14 days unless there is an update.
+          close-pr-message: >
+            Closed for inactivity: reopen it when you get back to it.

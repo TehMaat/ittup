@@ -1,0 +1,32 @@
+name: Labels
+
+# Creates and updates the labels of .github/labels.yml. Labels missing from the file are left alone
+on:
+  push:
+    branches: [main]
+    paths: [.github/labels.yml, .github/workflows/labels.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pip install pyyaml
+          python - <<'PY'
+          import subprocess, yaml
+          for label in yaml.safe_load(open(".github/labels.yml")):
+              subprocess.run(["gh", "label", "create", label["name"], "--force",
+                              "--color", label["color"], "--description", label.get("description", "")],
+                             check=True)
+              print("ok", label["name"])
+          PY

@@ -283,9 +283,10 @@ class ManageTitles:
     # The last episode is not a resolution (S04E01-1080p)
     EPISODE_PACK = re.compile(r"(?<![a-z0-9])S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pi])", re.IGNORECASE)
 
-    # Season between spaces, dots or slashes; episode after them (E01, S01E01v2), not inside a word (byMe7alh, Eagle1)
-    SEASON = r"(?:^|(?<=[\s./]))S(\d+)(?=[\s./]|$)"
-    EPISODE = r"(?:^|(?<=[\s./]))(?:S\d+)?E\d+"
+    # Season 'S02' between spaces, dots, dashes, underscores or slashes; episode 'S01E01' (or 'S01 E01') after them.
+    # Not inside a word (byMe7alh, Eagle1)
+    SEASON = r"(?:^|(?<=[\s._/-]))S(\d+)(?=[\s._/-]|$)(?![\s._-]*E\d)"
+    EPISODE = r"(?:^|(?<=[\s._/-]))S\d+[\s._-]*E\d+"
 
     @staticmethod
     def season_pack(name: str) -> str | None:

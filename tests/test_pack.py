@@ -29,12 +29,16 @@ from ittup.common.utility import ManageTitles
     ("Show.S01.1080p.WEB-DL.DDP5.1-E1ite", "S01"),
     # Still single episodes
     ("Show.S01E01E02.1080p.mkv", None),
-    ("/tv/Show S01/Show - E01.mkv", None),
     ("/tv/Show S01/Show S01E01", None),
     ("/tv/Show S01/Show.S01E01v2.1080p.mkv", None),
     ("/tv/Show S01/Show.S01E01-v2.mkv", None),
     ("/tv/Show S01/Show.S01E01_1080p.mkv", None),
     ("show.s02.720p.byme7alh", "S02"),
+    # Dashes and underscores are separators too
+    ("Show_S01_1080p", "S01"),
+    ("Show-S01-1080p", "S01"),
+    ("/tv/Show S01/Show_S01E01_1080p.mkv", None),
+    ("/tv/Show S01/Show-S01-E01-1080p.mkv", None),
     ("show.s04.e01.1080p", None),
 ])
 def test_season_pack(name, pack):

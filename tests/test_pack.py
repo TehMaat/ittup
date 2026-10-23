@@ -21,6 +21,18 @@ from ittup.common.utility import ManageTitles
     # Lower case
     ("show.s04.1080p.web-dl", "S04"),
     ("show.s04e01-e06.1080p", "S04E01-E06"),
+    # An 'E' and a number inside a word is not an episode (#114)
+    ("/tv/Show/S02/Show S02 (720p Ita Eng Spa SubS) byMe7alh", "S02"),
+    ("Show.S01.1080p.iTA.ENG.AC3.x264-Eagle1", "S01"),
+    ("Show.S01.1080p.WEB-DL-Re2", "S01"),
+    ("Show.S01.1080p.WEB-DL.DDPE5.1-GRP", "S01"),
+    ("Show.S01.1080p.WEB-DL.DDP5.1-E1ite", "S01"),
+    # Still single episodes
+    ("Show.S01E01E02.1080p.mkv", None),
+    ("/tv/Show S01/Show - E01.mkv", None),
+    ("/tv/Show S01/Show S01E01", None),
+    ("show.s02.720p.byme7alh", "S02"),
+    ("show.s04.e01.1080p", None),
 ])
 def test_season_pack(name, pack):
     assert ManageTitles.season_pack(name) == pack

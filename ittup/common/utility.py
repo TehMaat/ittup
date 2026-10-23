@@ -283,21 +283,23 @@ class ManageTitles:
     # The last episode is not a resolution (S04E01-1080p)
     EPISODE_PACK = re.compile(r"(?<![a-z0-9])S(\d+)[\s._-]*E(\d+)\s*-\s*(E?)(\d{1,3})(?![0-9pi])", re.IGNORECASE)
 
+    # Season and episode between spaces, dots or slashes, not inside a word (byMe7alh, Eagle1, DDPE5.1)
+    SEASON = r"(?:^|(?<=[\s./]))S(\d+)(?=[\s./]|$)"
+    EPISODE = r"(?:^|(?<=[\s./]))(?:S\d+)?E\d+(?:E\d+)*(?=[\s./]|$)"
+
     @staticmethod
     def season_pack(name: str) -> str | None:
         """
         Season or episode pack written in the name: 'S04' or 'S04E01-06' (es. from 'Show S04 E01-06')
         None if it is a single episode or a movie
         """
-        # Not 'DTS5.1' or 'H.264'
-        match = re.search(r"((?<![a-z0-9])S\d+(?![0-9])(?!.*E\d+))|" + ManageTitles.EPISODE_PACK.pattern,
-                          name, re.IGNORECASE)
-        if not match:
-            return None
-        if match.group(1):
-            return f"S{int(match.group(1)[1:]):02d}"
-        season, first, e, last = match.group(2, 3, 4, 5)
-        return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
+        match = ManageTitles.EPISODE_PACK.search(name)
+        if match:
+            season, first, e, last = match.group(1, 2, 3, 4)
+            return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
+        # A season with no single episode after it
+        match = re.search(rf"{ManageTitles.SEASON}(?!.*{ManageTitles.EPISODE})", name, re.IGNORECASE)
+        return f"S{int(match.group(1)):02d}" if match else None
 
     @staticmethod
     def pack_episodes(pack: str | None) -> tuple[int, int, int] | None:

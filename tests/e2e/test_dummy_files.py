@@ -24,6 +24,8 @@ TIMEOUT = 300
 
 MOVIE = "Dummy.Movie.2020.1080p.WEB-DL.AAC2.0.H.264.mkv"
 SEASON = "Dummy.Show.S01.1080p.WEB-DL.AAC2.0.H.264"
+# #114: the 'e7' in the group is not an episode
+SEASON_GROUP = "Dummy.Show.S01.1080p.WEB-DL.AAC2.0.H.264-byMe7alh"
 
 
 def dummy_video(path: Path, seconds: int) -> None:
@@ -46,6 +48,7 @@ def media(tmp_path_factory) -> Path:
     dummy_video(folder / MOVIE, seconds=20)
     for episode in (1, 2):
         dummy_video(folder / SEASON / f"Dummy.Show.S01E{episode:02d}.1080p.WEB-DL.AAC2.0.H.264.mkv", seconds=12)
+        dummy_video(folder / SEASON_GROUP / f"Dummy.Show.S01E{episode:02d}.1080p.WEB-DL.AAC2.0.H.264.mkv", seconds=12)
     return folder
 
 
@@ -145,4 +148,13 @@ def test_upload_a_season_pack(home, media):
     assert run.torrents() == [f"{SEASON}.torrent"]
     [upload] = run.uploads()
     assert upload["name"] == "Serie Finta S01 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264"
+    assert (upload["season_number"], upload["episode_number"]) == ("1", "0")
+
+
+def test_upload_a_season_pack_with_an_e_and_a_number_in_the_group(home, media):
+    run = ittup(home, "-f", str(media / SEASON_GROUP), "-noseed")
+
+    assert_clean(run)
+    assert run.torrents() == [f"{SEASON_GROUP}.torrent"]
+    [upload] = run.uploads()
     assert (upload["season_number"], upload["episode_number"]) == ("1", "0")

@@ -21,25 +21,29 @@ from ittup.common.utility import ManageTitles
     # Lower case
     ("show.s04.1080p.web-dl", "S04"),
     ("show.s04e01-e06.1080p", "S04E01-E06"),
+    ("show.s04.e01.1080p", None),
     # An 'E' and a number inside a word is not an episode (#114)
     ("/tv/Show/S02/Show S02 (720p Ita Eng Spa SubS) byMe7alh", "S02"),
+    ("show.s02.720p.byme7alh", "S02"),
     ("Show.S01.1080p.iTA.ENG.AC3.x264-Eagle1", "S01"),
     ("Show.S01.1080p.WEB-DL-Re2", "S01"),
     ("Show.S01.1080p.WEB-DL.DDPE5.1-GRP", "S01"),
     ("Show.S01.1080p.WEB-DL.DDP5.1-E1ite", "S01"),
-    # Still single episodes
-    ("Show.S01E01E02.1080p.mkv", None),
+    # The season folder alone is the season
+    ("/tv/Show/S01", "S01"),
+    ("/tv/Show/S01/", "S01"),
+    # An episode in the season folder is still an episode, whatever follows it
+    ("/tv/Show/S01/Show.S01E01.1080p.mkv", None),
     ("/tv/Show S01/Show S01E01", None),
+    ("/tv/Show S01/Show.S01E01E02.1080p.mkv", None),
     ("/tv/Show S01/Show.S01E01v2.1080p.mkv", None),
     ("/tv/Show S01/Show.S01E01-v2.mkv", None),
     ("/tv/Show S01/Show.S01E01_1080p.mkv", None),
-    ("show.s02.720p.byme7alh", "S02"),
     # Dashes and underscores are separators too
     ("Show_S01_1080p", "S01"),
     ("Show-S01-1080p", "S01"),
     ("/tv/Show S01/Show_S01E01_1080p.mkv", None),
     ("/tv/Show S01/Show-S01-E01-1080p.mkv", None),
-    ("show.s04.e01.1080p", None),
 ])
 def test_season_pack(name, pack):
     assert ManageTitles.season_pack(name) == pack

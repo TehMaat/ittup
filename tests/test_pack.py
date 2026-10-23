@@ -31,6 +31,9 @@ from ittup.common.utility import ManageTitles
     ("Show.S01E01E02.1080p.mkv", None),
     ("/tv/Show S01/Show - E01.mkv", None),
     ("/tv/Show S01/Show S01E01", None),
+    ("/tv/Show S01/Show.S01E01v2.1080p.mkv", None),
+    ("/tv/Show S01/Show.S01E01-v2.mkv", None),
+    ("/tv/Show S01/Show.S01E01_1080p.mkv", None),
     ("show.s02.720p.byme7alh", "S02"),
     ("show.s04.e01.1080p", None),
 ])

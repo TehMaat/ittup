@@ -78,6 +78,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `RESIZE_SCSHOT` | boolean | `False` | Resizes screenshots |
 | `TIMEOUT_SCSHOT` | number | `120` | Max seconds for a single screenshot (`0` = no limit) |
 | `TONEMAP_SCSHOT` | boolean | `False` | Tone maps the HDR screenshots to SDR |
+| `SCREENSHOTS_QUORUM` | boolean | `False` | Uploads a content only with all its screenshots on the image hosts |
 | `TORRENT_COMMENT` | string | `no_comment` | Comment inside the `.torrent` file |
 | `PREFERRED_LANG` | string | `all` | Preferred language (ISO 3166) or `all` |
 | `ANON` | boolean | `False` | Anonymous upload |

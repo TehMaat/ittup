@@ -3,6 +3,7 @@
 import os
 import re
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from ittup.common.utility import ManageTitles
 from ittup.common.trackers.tags_list import TAGS_LIST
@@ -73,7 +74,7 @@ class TRACKData:
         return found
 
     @staticmethod
-    def match_tags(name: str, tags) -> list[str]:
+    def match_tags(name: str, tags: Iterable[str]) -> list[str]:
         """
         Tags written in the name. A longer tag hides the shorter ones inside it (WEB-DLMux is not DLMux)
         """

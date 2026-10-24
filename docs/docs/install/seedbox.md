@@ -2,7 +2,7 @@
 
 Ultra.cc does not allow `sudo`, so we can't use the system packages. The bot also needs a Python with **sqlite3**, which it uses as a cache for screenshots and tracker searches: the Python that pyenv builds on ultra.cc doesn't have it, because the sqlite3 development files are missing.
 
-The simplest way is [**uv**](https://docs.astral.sh/uv/): it installs without `sudo`, downloads a ready-made Python that already includes sqlite3 and installs the bot in its own environment. Nothing to compile.
+The simplest way is [**uv**](https://docs.astral.sh/uv/): it installs without `sudo` and downloads a ready-made Python that already includes sqlite3, with which you create the bot's virtualenv. Nothing to compile.
 
 ## 1. Install uv
 
@@ -19,10 +19,12 @@ source $HOME/.local/bin/env
 ## 2. Install the bot
 
 ```bash
-uv tool install --python 3.12 ittup
+uv venv --seed --python 3.12 ~/.venvs/ittup
+~/.venvs/ittup/bin/pip install ittup
+ln -sf ~/.venvs/ittup/bin/ittup ~/.local/bin/ittup
 ```
 
-uv downloads Python 3.12 by itself (the bot requires Python 3.10 minimum; 3.12 is recommended — newer versions are still too recent for some libraries). The `ittup` command ends up in `~/.local/bin`.
+uv downloads Python 3.12 by itself and creates the virtualenv with pip in it (`--seed`): the bot requires Python 3.10 minimum; 3.12 is recommended — newer versions are still too recent for some libraries. The link puts the `ittup` command in `~/.local/bin`, already in the `PATH` after step 1.
 
 ## 3. Test the bot
 
@@ -35,7 +37,7 @@ The red messages warn you that the bot is not configured yet: continue with the 
 ## Upgrade
 
 ```bash
-uv tool upgrade ittup
+~/.venvs/ittup/bin/pip install --upgrade ittup
 ```
 
 ## Alternative: pyenv and sqlite3 compiled by hand

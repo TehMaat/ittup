@@ -13,20 +13,39 @@ UPGRADE_DOCS_URL = "https://tehmaat.github.io/ittup/install/upgrade/"
 TIMEOUT = 3
 
 
-def parse_version(value: str) -> tuple[int, ...] | None:
+# A release or a pre-release (PEP 440): '1.13.0', '1.13.0rc3', '1.13.0b1', '1.13.0a2'
+VERSION = re.compile(r"(\d+(?:\.\d+)*)(?:(a|b|rc)(\d+))?")
+# The pre-releases come before their release: 1.13.0a1 < 1.13.0b1 < 1.13.0rc1 < 1.13.0
+PRE_RELEASE = {"a": 0, "b": 1, "rc": 2}
+RELEASE = len(PRE_RELEASE)
+
+
+def parse_version(value: str) -> tuple[tuple[int, ...], int, int] | None:
     """
-    The release numbers of a version ('1.8.0' -> (1, 8, 0)), None for a pre-release or a local build
+    A key that sorts the versions ('1.13.0rc3' -> ((1, 13), 2, 3)), None for a dev or a local build
     """
-    if not re.fullmatch(r"\d+(\.\d+)*", value or ""):
+    match = VERSION.fullmatch(value or "")
+    if not match:
         return None
-    return tuple(int(part) for part in value.split("."))
+    numbers, pre_release, pre_number = match.groups()
+    release = tuple(int(part) for part in numbers.split("."))
+    # 1.13 is 1.13.0
+    while len(release) > 1 and release[-1] == 0:
+        release = release[:-1]
+    if pre_release:
+        return release, PRE_RELEASE[pre_release], int(pre_number)
+    return release, RELEASE, 0
 
 
 def is_newer(latest: str, current: str) -> bool:
-    latest_numbers, current_numbers = parse_version(latest), parse_version(current)
-    if latest_numbers is None or current_numbers is None:
+    """
+    'latest' is a release newer than 'current'. 'current' can be a pre-release (an rc installed with --pre),
+    'latest' never is: a pre-release on PyPI is not an upgrade, the testers install it by hand
+    """
+    latest_key, current_key = parse_version(latest), parse_version(current)
+    if latest_key is None or current_key is None or latest_key[1] != RELEASE:
         return False
-    return latest_numbers > current_numbers
+    return latest_key > current_key
 
 
 def latest_version() -> str | None:
@@ -55,7 +74,7 @@ class UpdateCheck:
         self.latest = latest_version()
 
     def start(self) -> "UpdateCheck":
-        # A source checkout (0.0.0+unknown) has no version to compare
+        # A source checkout (0.0.0+unknown) or a dev build (1.12.2.dev812) has no version to compare
         if parse_version(self.current) is not None:
             self._thread.start()
         return self

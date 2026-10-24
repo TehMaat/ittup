@@ -51,7 +51,14 @@ and then the bot can upload it to an image host, then add the link to the torren
 Install and Upgrade
 ===================
 
-- pip install ittup --upgrade
+In a virtualenv (required on Debian 12+ and Ubuntu 23.04+)::
+
+    python3 -m venv ~/.venvs/ittup
+    ~/.venvs/ittup/bin/pip install --upgrade ittup
+
+Or, where the Python lets pip install packages (for example on Windows)::
+
+    pip install --upgrade ittup
 
 Keeping Unit3Dup
 ----------------
@@ -67,9 +74,7 @@ If you use both, keep in mind that:
   same folder, or the same files can be uploaded twice: give ITTup its own folders in ``ittup.json``
   (or set them to ``no_path`` to use the defaults inside ``ittup_config``).
 - If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries
-  Unit3Dup depends on. To keep them isolated, install ITTup with pipx or in a virtualenv::
-
-    pipx install ittup
+  Unit3Dup depends on. To keep them isolated, install ITTup in its own virtualenv (above).
 
 When you no longer need Unit3Dup, you can remove it with ``pip uninstall unit3dup``: this also removes
 the old top-level ``common``, ``view`` and ``unit3dup`` modules it installed.

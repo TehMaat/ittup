@@ -1,13 +1,15 @@
 # Release candidate: manual tests
 
 During the soak period (3-5 days) at least one person uses the rc on real uploads and ticks this list in the
-milestone issue. Report problems with the Bug form, channel `rc`, label `found-in:rc`.
+milestone issue. Report problems with the Bug form, channel `rc`, label `found-in:rc`. The user guide for the
+testers is [Release candidate](docs/install/rc.md) (install, next rc, back to the release).
 
 ## Installation
 
-- [ ] Clean install, in a new virtualenv: `pip install --pre ittup==X.Y.ZrcN`
+- [ ] Clean install, in a new virtualenv: `python3 -m venv /tmp/ittup-rc && /tmp/ittup-rc/bin/pip install ittup==X.Y.ZrcN`
 - [ ] ITTup prints `X.Y.ZrcN` when it starts
-- [ ] Upgrade from the last release: `pip install ittup==<last release>`, then `pip install --upgrade --pre ittup==X.Y.ZrcN`
+- [ ] Upgrade from the last release, in another virtualenv: `pip install ittup==<last release>`, then `pip install --upgrade --pre ittup`
+- [ ] With the rc installed, `pip install --upgrade ittup` (without `--pre`) leaves the rc installed
 - [ ] Linux (Debian/Ubuntu) and, if possible, Windows
 
 ## Configuration
@@ -31,3 +33,4 @@ milestone issue. Report problems with the Bug form, channel `rc`, label `found-i
 ## Rollback
 
 - [ ] `pip install ittup==<last release>` goes back and works with the configuration the rc used
+- [ ] After the release: `pip install --upgrade ittup` moves the rc to `X.Y.Z`, and the rc shows the update notice of `X.Y.Z` when it starts

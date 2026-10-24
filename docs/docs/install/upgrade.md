@@ -3,26 +3,27 @@
 When a new version is out:
 
 !!! tip
-    At every start the bot asks PyPI for the latest version and, when a newer one is out, shows `ITTup X.Y.Z is available (installed: ...)` after the configuration summary. It is only a message: the bot goes on with the installed version, and without an answer from PyPI within a second nothing is shown.
+    At every start the bot asks PyPI for the latest version and, when a newer one is out, shows `ITTup X.Y.Z is available (installed: ...)` after the configuration summary. It is only a message: the bot goes on with the installed version, and without an answer from PyPI within a second nothing is shown. Only releases are announced, never the [release candidates](rc.md).
+
+Upgrade with the `pip` of the environment ITTup is installed in. In a virtualenv (as in the [Linux](linux.md) and [ultra.cc seedbox](seedbox.md) guides):
 
 ```bash
-pip install ittup --upgrade
+~/.venvs/ittup/bin/pip install --upgrade ittup
 ```
 
-If you installed it with pipx (as in the [Linux](linux.md) guide):
+Without a virtualenv (as in the [Windows](windows.md) guide), or with the virtualenv activated:
 
 ```bash
-pipx upgrade ittup
+pip install --upgrade ittup
 ```
 
-If you installed it with uv (as in the [ultra.cc seedbox](seedbox.md) guide):
+Without `--pre`, pip installs only releases and never goes back to an older version.
 
-```bash
-uv tool upgrade ittup
-```
+!!! note "Installed with pipx or uv tool?"
+    Older versions of these guides installed the bot with pipx (Linux) or `uv tool` (seedbox). Switch to a virtualenv once: `pipx uninstall ittup` or `uv tool uninstall ittup`, then install it again following the guide. The configuration in `ittup_config` is kept.
 
 !!! note "Installed from GitHub?"
-    Up to 1.5.0 the bot was installed from GitHub (`git+https://github.com/TehMaat/ittup`). It is now on [PyPI](https://pypi.org/project/ittup/): switch to PyPI once with `pip install ittup --upgrade`, `pipx install --force ittup` or `uv tool install --force --python 3.12 ittup`, then upgrade with the commands above.
+    Up to 1.5.0 the bot was installed from GitHub (`git+https://github.com/TehMaat/ittup`). It is now on [PyPI](https://pypi.org/project/ittup/): switch to PyPI once with `pip install --upgrade ittup`, then upgrade with the commands above.
 
 The installed version is shown when the bot starts:
 
@@ -78,11 +79,7 @@ You don't have to uninstall Unit3Dup: the two can be installed side by side. The
 If you use both, keep in mind that:
 
 - The custom paths copied from your Unit3Dup configuration (see the note above) are shared by the two tools. Don't run both watchers on the same folder, or the same files can be uploaded twice: give ITTup its own folders in `ittup.json`, or set them to `no_path`.
-- If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries Unit3Dup depends on. To keep them isolated, install ITTup with pipx or in a virtualenv:
-
-    ```bash
-    pipx install ittup
-    ```
+- If your Unit3Dup is older than 0.14.x, installing ITTup in the same environment may upgrade libraries Unit3Dup depends on. To keep them isolated, install ITTup in its own virtualenv, as in the [Linux](linux.md) guide.
 
 When you no longer need Unit3Dup, remove it — this also removes the old top-level `common`, `view` and `unit3dup` modules it installed:
 

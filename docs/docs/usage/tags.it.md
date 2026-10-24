@@ -53,6 +53,8 @@ Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder 
 
 La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide anche il **tipo** del torrent sul tracker: vince su codec e tag generici scritti prima (`HEVC`, `FullHD`, `BluRay`), quindi `Film.2020.1080p.HEVC.WEB-DL` è un WEB-DL e `Film.2020.1080p.BluRay.REMUX` un Remux. Il bot guarda prima il nome della cartella, poi quello del file video. Senza sorgente nel nome, un codec (`x264`, `HEVC`…) vale Encode.
 
+La sorgente può stare tra punti, underscore, trattini o parentesi (`Film_2020_BDRip_1080p`, `Film.2020.(WEB-DL).1080p`). Senza anno o stagione nel nome viene letta anche prima della risoluzione (`Film_BDRip_1080p`), ma solo per le sorgenti che non possono essere una parola del titolo: `Charlotte's Web 1080p` non è un WEB-DL.
+
 I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
 
 ### Sorgente dal MediaInfo

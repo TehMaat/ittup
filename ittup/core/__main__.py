@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import signal
 import sys
 
 # Python builds without sqlite3 (e.g. pyenv on a seedbox without libsqlite3-dev) would
@@ -33,6 +34,7 @@ def main():
                                        WATCHER_QUEUE_PATH, version)
     from ittup.common.trackers import TRACKER_NAME
     from ittup.common.about import APP_NAME
+    from ittup.common.processes import register
 
     from ittup.core.torrent import View
     from ittup.core import pvtTracker
@@ -127,6 +129,15 @@ def main():
     except FileNotFoundError:
         custom_console.bot_error_log(
             f"Ban list file {BAN_TAGS_PATH} not found. Please update your configuration file")
+
+    # Tell the other ITTup processes that this one is uploading. A SIGTERM ends it with SystemExit, so the run file
+    # is removed (the watcher handles it: it stops after the current upload)
+    commands = {"watcher": cli.args.watcher, "reseed": cli.args.reseed, "scan": cli.args.scan,
+                "folder": cli.args.folder, "upload": cli.args.upload, "ftp": cli.args.ftp}
+    mode = next((name for name, value in commands.items() if value), None)
+    if mode:
+        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+        register(mode, item=cli.args.upload or cli.args.folder or cli.args.scan)
 
     # Manual upload mode
     if cli.args.upload:

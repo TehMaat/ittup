@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import threading
+from importlib.metadata import PackageNotFoundError, version as package_version
 
 import requests
 
@@ -57,6 +58,17 @@ def latest_version() -> str | None:
         response.raise_for_status()
         return response.json()["info"]["version"]
     except (requests.RequestException, ValueError, KeyError, TypeError):
+        return None
+
+
+def installed_version() -> str | None:
+    """
+    The version installed now, which differs from __version__ when the package has been upgraded since
+    the start. None in a source checkout
+    """
+    try:
+        return package_version(PACKAGE_NAME)
+    except PackageNotFoundError:
         return None
 
 

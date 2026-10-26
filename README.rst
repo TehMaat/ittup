@@ -60,6 +60,9 @@ Or, where the Python lets pip install packages (for example on Windows)::
 
     pip install --upgrade ittup
 
+Once installed, ``ittup --upgrade`` upgrades it with the same pip, after asking what to do with the
+watchers, scans and uploads still running (``ittup --upgrade wait``, ``stop`` or ``force`` in a script).
+
 Keeping Unit3Dup
 ----------------
 You don't have to uninstall Unit3Dup: the two can be installed side by side.

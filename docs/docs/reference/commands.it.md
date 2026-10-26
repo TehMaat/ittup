@@ -13,6 +13,7 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | Flag | Argomento | Descrizione |
 |---|---|---|
 | `-check` | — | Controlla i file di configurazione e l'ambiente |
+| `-upgrade`, `--upgrade` | `ask` (default), `wait`, `stop`, `force`, `check` | [Aggiorna](../install/upgrade.md) ITTup, dopo aver chiesto cosa fare con gli altri processi ITTup attivi. `check` controlla e basta: exit code 1 se è uscita una nuova versione |
 
 ## Upload
 

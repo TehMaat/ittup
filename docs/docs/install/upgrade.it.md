@@ -3,7 +3,35 @@
 Quando esce una nuova versione:
 
 !!! tip
-    A ogni avvio il bot chiede a PyPI l'ultima versione e, se ce n'è una più recente, mostra `ITTup X.Y.Z is available (installed: ...)` dopo il riepilogo della configurazione. È solo un messaggio: il bot continua con la versione installata, e se PyPI non risponde entro un secondo non viene mostrato nulla. Vengono annunciate solo le release, mai le [release candidate](rc.md).
+    A ogni avvio il bot chiede a PyPI l'ultima versione e, se ce n'è una più recente, mostra `ITTup X.Y.Z is available (installed: ...)` dopo il riepilogo della configurazione, con il link alle note di rilascio e gli altri processi ITTup attivi. È solo un messaggio: il bot continua con la versione installata, e se PyPI non risponde entro un secondo non viene mostrato nulla. Vengono annunciate solo le release, mai le [release candidate](rc.md).
+
+## Con `ittup --upgrade`
+
+```bash
+ittup --upgrade
+```
+
+Installa la nuova versione con il `pip` del Python che esegue ITTup (lo stesso virtualenv). Se un watcher, uno scan, un reseed o un upload è ancora in esecuzione, aggiornare lo fermerebbe a metà o lo lascerebbe girare con il codice vecchio: vengono elencati e il bot chiede cosa fare.
+
+```text
+⚠ ITTup processes running: 1
+  PID 12345   watcher   started 2026-10-16 10:02   working on: Film.2024.1080p.mkv
+Upgrading now can stop an upload halfway.
+[W]ait for them to end / [S]top them and upgrade (a watcher ends its upload first) / [F]orce the upgrade / [N]o, cancel:
+```
+
+| Risposta | Argomento | Cosa succede |
+|---|---|---|
+| Wait | `ittup --upgrade wait` | Aspetta che finiscano, poi aggiorna |
+| Stop | `ittup --upgrade stop` | Manda loro un SIGTERM: il watcher finisce l'upload in corso ed esce, gli altri comandi si fermano subito. Poi aggiorna. Non su Windows |
+| Force | `ittup --upgrade force` | Aggiorna subito: riavviali dopo |
+| No | — | Annulla |
+
+Gli argomenti rispondono alla domanda in uno script o in un cron; senza terminale e senza argomento l'aggiornamento viene annullato. `ittup --upgrade check` controlla e basta: exit code 0 se ITTup è aggiornato, 1 se è uscita una nuova versione, 2 se PyPI non risponde.
+
+Un watcher che si accorge di una nuova versione installata sotto di lui (per esempio con `pip` a mano) si ferma prima dell'upload successivo: riavvialo.
+
+## Con pip
 
 Aggiorna con il `pip` dell'ambiente in cui hai installato ITTup. In un virtualenv (come nelle guide [Linux](linux.md) e [Seedbox ultra.cc](seedbox.md)):
 

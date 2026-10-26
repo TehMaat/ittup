@@ -5,7 +5,7 @@ from importlib.metadata import PackageNotFoundError, version as package_version
 
 import requests
 
-from ittup.common.about import PACKAGE_NAME, USER_AGENT, __version__
+from ittup.common.about import PACKAGE_NAME, REPO_URL, USER_AGENT, __version__
 
 PYPI_URL = f"https://pypi.org/pypi/{PACKAGE_NAME}/json"
 UPGRADE_DOCS_URL = "https://tehmaat.github.io/ittup/install/upgrade/"
@@ -47,6 +47,13 @@ def is_newer(latest: str, current: str) -> bool:
     if latest_key is None or current_key is None or latest_key[1] != RELEASE:
         return False
     return latest_key > current_key
+
+
+def release_url(version: str) -> str:
+    """
+    The GitHub release of a version, with what's new in it
+    """
+    return f"{REPO_URL}/releases/tag/{version}"
 
 
 def latest_version() -> str | None:

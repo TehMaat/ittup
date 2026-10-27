@@ -13,6 +13,7 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | Flag | Argument | Description |
 |---|---|---|
 | `-check` | — | Checks the configuration files and the environment |
+| `-upgrade`, `--upgrade` | `ask` (default), `wait`, `stop`, `force`, `check` | [Upgrades](../install/upgrade.md) ITTup, after asking what to do with the other ITTup processes running. `check` only checks: exit code 1 when a new version is out |
 
 ## Upload
 

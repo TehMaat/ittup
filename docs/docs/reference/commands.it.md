@@ -25,6 +25,7 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | `-reseed` | — | [Reseed](../usage/reseed.md): scarica dal tracker i torrent dei tuoi contenuti locali |
 | `-watcher` | — | Avvia il [watcher](../usage/watcher.md) (cartella monitorata) |
 | `-notitle` | "titolo" | [Titolo manuale](../usage/tags.md#titolo-manuale) per la ricerca TMDB |
+| `-tag` | nome | [Release group](../usage/tags.md#release-group) in fondo al titolo, al posto di quello del nome del file o di `RELEASER_SIGN` |
 | `-force` | categoria | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-noseed` | — | Upload senza consegnare il torrent al client (niente seeding) |
 | `-noup` | — | Crea solo il `.torrent` nell'archivio, niente upload |

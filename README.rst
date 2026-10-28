@@ -86,14 +86,12 @@ the old top-level ``common``, ``view`` and ``unit3dup`` modules it installed.
 Configuration
 -------------
 The configuration is stored in ``~/ittup_config/ittup.json``
-(Windows: ``%LOCALAPPDATA%\ittup_config\ittup.json``) together with
-``tags_list.json``, ``sign_list.json`` and ``ban_list.json``.
+(Windows: ``%LOCALAPPDATA%\ittup_config\ittup.json``).
 The same folder holds the default ``torrent_archive_path``, ``cache_path``, ``watcher_path``,
 ``watcher_destination_path`` and ``watcher_quarantine_path`` folders and the watcher queue (``watcher_queue.json``).
 
 Coming from Unit3Dup? On the first run, if ``Unit3Dup_config`` exists and ``ittup_config`` does not,
-ITTup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``), tags, sign and ban lists
-into the new folder. The old folder is left untouched. Settings of the removed trackers
+ITTup *copies* your configuration (``Unit3Dbot.json`` becomes ``ittup.json``) into the new folder. The old folder is left untouched. Settings of the removed trackers
 (``SIS``, ``PTT``, ``AST``, ``MULTI_TRACKER``) are simply ignored.
 
 Windows Dependencies

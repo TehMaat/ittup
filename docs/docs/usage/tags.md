@@ -4,7 +4,7 @@ The torrent title is made of the **media title** plus a set of **tags** derived 
 
 Available tags: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`.
 
-`video_encoder` is still accepted in `TAGS_POSITION_*` and in `ban_list.json` so existing configurations keep working, but it no longer adds anything: the encoder is part of `vcodec`.
+`video_encoder` is still accepted in `TAGS_POSITION_*` so existing configurations keep working, but it no longer adds anything: the encoder is part of `vcodec`. To leave a tag out of the title, remove it from `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE`.
 
 ## How the title is built
 
@@ -55,7 +55,7 @@ The source written in the name (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) also de
 
 The source can be between dots, underscores, dashes or brackets (`Movie_2020_BDRip_1080p`, `Movie.2020.(WEB-DL).1080p`). With no year or season in the name, it is also read before the resolution (`Movie_BDRip_1080p`), but only the sources that can't be a word of the title: `Charlotte's Web 1080p` is not a WEB-DL.
 
-Streaming platform rips are split into platform and source: `NFRip` becomes `NF WEBRip` (for every platform in `tags_list.json`, e.g. `AMZNRip` → `AMZN WEBRip`).
+Streaming platform rips are split into platform and source: `NFRip` becomes `NF WEBRip` (for every streaming platform the bot knows, e.g. `AMZNRip` → `AMZN WEBRip`).
 
 ### Source from MediaInfo
 
@@ -72,42 +72,30 @@ The title keeps at most two audio codecs: the **best ITA codec** and the **best 
 
 The languages follow the codecs: `ITA`, the original language, then the other languages of the file, which only get their flag and no codec. Example with Italian, English and Japanese tracks of a Japanese movie: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
 
-## The three customization files
+## Release group
 
-They live in the configuration folder (`ittup_config`) and are created on first run with default values. They are plain JSON, editable with any text editor.
+The title ends with the release group, read from the end of the file or folder name after a `-`, a `.`, a space or in `[ ]`:
 
-### `tags_list.json` — custom tags
+| Name | Release group |
+|---|---|
+| `Movie.2024.1080p.WEB-DL.DDP5.1.H.264-NAHOM.mkv` | `-NAHOM` |
+| `Movie.2025.1080p.VU.REMUX.TrueHD.ITA.ENG.AVC.LFi.mkv` | `-LFi` |
+| `Show.S01E03.1080p.WEB-DL.E-AC3.ITA.KOR.SUBS.H.264.S-K.mkv` | `-S-K` |
+| `Movie (2022) iTA-ENG.Bluray.1080p.x264-Dr4gon MIRCrew.mkv` | `-Dr4gon MIRCrew` |
+| `Movie.2024.1080p.BluRay.x264.AC3.ITA-ENG.mkv` | none: `ENG` is a language |
+| `Spider-Man.2002.1080p.BluRay.x264.mkv` | none: `Spider` is part of the title |
 
-Maps **word → tag type**: it teaches the bot to recognize words in file names and classify them.
+A language (`ITA`, `ENG`…) or `MULTI`, `DUAL`, `SUB`, `SUBS` at the end of the name is never a release group.
 
-```json
-{
-    "REMUX": "remux",
-    "WEB-DL": "source",
-    "AMZN": "platform"
-}
-```
+To choose it yourself:
 
-Used when building the title: when the word appears in the file name, the value lands in the right tag of the title. You can add your own entries (e.g. release group names or unusual sources).
+- `-tag NAME` for one upload: `ittup -u "<file>" -tag NAHOM`
+- `RELEASER_SIGN` in `ittup.json` for every upload ([Advanced options](../config/options.md#language-anonymity-and-signature)), max 20 characters, special characters stripped
 
-!!! warning "Required file"
-    If `tags_list.json` is missing, the bot reports it at startup.
+`-tag` wins over `RELEASER_SIGN`, and both win over the name.
 
-### `ban_list.json` — tags to exclude from the autobuild
-
-Excludes entire **tag types** from the title rebuild: a tag listed here never ends up in the title built by the bot. Keys are the tag names (the same ones used in `TAGS_POSITION_*`); the value is just a placeholder.
-
-Example — never include the video codec in the title:
-
-```json
-{
-    "vcodec": "banned"
-}
-```
-
-### `sign_list.json` — releaser signatures
-
-List of signatures recognized as **release groups**. Together with `RELEASER_SIGN` ([Advanced options](../config/options.md#language-anonymity-and-signature)) it manages the signature at the end of the title (max 20 characters, special characters stripped).
+!!! note "`tags_list.json`, `sign_list.json`, `ban_list.json`"
+    Up to 1.x the bot copied these three lists into `ittup_config`. Since 2.0 the tags and the release groups come with ITTup and are updated with it: the files are no longer read, and the bot says so at startup while they are still there. You can delete them. What `ban_list.json` did (leave a tag out of the title) is done by `TAGS_POSITION_*`.
 
 ## Manual title
 

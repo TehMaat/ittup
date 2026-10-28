@@ -13,9 +13,6 @@ from pathvalidate import sanitize_filepath
 from urllib.parse import urlparse
 from pathlib import Path
 
-from ittup.common.trackers.signs_list import SIGNS_LIST
-from ittup.common.trackers.tags_list import TAGS_LIST
-from ittup.common.trackers.ban_list import BAN_LIST
 from ittup.common.trackers import tracker_list
 
 from ittup.common.utility import ManageTitles
@@ -23,9 +20,6 @@ from ittup.common.utility import ManageTitles
 from ittup.common.about import __version__
 
 config_file = "ittup.json"
-user_tags_file = "tags_list.json"
-user_sign_file = "sign_list.json"
-bane_file = "ban_list.json"
 
 version = __version__
 
@@ -47,16 +41,14 @@ TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
 # The screenshots of the contents not uploaded that the image hosts could not delete: remove them by hand
 SCREENSHOTS_TO_DELETE_PATH: Path = CONFIG_DIR / "screenshots_to_delete.txt"
 DEFAULT_JSON_PATH: Path = CONFIG_DIR / f"{config_file}"
-USER_TAGS_PATH: Path = CONFIG_DIR / f"{user_tags_file}"
-USER_SIGN_PATH: Path = CONFIG_DIR / f"{user_sign_file}"
-BAN_TAGS_PATH: Path = CONFIG_DIR / f"{bane_file}"
+# The lists that the versions before 2.0 copied into the configuration folder, no longer read: the tags and the
+# releasers come with the package (ittup/common/trackers), TAGS_POSITION_* leaves a tag out of the title
+OBSOLETE_LIST_FILES: list[Path] = [CONFIG_DIR / name
+                                   for name in ("tags_list.json", "sign_list.json", "ban_list.json")]
 
 # Legacy file name -> new path
 LEGACY_CONFIG_FILES: dict[str, Path] = {
     "Unit3Dbot.json": DEFAULT_JSON_PATH,
-    user_tags_file: USER_TAGS_PATH,
-    user_sign_file: USER_SIGN_PATH,
-    bane_file: BAN_TAGS_PATH,
 }
 
 # Attributes where '' already means the default value: older versions added the new attributes to the
@@ -641,33 +633,6 @@ class Load:
         self.config = self.load_config()
 
     @staticmethod
-    def create_tags_list_file(path: Path):
-        """
-        Creates a tags list file
-        """
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as tags_list_file:
-            json.dump(TAGS_LIST, tags_list_file, ensure_ascii=False, indent=4)
-
-    @staticmethod
-    def create_sign_list_file(path: Path):
-        """
-        Creates a sign list file
-        """
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as tags_sign_file:
-            json.dump(SIGNS_LIST, tags_sign_file, ensure_ascii=False, indent=4)
-
-    @staticmethod
-    def create_ban_list_file(path: Path):
-        """
-        Creates a ban list file
-        """
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as ban_list_file:
-            json.dump(BAN_LIST, ban_list_file, ensure_ascii=False, indent=4)
-
-    @staticmethod
     def default_config() -> dict:
         """
         The default configuration: the sections and attributes of the config file, in their order
@@ -857,18 +822,6 @@ class Load:
         if not DEFAULT_JSON_PATH.exists():
             print(f"Create default configuration file: {DEFAULT_JSON_PATH}")
             Load.create_default_json_file(DEFAULT_JSON_PATH)
-
-        if not USER_TAGS_PATH.exists():
-            print(f"Create default Tags_list file: {USER_TAGS_PATH}")
-            Load.create_tags_list_file(USER_TAGS_PATH)
-
-        if not USER_SIGN_PATH.exists():
-            print(f"Create default Sign_list file: {USER_SIGN_PATH}")
-            Load.create_sign_list_file(USER_SIGN_PATH)
-
-        if not BAN_TAGS_PATH.exists():
-            print(f"Create default Ban_list file: {BAN_TAGS_PATH}")
-            Load.create_ban_list_file(BAN_TAGS_PATH)
 
         # Since the last bot version there might are new attributes
         # Load the json file, find the difference between json file and the code. Update the user's json file

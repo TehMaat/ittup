@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import signal
 import sys
 
@@ -35,8 +34,7 @@ def main():
 
     # These modules load the user configuration on import
     from ittup.common.torrent_clients import TransmissionClient, QbittorrentClient, RTorrentClient
-    from ittup.common.settings import (Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH,
-                                       WATCHER_QUEUE_PATH, version)
+    from ittup.common.settings import Load, DEFAULT_JSON_PATH, OBSOLETE_LIST_FILES, WATCHER_QUEUE_PATH, version
     from ittup.common.trackers import TRACKER_NAME
     from ittup.common.about import APP_NAME, PACKAGE_NAME
     from ittup.common.processes import register, running
@@ -116,32 +114,12 @@ def main():
                 custom_console.bot_error_log(f"You need to set a favorite 'torrent_client' in the config file")
                 exit(1)
 
-    # Load User Tags list
-    tags_list = None
-    try:
-        with open(USER_TAGS_PATH, "r", encoding="utf-8") as f:
-            tags_list = json.load(f)
-    except FileNotFoundError:
-        custom_console.bot_error_log(
-            f"User tags file {USER_TAGS_PATH} not found. Please update your configuration file")
-
-    # Load User Sign list
-    sign_list = None
-    try:
-        with open(USER_SIGN_PATH, "r", encoding="utf-8") as f:
-            sign_list = json.load(f)
-    except FileNotFoundError:
-        custom_console.bot_error_log(
-            f"User sign file {USER_SIGN_PATH} not found. Please update your configuration file")
-
-    # Load Ban list
-    ban_list = None
-    try:
-        with open(BAN_TAGS_PATH, "r", encoding="utf-8") as f:
-            ban_list = json.load(f)
-    except FileNotFoundError:
-        custom_console.bot_error_log(
-            f"Ban list file {BAN_TAGS_PATH} not found. Please update your configuration file")
+    # The lists copied into the configuration folder before 2.0 are no longer read
+    obsolete = [path.name for path in OBSOLETE_LIST_FILES if path.exists()]
+    if obsolete:
+        custom_console.bot_warning_log(f"{', '.join(obsolete)} in '{OBSOLETE_LIST_FILES[0].parent}' are no longer "
+                                       f"used: you can delete them. The release group is read from the file name "
+                                       f"or set with RELEASER_SIGN or -tag, the tags of the title with TAGS_POSITION_*")
 
     # Tell the other ITTup processes that this one is uploading. A SIGTERM ends it with SystemExit, so the run file
     # is removed (the watcher handles it: it stops after the current upload)
@@ -155,7 +133,7 @@ def main():
     # Manual upload mode
     if cli.args.upload:
         bot = Bot(path=cli.args.upload, cli=cli.args, trackers_name_list=tracker_name_list,
-                  torrent_archive_path=tracker_archive, tags_list=tags_list, sign_list=sign_list, ban_list=ban_list)
+                  torrent_archive_path=tracker_archive)
         bot.run()
 
     # Manual folder mode
@@ -166,22 +144,19 @@ def main():
             mode="folder",
             trackers_name_list=tracker_name_list,
             torrent_archive_path=tracker_archive,
-            tags_list=tags_list,
-            sign_list=sign_list,
-            ban_list=ban_list
         )
         bot.run()
 
     # Auto mode
     if cli.args.scan and not cli.args.ftp:
         bot = Bot(path=cli.args.scan, cli=cli.args, mode="auto", trackers_name_list=tracker_name_list,
-                  torrent_archive_path=tracker_archive, tags_list=tags_list, sign_list=sign_list, ban_list=ban_list)
+                  torrent_archive_path=tracker_archive)
         bot.run()
 
     # Watcher
     if cli.args.watcher:
         bot = Bot(path='', cli=cli.args, mode="auto", trackers_name_list=tracker_name_list,
-                  torrent_archive_path=tracker_archive, tags_list=tags_list, sign_list=sign_list, ban_list=ban_list)
+                  torrent_archive_path=tracker_archive)
 
         bot.watcher(duration=config.user_preferences.WATCHER_INTERVAL,
                     watcher_path=config.user_preferences.WATCHER_PATH,

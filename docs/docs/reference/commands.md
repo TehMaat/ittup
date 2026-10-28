@@ -25,6 +25,7 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | `-reseed` | — | [Reseed](../usage/reseed.md): downloads from the tracker the torrents of your local content |
 | `-watcher` | — | Starts the [watcher](../usage/watcher.md) (monitored folder) |
 | `-notitle` | "title" | [Manual title](../usage/tags.md#manual-title) for the TMDB search |
+| `-tag` | name | [Release group](../usage/tags.md#release-group) at the end of the title, instead of the one in the file name or `RELEASER_SIGN` |
 | `-force` | category | Forces the category: `movie`, `tv`, `game`, `edicola` (no argument: `movie`) |
 | `-noseed` | — | Upload without handing the torrent to the client (no seeding) |
 | `-noup` | — | Creates the `.torrent` in the archive only, no upload |

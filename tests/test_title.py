@@ -77,3 +77,20 @@ def test_the_source_between_special_characters(filename, expected):
                         tags_position=["title", "year", "part", "source"], tags_list=TAGS_LIST, sign_list={},
                         ban_list={"dummy": "banned"}, releaser_sign="")
     assert search.process()[0] == expected
+
+
+@pytest.mark.parametrize("filename, expected", [
+    ("Titolo 1990 1080p VU REMUX DTS-HD MA 5.1.mkv", "Titolo 1990 VU REMUX"),
+    ("Titolo.1990.1080p.REMUX.VU.mkv", "Titolo 1990 REMUX VU"),
+    ("Titolo 1990 1080p BluRay REMUX.mkv", "Titolo 1990 BluRay REMUX"),
+])
+def test_the_remux_tags_keep_the_order_of_the_name(filename, expected):
+    from types import SimpleNamespace
+    from ittup.common.tags import SearchTags
+    from ittup.common.trackers.tags_list import TAGS_LIST
+    media = SimpleNamespace(mediafile=SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[]),
+                            torrent_pack=False, resolution="1080p", pack=None)
+    search = SearchTags(filename=filename, title="Titolo", year=1990, season=None, episode=None, media=media,
+                        tags_position=["title", "year", "source", "remux"], tags_list=TAGS_LIST, sign_list={},
+                        ban_list={"dummy": "banned"}, releaser_sign="")
+    assert search.process()[0] == expected

@@ -211,12 +211,22 @@ class SearchTags(object):
 
         # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
         tags = {}
+        positions = {}
         for p, category in patterns:
             regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
-            matches = regex.findall(text)
-            if matches:
+            match = regex.search(text)
+            if match:
                 # Normalize Tag_list
-                tags.setdefault(category, []).append(TAG_NORMALIZE.get(matches[0].upper(), matches[0]))
+                tags.setdefault(category, []).append(TAG_NORMALIZE.get(match.group(0).upper(), match.group(0)))
+                positions.setdefault(category, []).append(match.start())
+        # Remux tags in the order of the name, but always 'VU REMUX' (the ItaTorrents type), never 'REMUX VU'
+        if len(tags.get('remux', [])) > 1:
+            remux = [tag for _, tag in sorted(zip(positions['remux'], tags['remux']))]
+            upper = [tag.upper() for tag in remux]
+            if 'VU' in upper and 'REMUX' in upper:
+                vu = remux.pop(upper.index('VU'))
+                remux.insert([tag.upper() for tag in remux].index('REMUX'), vu)
+            tags['remux'] = remux
         return tags
 
     def process(self) -> tuple[str, dict]:

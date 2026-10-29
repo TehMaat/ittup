@@ -29,6 +29,9 @@ from ittup.common.tags import SearchTags
     ("Film.2024.1080p.WEB-DL.H264-iTA.mkv", ""),
     ("Film.2024.1080p.WEB-DL.ITA.ENG.SUB-ITA.mkv", ""),
     ("Film.2024.1080p.WEB-DL.ITA.AAC.H264-MULTI.mkv", ""),
+    # A tag of the title
+    ("Titolo.1990.1080p.REMUX.VU.mkv", ""),
+    ("Titolo 1990 1080p Remux vu.mkv", ""),
     ("Film.2024.1080p.WEB-DL.H264.ITA.ENG.SUBS.mkv", ""),
     ("Film.2024.1080p.BluRay.x264.DTS-HD.MA.5.1.mkv", ""),
 ])

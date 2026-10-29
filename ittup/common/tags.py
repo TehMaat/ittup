@@ -104,8 +104,9 @@ TAG_NORMALIZE = {
 
 # The end of a file name: the release group is right before it
 VIDEO_EXTENSION = re.compile(r"\.(?:mp4|mkv|avi|mov|wmv|flv|webm|mpeg|mpg|m4v|m2ts|ts|3gp)$", re.IGNORECASE)
-# Words guessit reads as a release group at the end of a name that are not one ('Film.H264-MULTI')
-NOT_A_GROUP = {"MULTI", "DUAL", "SUB", "SUBS", "SUBITA", "ITALIAN", "ENGLISH"}
+# Words guessit reads as a release group at the end of a name that are not one ('Film.H264-MULTI'), and the
+# tags of the title ('Film.1990.REMUX.VU')
+NOT_A_GROUP = {"MULTI", "DUAL", "SUB", "SUBS", "SUBITA", "ITALIAN", "ENGLISH"} | {tag.upper() for tag in TAGS_LIST}
 
 
 class SearchTags(object):
@@ -220,12 +221,22 @@ class SearchTags(object):
 
         # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
         tags = {}
+        positions = {}
         for p, category in patterns:
             regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
-            matches = regex.findall(text)
-            if matches:
+            match = regex.search(text)
+            if match:
                 # Normalize Tag_list
-                tags.setdefault(category, []).append(TAG_NORMALIZE.get(matches[0].upper(), matches[0]))
+                tags.setdefault(category, []).append(TAG_NORMALIZE.get(match.group(0).upper(), match.group(0)))
+                positions.setdefault(category, []).append(match.start())
+        # Remux tags in the order of the name, but always 'VU REMUX' (the ItaTorrents type), never 'REMUX VU'
+        if len(tags.get('remux', [])) > 1:
+            remux = [tag for _, tag in sorted(zip(positions['remux'], tags['remux']))]
+            upper = [tag.upper() for tag in remux]
+            if 'VU' in upper and 'REMUX' in upper:
+                vu = remux.pop(upper.index('VU'))
+                remux.insert([tag.upper() for tag in remux].index('REMUX'), vu)
+            tags['remux'] = remux
         return tags
 
     def process(self) -> tuple[str, dict]:
@@ -428,23 +439,28 @@ class SearchTags(object):
                     if original:
                         original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
-                # Add multilanguage tag when languages > 2
-                if len(languages) > 2:
-                    self.tags_dict.update({'multi': 'MULTI'})
 
-        # Best ITA codec + best original language codec, then the tracks with no language up to MAX_AUDIO_CODECS
+        # Flags: only ITA and the original language (the first language of the file without them),
+        # MULTI stands for the other languages
+        flags = list(dict.fromkeys(language for language in ["ITA"] + original_languages[:1] if language in languages))
+        flags = flags or languages[:1]
+        if len(languages) > len(flags):
+            self.tags_dict.update({'multi': 'MULTI'})
+        else:
+            self.tags_dict.pop('multi', None)
+
+        # Best ITA codec + best original language codec (or the codec of the flag written without them),
+        # then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
         picked = [track for track in best_first if track[2] == "ITA"][:1]
         picked += [track for track in best_first if track[3]][:1]
+        picked += [track for track in best_first if track[2] in flags][:1]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
         for _, label, _, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
-
-        # Flags: ITA, the original language, then the other languages with no codec
-        first = [language for language in ["ITA"] + original_languages[:1] if language in languages]
-        audio_codecs.extend(dict.fromkeys(first + languages))
+        audio_codecs.extend(flags)
         return {category: audio_codecs}
 
     def mediainfo_source(self) -> dict[str, list[str]]:
@@ -672,7 +688,7 @@ class SearchTags(object):
     @staticmethod
     def is_release_group(group: str, base_name: str) -> bool:
         """
-        The release group guessit read is at the end of the name, after a separator, and is not a language
+        The release group guessit read is at the end of the name, after a separator, and is not a language or a tag
         """
         if not re.search(r"[-. _\[]" + re.escape(group) + r"\]?$", base_name, re.IGNORECASE):
             return False

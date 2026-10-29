@@ -89,9 +89,6 @@ On the first run, if `Unit3Dup_config` exists and `ittup_config` does not, ITTup
 | Unit3Dup | ITTup |
 |---|---|
 | `Unit3Dup_config/Unit3Dbot.json` | `ittup_config/ittup.json` |
-| `Unit3Dup_config/tags_list.json` | `ittup_config/tags_list.json` |
-| `Unit3Dup_config/sign_list.json` | `ittup_config/sign_list.json` |
-| `Unit3Dup_config/ban_list.json` | `ittup_config/ban_list.json` |
 
 The old folder is left untouched: from now on edit only the files in `ittup_config`.
 

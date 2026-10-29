@@ -2,7 +2,6 @@
 from types import SimpleNamespace
 
 from ittup.common.tags import SearchTags
-from ittup.common.trackers.tags_list import TAGS_LIST
 
 LANGUAGES = {"ITA": ["Italian", "it", "ita"], "ENG": ["English", "en", "eng"], "FRA": ["French", "fr", "fra"],
              "GER": ["German", "de", "deu"], "JPN": ["Japanese", "ja", "jpn"],
@@ -18,8 +17,8 @@ def audio_tags(*audio_track: dict, original_language: str | None = None) -> dict
     mediafile = SimpleNamespace(video_track=[], audio_track=list(audio_track), subtitle_track=[])
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename="Movie.2020.1080p.BluRay.REMUX-GRP.mkv", title="Movie", year="2020", season=None,
-                        episode=None, media=media, tags_position=["title", "year", "multi", "acodec"], tags_list=TAGS_LIST,
-                        sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+                        episode=None, media=media, tags_position=["title", "year", "multi", "acodec"],
+                        releaser_sign="")
     search.process()
     _, tags_dict = search.set_original_language(original_language)
     return tags_dict
@@ -111,11 +110,12 @@ def test_title_is_rebuilt_with_the_original_language():
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename="Movie.2020.1080p.BluRay.REMUX-GRP.mkv", title="Movie", year="2020", season=None,
                         episode=None, media=media, tags_position=["title", "year", "multi", "acodec"],
-                        tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+                        releaser_sign="")
     title, _ = search.process()
-    assert title == "Movie 2020 MULTI DD 5.1 DD+ 5.1 ITA ENG"
+    # The release group of the file name ends the title (#112)
+    assert title == "Movie 2020 MULTI DD 5.1 DD+ 5.1 ITA ENG-GRP"
     title, _ = search.set_original_language("ja")
-    assert title == "Movie 2020 MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN"
+    assert title == "Movie 2020 MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN-GRP"
 
 
 def test_multi_is_removed_when_the_original_language_is_the_other_one():
@@ -124,11 +124,11 @@ def test_multi_is_removed_when_the_original_language_is_the_other_one():
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename="Movie.2020.1080p.BluRay.REMUX-GRP.mkv", title="Movie", year="2020", season=None,
                         episode=None, media=media, tags_position=["title", "year", "multi", "acodec"],
-                        tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+                        releaser_sign="")
     title, _ = search.process()
-    assert title == "Movie 2020 MULTI DD 5.1 ITA"
+    assert title == "Movie 2020 MULTI DD 5.1 ITA-GRP"
     title, _ = search.set_original_language("ja")
-    assert title == "Movie 2020 DD 5.1 DTS-HD MA 5.1 ITA JPN"
+    assert title == "Movie 2020 DD 5.1 DTS-HD MA 5.1 ITA JPN-GRP"
 
 
 def test_mono_track():

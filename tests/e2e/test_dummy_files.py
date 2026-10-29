@@ -192,3 +192,17 @@ def test_scan_uploads_a_pack_for_each_season_folder(home, shows):
         ("Serie Finta S01 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "1", "0"),
         ("Serie Finta S02 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "2", "0"),
     ]
+
+
+def test_tag_and_the_lists_of_the_old_versions(home, media):
+    # #112: the lists copied by the versions before 2.0 are no longer read, nor deleted
+    for name in ("tags_list.json", "sign_list.json", "ban_list.json"):
+        (home / "ittup_config" / name).write_text('{"vcodec": "banned"}', encoding="utf-8")
+
+    run = ittup(home, "-u", str(media / MOVIE), "-noseed", "-tag", "NAHOM")
+
+    assert_clean(run)
+    [upload] = run.uploads()
+    assert upload["name"] == "Film Finto 2020 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264-NAHOM"
+    assert "arenolongerused" in "".join(run.output.split())
+    assert (home / "ittup_config" / "ban_list.json").exists()

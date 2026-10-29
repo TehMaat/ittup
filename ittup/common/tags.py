@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 import re
+
+import babelfish
+import guessit
+
+from ittup.common.trackers.signs_list import SIGNS_LIST
+from ittup.common.trackers.tags_list import TAGS_LIST
 from ittup.common.utility import ManageTitles
 from ittup.common.mediainfo import MediaFile
 from ittup.common.rename import TitleInfo
@@ -96,10 +102,16 @@ TAG_NORMALIZE = {
 }
 
 
+# The end of a file name: the release group is right before it
+VIDEO_EXTENSION = re.compile(r"\.(?:mp4|mkv|avi|mov|wmv|flv|webm|mpeg|mpg|m4v|m2ts|ts|3gp)$", re.IGNORECASE)
+# Words guessit reads as a release group at the end of a name that are not one ('Film.H264-MULTI'), and the
+# tags of the title ('Film.1990.REMUX.VU')
+NOT_A_GROUP = {"MULTI", "DUAL", "SUB", "SUBS", "SUBITA", "ITALIAN", "ENGLISH"} | {tag.upper() for tag in TAGS_LIST}
+
+
 class SearchTags(object):
     def __init__(self, filename, title: str, year: str, season: int, episode: int,
-                 media: Media, tags_position: list, tags_list: dict, sign_list: dict, ban_list: dict,
-                 releaser_sign: str):
+                 media: Media, tags_position: list, releaser_sign: str):
 
         self.mediafile: MediaFile = media.mediafile
         self.tags_position = tags_position
@@ -117,9 +129,7 @@ class SearchTags(object):
         self.mediainfo_tags: dict[str, list[str]] = {}
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
 
-        self.TAG_TYPES: dict = tags_list
-        self.SIGNS_LIST: dict = sign_list
-        self.BAN_LIST: dict = ban_list
+        self.TAG_TYPES: dict = TAGS_LIST
 
     @staticmethod
     def normalize_version_tag(tag: str) -> str:
@@ -230,8 +240,7 @@ class SearchTags(object):
         return tags
 
     def process(self) -> tuple[str, dict]:
-        # Remove banned items from categories
-        self.tags_position = [x.lower() for x in self.tags_position if x not in self.BAN_LIST]
+        self.tags_position = [x.lower() for x in self.tags_position]
         self.tags_dict.update(self.find_tags(self.filename))
 
         # /// Tags with no categories
@@ -317,9 +326,8 @@ class SearchTags(object):
             self.tags_dict.update({'season': se_str})
 
         if not self.releaser_sign:
-            # If releaser_sign is not defined in the configuration file,
-            # try to detect a known sign from SIGN_LIST
-            self.releaser_sign = self.detect_releaser(self.filename, self.SIGNS_LIST)
+            # No -tag nor RELEASER_SIGN: the release group of the file name
+            self.releaser_sign = self.detect_releaser(self.filename)
 
         return self.ordered_title()
 
@@ -656,40 +664,40 @@ class SearchTags(object):
         }
 
     @staticmethod
-    def detect_releaser(name: str, signs_list: dict) -> str:
+    def detect_releaser(name: str) -> str:
         """
-            normalize both signs_list and base_name
-            find the start/end position of the matched sign
-            extract the substring from the original base_name
+        The release group at the end of a file or folder name, with a '-' before it: '-NAHOM' from '..H.264-NAHOM',
+        '-LFi' from '..AVC.LFi', '-Dr4gon MIRCrew' from '..x264-Dr4gon MIRCrew.mkv'. '' when there is none
+
+        guessit reads it. It counts only at the end of the name after a separator ('Spider-Man.2002..' has no group)
+        and when it isn't a language or a word like MULTI ('..AC3.ITA-ENG'). Otherwise the releasers of SIGNS_LIST
+        are searched at the end of the name, the longest first ('SP33DY94-MIRCREW' before 'MIRCREW')
         """
-        # Strip the title
-        base_name = str(name).strip()
+        base_name = VIDEO_EXTENSION.sub("", str(name).strip())
 
-        # sort dictionary from the longest to shortest to avoid partial result (es. 'crew' instead di 'mircrew')
-        tokens_signs_list_sorted = sorted(signs_list.keys(), key=len, reverse=True)
+        group = guessit.guessit(base_name).get("release_group")
+        if isinstance(group, str) and SearchTags.is_release_group(group, base_name):
+            return f"-{group}"
 
-        video_exts = [
-            "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "mpeg", "mpg", "m4v", "ts", "3gp"
-        ]
-
-        # Regex per catturare l'estensione alla fine (case insensitive)
-        pattern = rf"\.({'|'.join(video_exts)})$"
-
-        # # Search for signs in the base_name only at the end of the string
-        base_name = re.sub(pattern, "", base_name, flags=re.IGNORECASE)
-
-        # Search for signs in the base_name_normalized
-        for token in tokens_signs_list_sorted:
-            token = str(token)
-            pattern = re.escape(token)
-            match = re.search(pattern, base_name, re.IGNORECASE)
-
+        for sign in sorted(SIGNS_LIST, key=len, reverse=True):
+            match = re.search(r"(?<![^\W_])" + re.escape(sign) + r"\]?$", base_name, re.IGNORECASE)
             if match:
-                # Sign must be the last words
-                base_name_len = len(base_name)
-                match_len = match.end() - base_name_len
-                if match_len == 0:
-                    # Capture any characters from the start to the end of base_name
-                    sign = base_name[match.start(): match.end()]
-                    return f"-{sign}"
+                return f"-{base_name[match.start():match.end()].rstrip(']')}"
         return ""
+
+    @staticmethod
+    def is_release_group(group: str, base_name: str) -> bool:
+        """
+        The release group guessit read is at the end of the name, after a separator, and is not a language or a tag
+        """
+        if not re.search(r"[-. _\[]" + re.escape(group) + r"\]?$", base_name, re.IGNORECASE):
+            return False
+        if group.upper() in NOT_A_GROUP:
+            return False
+        for language in (babelfish.Language.fromalpha3b, babelfish.Language.fromalpha2):
+            try:
+                language(group.lower())
+                return False
+            except (ValueError, KeyError, babelfish.Error):
+                pass
+        return True

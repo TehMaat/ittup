@@ -63,13 +63,9 @@ Le categorie valide per `-force` sono: `movie`, `tv`, `game`, `edicola`.
 
 Mancano `IGDB_CLIENT_ID` / `IGDB_ID_SECRET`: i giochi vengono saltati, il resto prosegue. Vedi [Giochi](../guides/games.md).
 
-### `User tags file ... not found`
-
-Manca `tags_list.json` nella cartella di configurazione. Viene creato al primo avvio: se l'hai cancellato, rilancia il bot senza argomenti. Vedi [Tag e titoli](../usage/tags.md).
-
 ### Il titolo viene riconosciuto male
 
-Usa `-notitle "Titolo Corretto"` per forzare la ricerca TMDB; ritocca `tags_list.json` e `ban_list.json` per correggere i tag. Vedi [Tag e titoli](../usage/tags.md).
+Usa `-notitle "Titolo Corretto"` per forzare la ricerca TMDB, `-tag` per scegliere il release group e `TAGS_POSITION_*` per scegliere i tag. Vedi [Tag e titoli](../usage/tags.md).
 
 ### `-int` o `-fl100` non vengono applicati
 

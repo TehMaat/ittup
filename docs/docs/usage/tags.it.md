@@ -4,7 +4,7 @@ Il titolo del torrent è composto dal **titolo del media** più una serie di **t
 
 Tag generabili: `version`, `resolution`, `uhd`, `platform`, `source`, `remux`, `multi`, `acodec`, `channels`, `flag`, `subtitle`, `vcodec`, `hdr`.
 
-`video_encoder` è ancora accettato in `TAGS_POSITION_*` e in `ban_list.json`, così le configurazioni esistenti continuano a funzionare, ma non aggiunge più nulla: l'encoder fa parte di `vcodec`.
+`video_encoder` è ancora accettato in `TAGS_POSITION_*`, così le configurazioni esistenti continuano a funzionare, ma non aggiunge più nulla: l'encoder fa parte di `vcodec`. Per togliere un tag dal titolo, toglilo da `TAGS_POSITION_MOVIE` / `TAGS_POSITION_SERIE`.
 
 ## Come viene costruito il titolo
 
@@ -55,7 +55,7 @@ La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide an
 
 La sorgente può stare tra punti, underscore, trattini o parentesi (`Film_2020_BDRip_1080p`, `Film.2020.(WEB-DL).1080p`). Senza anno o stagione nel nome viene letta anche prima della risoluzione (`Film_BDRip_1080p`), ma solo per le sorgenti che non possono essere una parola del titolo: `Charlotte's Web 1080p` non è un WEB-DL.
 
-I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
+I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme streaming che il bot conosce, es. `AMZNRip` → `AMZN WEBRip`).
 
 ### Sorgente dal MediaInfo
 
@@ -72,42 +72,30 @@ Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **migl
 
 Dopo i codec vengono le lingue: sono scritte solo `ITA` e la lingua originale, le altre lingue del file diventano il tag `multi` (`MULTI`). Esempio con tracce italiana, inglese e giapponese di un film giapponese: `MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN`; con le sole tracce italiana e giapponese non c'è `MULTI`. Un file senza italiano né lingua originale ha la bandiera della sua prima lingua.
 
-## I tre file di personalizzazione
+## Release group
 
-Stanno nella cartella di configurazione (`ittup_config`) e vengono creati al primo avvio con valori di default. Sono JSON modificabili con un editor di testo.
+Il titolo finisce con il release group, letto in fondo al nome del file o della cartella dopo un `-`, un `.`, uno spazio o tra `[ ]`:
 
-### `tags_list.json` — tag personalizzati
+| Nome | Release group |
+|---|---|
+| `Film.2024.1080p.WEB-DL.DDP5.1.H.264-NAHOM.mkv` | `-NAHOM` |
+| `Film.2025.1080p.VU.REMUX.TrueHD.ITA.ENG.AVC.LFi.mkv` | `-LFi` |
+| `Serie.S01E03.1080p.WEB-DL.E-AC3.ITA.KOR.SUBS.H.264.S-K.mkv` | `-S-K` |
+| `Film (2022) iTA-ENG.Bluray.1080p.x264-Dr4gon MIRCrew.mkv` | `-Dr4gon MIRCrew` |
+| `Film.2024.1080p.BluRay.x264.AC3.ITA-ENG.mkv` | nessuno: `ENG` è una lingua |
+| `Spider-Man.2002.1080p.BluRay.x264.mkv` | nessuno: `Spider` fa parte del titolo |
 
-Mappa **parola → tipo di tag**: insegna al bot a riconoscere parole nei nomi dei file e classificarle.
+Una lingua (`ITA`, `ENG`…) o `MULTI`, `DUAL`, `SUB`, `SUBS` in fondo al nome non è mai un release group.
 
-```json
-{
-    "REMUX": "remux",
-    "WEB-DL": "source",
-    "AMZN": "platform"
-}
-```
+Per sceglierlo tu:
 
-Usato nella costruzione del titolo: se nel nome del file compare la parola, il valore corrispondente finisce nel tag giusto del titolo. Puoi aggiungere le tue voci (es. sigle di release group o sorgenti particolari).
+- `-tag NOME` per un upload: `ittup -u "<file>" -tag NAHOM`
+- `RELEASER_SIGN` in `ittup.json` per tutti gli upload ([Opzioni avanzate](../config/options.md#lingua-anonimato-e-firma)), max 20 caratteri, caratteri speciali rimossi
 
-!!! warning "File richiesto"
-    Se `tags_list.json` manca, il bot lo segnala all'avvio.
+`-tag` vince su `RELEASER_SIGN`, ed entrambi vincono sul nome.
 
-### `ban_list.json` — tag da escludere dall'autobuild
-
-Esclude interi **tipi di tag** dalla ricostruzione del titolo: un tag elencato qui non finisce mai nel titolo costruito dal bot. Le chiavi sono i nomi dei tag (gli stessi usati in `TAGS_POSITION_*`); il valore è solo un segnaposto.
-
-Esempio — mai includere il codec video nel titolo:
-
-```json
-{
-    "vcodec": "banned"
-}
-```
-
-### `sign_list.json` — firme releaser
-
-Lista delle firme riconosciute come **release group**. Insieme a `RELEASER_SIGN` ([Opzioni avanzate](../config/options.md#lingua-anonimato-e-firma)) gestisce la firma in coda al titolo (max 20 caratteri, caratteri speciali rimossi).
+!!! note "`tags_list.json`, `sign_list.json`, `ban_list.json`"
+    Fino alla 1.x il bot copiava queste tre liste in `ittup_config`. Dalla 2.0 i tag e i release group arrivano con ITTup e si aggiornano con lui: i file non vengono più letti, e finché ci sono il bot lo dice all'avvio. Puoi cancellarli. Quello che faceva `ban_list.json` (togliere un tag dal titolo) lo fa `TAGS_POSITION_*`.
 
 ## Titolo manuale
 

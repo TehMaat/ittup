@@ -6,7 +6,6 @@ import pytest
 from ittup.common import tags
 from ittup.common.settings import Validate
 from ittup.common.tags import SearchTags
-from ittup.common.trackers.tags_list import TAGS_LIST
 
 TAGS_POSITION = ["title", "year", "part", "version", "resolution", "uhd", "platform", "source", "remux",
                  "multi", "acodec", "channels", "flag", "subtitle", "hdr", "vcodec"]
@@ -32,8 +31,7 @@ def build_title(filename: str, video_format: str | None, writing_library: str = 
     mediafile = SimpleNamespace(video_track=video_track, audio_track=[], subtitle_track=[])
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename=filename, title="Movie", year="2020", season=None, episode=None, media=media,
-                        tags_position=list(tags_position or TAGS_POSITION), tags_list=TAGS_LIST, sign_list={},
-                        ban_list={"dummy": "banned"}, releaser_sign="")
+                        tags_position=list(tags_position or TAGS_POSITION), releaser_sign="")
     return search.process()
 
 

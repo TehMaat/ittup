@@ -251,8 +251,9 @@ class VideoManager:
         # One content at a time: the screenshots are extracted while the torrent is hashed
         self.screenshots_executor = ThreadPoolExecutor(max_workers=1)
         for content, db in checked:
-            # Skip the corrupted video files: ffprobe reads the container and decodes a few frames
-            if config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
+            # Skip the corrupted video files: ffprobe reads the container and decodes a few frames.
+            # Disabled until #128 is fixed: VC-1 frames in MKV have no timestamp after the seek and the file looks truncated
+            if False and config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
                 continue
 
             screenshots = self.extract_screenshots(content)

@@ -421,23 +421,28 @@ class SearchTags(object):
                     if original:
                         original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
-                # Add multilanguage tag when languages > 2
-                if len(languages) > 2:
-                    self.tags_dict.update({'multi': 'MULTI'})
 
-        # Best ITA codec + best original language codec, then the tracks with no language up to MAX_AUDIO_CODECS
+        # Flags: only ITA and the original language (the first language of the file without them),
+        # MULTI stands for the other languages
+        flags = list(dict.fromkeys(language for language in ["ITA"] + original_languages[:1] if language in languages))
+        flags = flags or languages[:1]
+        if len(languages) > len(flags):
+            self.tags_dict.update({'multi': 'MULTI'})
+        else:
+            self.tags_dict.pop('multi', None)
+
+        # Best ITA codec + best original language codec (or the codec of the flag written without them),
+        # then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
         picked = [track for track in best_first if track[2] == "ITA"][:1]
         picked += [track for track in best_first if track[3]][:1]
+        picked += [track for track in best_first if track[2] in flags][:1]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
         for _, label, _, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
-
-        # Flags: ITA, the original language, then the other languages with no codec
-        first = [language for language in ["ITA"] + original_languages[:1] if language in languages]
-        audio_codecs.extend(dict.fromkeys(first + languages))
+        audio_codecs.extend(flags)
         return {category: audio_codecs}
 
     def mediainfo_source(self) -> dict[str, list[str]]:

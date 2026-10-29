@@ -219,9 +219,14 @@ class SearchTags(object):
                 # Normalize Tag_list
                 tags.setdefault(category, []).append(TAG_NORMALIZE.get(match.group(0).upper(), match.group(0)))
                 positions.setdefault(category, []).append(match.start())
-        # Remux tags in the order of the name ('VU REMUX' stays 'VU REMUX', not 'REMUX VU')
+        # Remux tags in the order of the name, but always 'VU REMUX' (the ItaTorrents type), never 'REMUX VU'
         if len(tags.get('remux', [])) > 1:
-            tags['remux'] = [tag for _, tag in sorted(zip(positions['remux'], tags['remux']))]
+            remux = [tag for _, tag in sorted(zip(positions['remux'], tags['remux']))]
+            upper = [tag.upper() for tag in remux]
+            if 'VU' in upper and 'REMUX' in upper:
+                vu = remux.pop(upper.index('VU'))
+                remux.insert([tag.upper() for tag in remux].index('REMUX'), vu)
+            tags['remux'] = remux
         return tags
 
     def process(self) -> tuple[str, dict]:

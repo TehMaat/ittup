@@ -81,10 +81,11 @@ def test_the_source_between_special_characters(filename, expected):
 
 @pytest.mark.parametrize("filename, expected", [
     ("Titolo 1990 1080p VU REMUX DTS-HD MA 5.1.mkv", "Titolo 1990 VU REMUX"),
-    ("Titolo.1990.1080p.REMUX.VU.mkv", "Titolo 1990 REMUX VU"),
+    ("Titolo.1990.1080p.REMUX.VU.mkv", "Titolo 1990 VU REMUX"),
+    ("Titolo 1990 1080p Remux vu.mkv", "Titolo 1990 vu Remux"),
     ("Titolo 1990 1080p BluRay REMUX.mkv", "Titolo 1990 BluRay REMUX"),
 ])
-def test_the_remux_tags_keep_the_order_of_the_name(filename, expected):
+def test_the_remux_tags_are_vu_remux(filename, expected):
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
     from ittup.common.trackers.tags_list import TAGS_LIST

@@ -52,9 +52,11 @@ audio_channels = {1: "1.0", 2: "2.0", 6: "5.1", 8: "7.1"}
 
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
-# The title keeps the best ITA codec and the best codec in the original language, then fills up to
-# MAX_AUDIO_CODECS with the tracks with no language. Tracks in other languages only add their flag
+# The title keeps the best codec of each written language, then fills up to MAX_AUDIO_CODECS with the
+# tracks with no language
 MAX_AUDIO_CODECS = 2
+# Up to MAX_AUDIO_LANGUAGES all the audio languages are written; with more only ITA and ENG and MULTI
+MAX_AUDIO_LANGUAGES = 2
 # Original language (TMDB ISO 639-1) when it is not known yet
 DEFAULT_ORIGINAL_LANGUAGE = "en"
 
@@ -397,19 +399,13 @@ class SearchTags(object):
         rank = len(audio_rank) - audio_rank.index(codec) if codec in audio_rank else 0
         return rank, atmos, channel_s
 
-    def is_original_language(self, audio: dict) -> bool:
-        codes = [str(code).lower() for code in audio.get('other_language', []) + [audio.get('language') or '']]
-        return self.original_language in codes
-
     def mediainfo_audio(self, category: str) -> dict:
         languages = []
-        original_languages = []
-        # [(score, label, language, original language)]
+        # [(score, label, language)]
         tracks = []
         if self.mediafile.audio_track:
             for audio in self.mediafile.audio_track:
                 language = self.audio_language(audio)
-                original = self.is_original_language(audio)
                 other_format = audio.get('other_format', [])
                 if other_format:
                     codec_translated = audio_translate.get(other_format[0], '')
@@ -423,33 +419,30 @@ class SearchTags(object):
                     # Add channels
                     ch = audio_channels.get(channel_s, "")
                     tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
-                                   f"{codec_translated} {ch} {atmos}".strip(), language, original))
+                                   f"{codec_translated} {ch} {atmos}".strip(), language))
 
                 # Add flags
                 if language:
                     languages.append(language)
-                    if original:
-                        original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
 
-        # Flags: only ITA and the original language (the first language of the file without them),
-        # MULTI stands for the other languages
-        flags = list(dict.fromkeys(language for language in ["ITA"] + original_languages[:1] if language in languages))
-        flags = flags or languages[:1]
+        # Flags: up to MAX_AUDIO_LANGUAGES all the languages, ITA and ENG first. With more only ITA and ENG
+        # (the first language of the file without them) and MULTI stands for the other languages
+        if len(languages) <= MAX_AUDIO_LANGUAGES:
+            flags = list(dict.fromkeys(language for language in ["ITA", "ENG"] + languages if language in languages))
+        else:
+            flags = [language for language in ["ITA", "ENG"] if language in languages] or languages[:1]
         if len(languages) > len(flags):
             self.tags_dict.update({'multi': 'MULTI'})
         else:
             self.tags_dict.pop('multi', None)
 
-        # Best ITA codec + best original language codec (or the codec of the flag written without them),
-        # then the tracks with no language up to MAX_AUDIO_CODECS
+        # Best codec of each flag, then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
-        picked = [track for track in best_first if track[2] == "ITA"][:1]
-        picked += [track for track in best_first if track[3]][:1]
-        picked += [track for track in best_first if track[2] in flags][:1]
+        picked = [track for flag in flags for track in [track for track in best_first if track[2] == flag][:1]]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
-        for _, label, _, _ in picked:
+        for _, label, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
         audio_codecs.extend(flags)

@@ -68,9 +68,9 @@ When MediaInfo doesn't tell the source, the title stays without it. The log show
 
 ## Audio codec
 
-The title keeps at most two audio codecs: the **best ITA codec** and the **best codec in the original language** of the movie or show (read from TMDB, English when TMDB doesn't know it). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once. After the codec come the channels read from MediaInfo: `1.0`, `2.0`, `5.1` or `7.1`.
+The title keeps at most two audio codecs: the **best ITA codec** and the **best ENG codec** (with no Italian or English, the best codec of the language written). When there is room left, it is filled with the best tracks with no language. Codecs from the best one: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. With the same codec, Atmos and then more channels win. The same codec is written once. After the codec come the channels read from MediaInfo: `1.0`, `2.0`, `5.1` or `7.1`.
 
-The languages follow the codecs: only `ITA` and the original language are written, the other languages of the file become the `multi` tag (`MULTI`). Example with Italian, English and Japanese tracks of a Japanese movie: `MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN`; with only Italian and Japanese tracks there is no `MULTI`. A file with neither Italian nor the original language gets the flag of its first language.
+The languages follow the codecs: with one or two audio languages they are all written, `ITA` first (e.g. `DD+ 5.1 ITA ENG`, `DD 5.1 DTS-HD MA 5.1 ITA JPN`). With three or more languages only `ITA` and `ENG` are written, or only the one of the two in the file, and the other languages become the `multi` tag (`MULTI`), e.g. `MULTI DD 5.1 DD+ 5.1 ITA ENG`; a file with neither Italian nor English gets the flag of its first language.
 
 ## The three customization files
 

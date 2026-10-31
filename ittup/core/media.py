@@ -20,6 +20,9 @@ RESOLUTION_THRESHOLDS = (
     ("576p", 960, 540),
 )
 
+# Below 576p the video is SD: the tracker has no resolution lower than 480p, so a 736x414 or a 640x360 video is 480p
+SD_RESOLUTION = "480p"
+
 # The interlaced resolutions of the tracker: 2160p and 720p are always progressive
 INTERLACED_RESOLUTIONS = {"1080p": "1080i", "576p": "576i", "480p": "480i"}
 
@@ -379,11 +382,11 @@ class Media:
     @staticmethod
     def resolution_from_size(width: int, height: int | None, interlaced: bool = False) -> str:
         """
-        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), the height under 576p.
+        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), 480p under 576p (SD_RESOLUTION).
         An interlaced video is 1080i, 576i or 480i (INTERLACED_RESOLUTIONS)
         """
         resolution = next((resolution for resolution, min_width, min_height in RESOLUTION_THRESHOLDS
-                           if width >= min_width or (height and height >= min_height)), f"{height}p")
+                           if width >= min_width or (height and height >= min_height)), SD_RESOLUTION)
         return INTERLACED_RESOLUTIONS.get(resolution, resolution) if interlaced else resolution
 
     @property

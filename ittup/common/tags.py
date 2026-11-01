@@ -6,29 +6,49 @@ from ittup.common.rename import TitleInfo
 from ittup.core.media import Media
 from ittup.view import custom_console
 
-# From hdr format
-hdr_map = {
-    "DOLBY VISION": "DV",
-    "DOLBY VISION DV": "DV",
-    "DOLBY VISION HDR": "DV HDR",
-    "DOLBY VISION HDR10": "DV HDR10",
-    "DOLBY VISION HDR10+": "DV HDR10+",
-    "HDR10PLUS": "HDR10+",
-    "HDRPLUS+": "HDR10+",
-    "HDR10+": "HDR10+",
-    "HDR10": "HDR10",
-    "BLU-RAY / HDR10": "HDR10",
-    "BLU-RAY / HDR10+": "HDR10+",
-    "HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10+": "HDR10+",
-    "HDR10 / HDR10 / HDR10+": "HDR10+",
-    "SMPTE ST 2086": "HDR10",
-    "SMPTE ST 2094": "HDR10+",
+# HDR tags from the parts of the MediaInfo HDR format, split on " / " (e.g. "Dolby Vision / SMPTE ST 2094 App 4",
+# "HDR10 / HDR10+", "Blu-ray / HDR10"): each part is read on its own, so every combination gets a tag
+HDR10PLUS_FORMATS = ("SMPTE ST 2094", "SMPTE ST 2094 APP 4")
+HDR10_FORMATS = ("SMPTE ST 2086",)
+# Parts with no HDR tag of their own: the Blu-ray compatibility of Dolby Vision profile 7
+NEUTRAL_HDR_FORMATS = ("", "BLU-RAY")
 
-    "DOVI": "DV",
-    "HDR": "HDR",
-}
+
+def hdr_part(part: str) -> str | None:
+    """HDR tag of one part of the MediaInfo HDR format: '' when it adds nothing, None when it is unknown"""
+    part = part.strip().upper()
+    if part.startswith(("DOLBY VISION", "DOVI")):
+        return "DV"
+    if part.startswith(("HDR10+", "HDR10PLUS", "HDRPLUS")) or part in HDR10PLUS_FORMATS:
+        return "HDR10+"
+    if part.startswith("HDR10") or part in HDR10_FORMATS:
+        return "HDR10"
+    if part == "HDR":
+        return "HDR"
+    if part in NEUTRAL_HDR_FORMATS:
+        return ""
+    return None
+
+
+def hdr_tag(*formats: str) -> tuple[str, list[str]]:
+    """
+    HDR tag from the MediaInfo HDR formats (commercial name and format): 'DV' plus the best of HDR10+/HDR10.
+    Returns the tag and the unknown parts. An unknown format never leaves the tag empty: 'DV' or at least 'HDR'
+    """
+    tags = set()
+    unknown = []
+    for hdr_format in formats:
+        for part in hdr_format.split(" / "):
+            tag = hdr_part(part)
+            if tag is None:
+                if part.strip() not in unknown:
+                    unknown.append(part.strip())
+            elif tag:
+                tags.add(tag)
+    base = next((tag for tag in ("HDR10+", "HDR10", "HDR") if tag in tags), "")
+    tag = " ".join(t for t in ("DV" if "DV" in tags else "", base) if t)
+    return tag or "HDR", unknown
+
 
 audio_translate = {
     "AC3": "DD",
@@ -589,33 +609,24 @@ class SearchTags(object):
                 bit_depth = video.get('bit_depth', "")
                 transfer_characteristics = video.get('transfer_characteristics', "")
                 # Check hdr
-                if hdr_format_commercial:
-                    hdr = ''
-                    if hdr_format_commercial.upper() in hdr_map:
-                        hdr = hdr_map[hdr_format_commercial.upper()]
-
-                    # if hdr not in hdr_map:
-                    if not hdr:
+                if hdr_format_commercial or hdr_format:
+                    hdr, unknown = hdr_tag(hdr_format_commercial, hdr_format)
+                    custom_console.bot_log(f"Hdr format: '{hdr_format}'")
+                    custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                    if unknown:
                         custom_console.bot_warning_log(
-                            f"<> HDR Warning: '{hdr_format_commercial}' not found in hdr_map")
-                    else:
-                        custom_console.bot_log(f"Hdr format: '{hdr_format}'")
-                        custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                            f"<> HDR Warning: unknown HDR format {unknown} in '{hdr_format_commercial}',"
+                            f" the tag is '{hdr}'")
 
-                    if 'DOLBY VISION' in hdr_format_commercial.upper() or 'DOLBY VISION' in hdr_format.upper():
-                        # Search for fake remux
-                        if any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
-                            if self.tags_dict.get('remux', ''):
-                                remux = self.tags_dict.get('remux', '')
-                                remux.append('HYBRID')
-                                self.tags_dict.update({'remux': remux})
-                                custom_console.bot_warning_log(
-                                    f"<> Warning: HYBRID REMUX with {other_hdr_format}")
-                                hdr = f"DOLBY VISION {hdr}"
-                                return {category: f"{hdr_map.get(hdr, '*HDR')}"}
-
-                        hdr = f"DOLBY VISION {hdr}"
-                    return {category: hdr_map.get(hdr, '*HDR')}
+                    # Search for fake remux
+                    if hdr.startswith("DV") and any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
+                        if self.tags_dict.get('remux', ''):
+                            remux = self.tags_dict.get('remux', '')
+                            remux.append('HYBRID')
+                            self.tags_dict.update({'remux': remux})
+                            custom_console.bot_warning_log(
+                                f"<> Warning: HYBRID REMUX with {other_hdr_format}")
+                    return {category: hdr}
                 else:
                     if "2020" in colour_primaries and "2020" in matrix_coefficients:
                         if bit_depth == 10 and transfer_characteristics.strip() == 'PQ':

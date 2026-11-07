@@ -42,6 +42,8 @@ WATCHER_PATH: Path = CONFIG_DIR / "watcher_path"
 WATCHER_QUARANTINE_PATH: Path = CONFIG_DIR / "watcher_quarantine_path"
 # The watcher uploads left to do, kept across restarts
 WATCHER_QUEUE_PATH: Path = CONFIG_DIR / "watcher_queue.json"
+# The TMDB IDs typed by the user for the titles TMDB doesn't find: not asked again for the same title
+MANUAL_IDS_PATH: Path = CONFIG_DIR / "manual_ids.json"
 CACHE_PATH: Path = CONFIG_DIR / "cache_path"
 TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
 # The screenshots of the contents not uploaded that the image hosts could not delete: remove them by hand

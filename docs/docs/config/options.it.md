@@ -179,7 +179,7 @@ Cartella dove il bot archivia i `.torrent` generati, dentro la sottocartella `IT
 |---|---|
 | `YOUTUBE_PREF_LANG` | Codice paese/lingua (ISO 3166, es. `IT`) usato per cercare i trailer su YouTube |
 | `SKIP_YOUTUBE` | Salta del tutto la ricerca trailer su YouTube |
-| `SKIP_TMDB` | Salta l'interrogazione di TMDB (sconsigliato per i video) |
+| `SKIP_TMDB` | Non chiede l'ID TMDB di un titolo che TMDB non trova (sconsigliato per i video); gli ID inseriti nei caricamenti precedenti vengono usati comunque ([Titoli non trovati su TMDB](../usage/upload.md#titoli-non-trovati-su-tmdb)) |
 
 ## FAST_LOAD
 

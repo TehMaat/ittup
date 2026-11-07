@@ -26,6 +26,8 @@ from ittup.common.external_services.sessions.agents import Agent
 from ittup.common.external_services.theMovieDB import config
 from ittup.common.external_services.tvdb import TVDB
 from ittup.common.lookup_cache import LookupCache, DAY
+from ittup.common.manual_ids import ManualIds
+from ittup.common.settings import MANUAL_IDS_PATH
 from ittup.common.utility import ManageTitles
 
 from ittup.core.media import Media
@@ -495,6 +497,17 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 return search_results
 
+        # The ID typed by the user for this title in a previous upload: TMDB would not find it again
+        manual_ids = ManualIds(MANUAL_IDS_PATH)
+        year = self.media.guess_filename.guessit_year
+        manual_id = manual_ids.get(self.category, self.query, year)
+        if manual_id:
+            custom_console.bot_log(f"TMDB ID {manual_id} from the IDs typed in a previous upload ('{MANUAL_IDS_PATH}')")
+            search_results = self.result_from_id(manual_id)
+            if search_results:
+                return search_results
+            custom_console.bot_warning_log(f"The saved TMDB ID {manual_id} is not valid: search again")
+
         # or start an on-line search
         result, results = self.search_queries()
 
@@ -542,8 +555,12 @@ class DbOnline(TmdbAPI):
         # Ask User TMDB ID
         search_results = self.manual_search()
         # Don't cache a skipped result (TMDB ID 0): the next run should search again
-        if config_settings.user_preferences.CACHE_DBONLINE and search_results and search_results.video_id:
-            self.search_cache[cache_key] = search_results
+        if search_results and search_results.video_id:
+            # Remember it whether the cache is on or not: the next episode of the same show isn't asked again
+            manual_ids.set(self.category, self.query, year, search_results.video_id,
+                           search_results.result.get_title() if search_results.result else None)
+            if config_settings.user_preferences.CACHE_DBONLINE:
+                self.search_cache[cache_key] = search_results
         return search_results
 
     def search_queries(self) -> tuple[T | None, list[T] | None]:
@@ -646,18 +663,25 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 return search_results
             else:
-                result = self.search_id(video_id=user_id)
-                if result:
-                    # The TVDB search may have missed: take the IMDB ID from TMDB
-                    self.add_external_ids(user_id, override=True)
-                    # Request trailer and keywords
-                    trailer_key = self.trailer(user_id)
-                    keywords_list = self.keywords(user_id) if trailer_key else ''
-                    search_results = MediaResult(result=result, video_id=user_id, imdb_id=self.imdb_id,
-                                                 tvdb_id=self.tvdb_id, trailer_key=trailer_key,
-                                                 keywords_list=keywords_list)
-                    self.print_results(results=search_results)
+                search_results = self.result_from_id(user_id)
+                if search_results:
                     return search_results
+
+    def result_from_id(self, video_id: int) -> MediaResult | None:
+        """ The result of a TMDB ID typed by the user or saved; None if TMDB doesn't know the ID """
+        result = self.search_id(video_id=video_id)
+        if not result:
+            return None
+        # The TVDB search may have missed: take the IMDB ID from TMDB
+        self.add_external_ids(video_id, override=True)
+        # Request trailer and keywords
+        trailer_key = self.trailer(video_id)
+        keywords_list = self.keywords(video_id) if trailer_key else ''
+        search_results = MediaResult(result=result, video_id=video_id, imdb_id=self.imdb_id,
+                                     tvdb_id=self.tvdb_id, trailer_key=trailer_key,
+                                     keywords_list=keywords_list)
+        self.print_results(results=search_results)
+        return search_results
 
     def youtube_trailer(self) -> str | None:
         # Search trailer on YouTube

@@ -663,9 +663,9 @@ class DbOnline(TmdbAPI):
                 self.print_results(results=search_results)
                 return search_results
             else:
-                search_results = self.result_from_id(user_id)
-                if search_results:
-                    return search_results
+                id_results = self.result_from_id(user_id)
+                if id_results:
+                    return id_results
 
     def result_from_id(self, video_id: int) -> MediaResult | None:
         """ The result of a TMDB ID typed by the user or saved; None if TMDB doesn't know the ID """

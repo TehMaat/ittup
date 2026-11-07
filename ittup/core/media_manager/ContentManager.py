@@ -31,7 +31,7 @@ class ContentManager:
         self.languages: list[str] | None = None
         self.display_name: str | None = None
         self.meta_info_list: list[dict] = []
-        self.game_nfo: str = ''
+        self.nfo: str = ''
         self.category: int | None = None
 
         self.meta_info: str | None = None
@@ -97,7 +97,7 @@ class ContentManager:
             media.pack = pack
             media.metainfo = self.meta_info
             media.doc_description = self.doc_description
-            media.game_nfo = self.game_nfo
+            media.nfo = self.nfo
 
             # Add ID if there are one in the title
             media.imdb_id = self.imdb_id
@@ -136,6 +136,8 @@ class ContentManager:
     def process_file(self) -> bool:
         """Process individual files and gather metadata"""
         self.file_name = self.path
+        # A single file has no release NFO
+        self.nfo = ''
 
         # # Display name on webpage
         self.display_name, _ = os.path.splitext(os.path.basename(self.file_name))
@@ -184,11 +186,30 @@ class ContentManager:
             size = os.path.getsize(os.path.join(self.path, file))
             self.meta_info_list.append({"length": size, "path": [file]})
             self.size += size
-            if file.lower().endswith(".nfo"):
-                self.game_nfo = os.path.join(self.path, file)
+        # The NFO of the release (scene games, movies and series): the video folders list only the videos
+        self.nfo = self.find_nfo(self.path)
 
         self.meta_info = json.dumps(self.meta_info_list, indent=4)
         return True
+
+    @staticmethod
+    def find_nfo(folder: str) -> str:
+        """
+        The NFO of the release in the folder, '' if there is none
+
+        The XML .nfo files written by Kodi, Jellyfin, Radarr and Sonarr (movie.nfo, tvshow.nfo..) are metadata,
+        not the NFO of the release: they are skipped
+        """
+        for file in sorted(os.listdir(folder), key=System.natural_key):
+            path = os.path.join(folder, file)
+            if not file.lower().endswith(".nfo") or not os.path.isfile(path):
+                continue
+            with open(path, 'rb') as nfo:
+                start = nfo.read(512).lstrip(b"\xef\xbb\xbf \t\r\n")
+            if not start.startswith(b"<"):
+                return path
+        return ''
+
     def list_files_by_category(self) -> list[str]:
         """List files based on the content category"""
         if self.category ==System.category_list.get(System.GAME):

@@ -183,8 +183,8 @@ class IGDBClient:
             else:
                 # User makes their choices
                 mygame = self.viewer.to_game(igdb_results)
-                # Add a description
-                mygame = self.game_description(mygame=mygame[0])
+                # Add a description to the chosen game
+                mygame = self.game_description(mygame=mygame[user_choice])
                 return mygame
 
 

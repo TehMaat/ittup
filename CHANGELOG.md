@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.13.0](https://github.com/TehMaat/ittup/compare/1.12.1...1.13.0) (2026-11-11)
+
+
+### Features
+
+* don't upload a content without all its screenshots on the image hosts ([5b03ac5](https://github.com/TehMaat/ittup/commit/5b03ac5ac81de45ade2a84cae9c28dbc49985880))
+* don't upload a content without all its screenshots on the image hosts ([7471a17](https://github.com/TehMaat/ittup/commit/7471a17da476a46e6a63577e43a03a7db9c70950)), closes [#76](https://github.com/TehMaat/ittup/issues/76)
+* ittup --upgrade upgrades with the same pip, asking what to do with the processes running ([9e1cb3b](https://github.com/TehMaat/ittup/commit/9e1cb3bbbf3b2152118c5da5d94d0c5507059ed3)), closes [#103](https://github.com/TehMaat/ittup/issues/103)
+* ittup --upgrade, with the ITTup processes running listed and handled ([6f6ce3e](https://github.com/TehMaat/ittup/commit/6f6ce3e7013953fb3c3c1733e3d59468342dba32))
+* register the running watchers, scans and uploads, stop the watcher cleanly on SIGTERM ([ff93fee](https://github.com/TehMaat/ittup/commit/ff93feedfb4353d66a3eb7cbe6dd16f70dca7538)), closes [#103](https://github.com/TehMaat/ittup/issues/103)
+* write only ITA and the original language in the title, MULTI for the other audio languages ([aa164e6](https://github.com/TehMaat/ittup/commit/aa164e6b8e1529d0245ec263b2c88aacd49e1c96))
+* write only ITA and the original language in the title, MULTI for the other audio languages ([39e28d3](https://github.com/TehMaat/ittup/commit/39e28d39bd30c6b66b12bc2acb94828e6a7dc931)), closes [#104](https://github.com/TehMaat/ittup/issues/104)
+
+
+### Bug Fixes
+
+* a video below 576p is 480p, not its height ([6d5830a](https://github.com/TehMaat/ittup/commit/6d5830a04d11e3ccf138581950096f1faa051a87))
+* a video below 576p is 480p, not its height ([ec4bd9c](https://github.com/TehMaat/ittup/commit/ec4bd9c80c26df8b3e69a743ef7ff8fdf494d8df))
+* annotate the tags of TRACKData.match_tags for mypy ([1f48cde](https://github.com/TehMaat/ittup/commit/1f48cde3a98779d24c41b8ad3e0b01eb2305d268)), closes [#58](https://github.com/TehMaat/ittup/issues/58)
+* disable the corrupted files check until [#128](https://github.com/TehMaat/ittup/issues/128) is fixed ([25240ca](https://github.com/TehMaat/ittup/commit/25240caec79c585d826d0ecd09e3345f901e0bf5))
+* disable the corrupted files check until [#128](https://github.com/TehMaat/ittup/issues/128) is fixed ([6acb5e9](https://github.com/TehMaat/ittup/commit/6acb5e92db1538afab2db716d8f2aed00ed34e16))
+* keep a single episode followed by v2, '-' or '_' out of the season pack ([b89f8c8](https://github.com/TehMaat/ittup/commit/b89f8c815047b9e578b0cafb1611e73fb8a53fa1)), closes [#114](https://github.com/TehMaat/ittup/issues/114)
+* keep the order of the remux tags of the file name ([7e8df05](https://github.com/TehMaat/ittup/commit/7e8df05b5bb1668dc43fe2a280fad6fabccda99a))
+* match only SXX or SXXEXX between spaces, dots, dashes or underscores ([42a51af](https://github.com/TehMaat/ittup/commit/42a51afd18b10e5a94d8c8cc4838d82a635371f5)), closes [#114](https://github.com/TehMaat/ittup/issues/114)
+* pick the tracker type from a source written before the resolution ([978b00a](https://github.com/TehMaat/ittup/commit/978b00aab617f043c8521c8264cf3f387d879881))
+* pick the tracker type from a source written before the resolution ([bf14aab](https://github.com/TehMaat/ittup/commit/bf14aab128dab3817bf19095173c5b060888224c)), closes [#58](https://github.com/TehMaat/ittup/issues/58)
+* recognize a season pack when an 'E' and a number are inside a word ([a7fa673](https://github.com/TehMaat/ittup/commit/a7fa67356c6ed61822720996e6f60bdbba406812))
+* recognize a season pack when an 'E' and a number are inside a word ([3730330](https://github.com/TehMaat/ittup/commit/3730330886d3cf2a7f3b1ad92b3e9b7412461aff)), closes [#114](https://github.com/TehMaat/ittup/issues/114)
+* show the update notice of the release to an rc installed with --pre ([13b70f9](https://github.com/TehMaat/ittup/commit/13b70f9968de7c0f3b418e6498c810d4589ea700)), closes [#120](https://github.com/TehMaat/ittup/issues/120)
+* tag DV HDR10+ instead of *HDR for Dolby Vision with HDR10+ and no HDR10 metadata ([16bbe6d](https://github.com/TehMaat/ittup/commit/16bbe6dff55c8c1b95e9b4e9ad4ff3322836f6aa))
+* tag DV HDR10+ instead of *HDR for Dolby Vision with HDR10+ and no HDR10 metadata ([58e7c4b](https://github.com/TehMaat/ittup/commit/58e7c4b24eb89ec8afc96215b9a9bdcd128d21ea)), closes [#135](https://github.com/TehMaat/ittup/issues/135)
+* the remux type is always 'VU REMUX' ([a65e12e](https://github.com/TehMaat/ittup/commit/a65e12e511bf2a55ed87f263405f144095e82a2c))
+* the remux type is always 'VU REMUX', never 'REMUX VU' ([2f6c42b](https://github.com/TehMaat/ittup/commit/2f6c42b06321a8f97d083780095040f4c353269d))
+* update pillow to 12.3.0 for PYSEC-2026-3493, PYSEC-2026-3494 and PYSEC-2026-3496 ([#110](https://github.com/TehMaat/ittup/issues/110)) ([662f8fe](https://github.com/TehMaat/ittup/commit/662f8fea638e8fdd13f6bb3268b18697f2382f77)), closes [#109](https://github.com/TehMaat/ittup/issues/109)
+* update Pillow to 13.0.0 and ignore the unfixed diskcache advisory ([a1a6250](https://github.com/TehMaat/ittup/commit/a1a6250d5e9cdb74f9a43107d521744312a4875d))
+* update Pillow to 13.0.0 and ignore the unfixed diskcache advisory ([315805c](https://github.com/TehMaat/ittup/commit/315805c6bf68e897c48e63bf0ec9b3a3f9e74403)), closes [#117](https://github.com/TehMaat/ittup/issues/117)
+* write ITA and ENG with MULTI for more than two audio languages ([0736bbb](https://github.com/TehMaat/ittup/commit/0736bbb244ddca23635de2379d9545c01c857d35))
+* write ITA and ENG with MULTI for more than two audio languages ([d312d3c](https://github.com/TehMaat/ittup/commit/d312d3cd1fc58d051568833b3f6d5b587c991066))
+
+
+### Documentation
+
+* install with pip or pip in a virtualenv, and a release candidate page ([483a997](https://github.com/TehMaat/ittup/commit/483a9974a6b772b07d88b97dd7e9f7421481eb8b)), closes [#121](https://github.com/TehMaat/ittup/issues/121)
+* the tracker type from a source next to special characters or before the resolution ([808f09e](https://github.com/TehMaat/ittup/commit/808f09e71be0f0eaceafe06561dea4dc94823f2b)), closes [#58](https://github.com/TehMaat/ittup/issues/58)
+
 ## [1.12.1](https://github.com/TehMaat/ittup/compare/1.12.0...1.12.1) (2026-10-17)
 
 

@@ -23,7 +23,10 @@ from ittup.core.watcher_queue import UploadQueue, QueueEntry, RunOutcome, quaran
 from ittup.common.external_services.ftpx.core.models.list import FTPDirectory
 from ittup.common.external_services.ftpx.core.menu import Menu
 from ittup.common.external_services.ftpx.client import Client
+from ittup.common.about import __version__
 from ittup.common.extractor import Extractor
+from ittup.common.processes import working_on
+from ittup.common.update_check import installed_version
 from ittup.common.utility import System
 
 from ittup.view import custom_console
@@ -59,6 +62,10 @@ class Bot:
         self.path = path.strip()
         self.cli = cli
         self.mode = mode
+        # The watcher got a SIGTERM: it stops after the current upload
+        self._stop_requested = False
+        # The watcher is waiting for the next cycle: a SIGTERM stops it at once
+        self._idle = False
 
 
     def contents(self, include_paths: list[str] | None = None) -> bool | list[Media]:
@@ -146,6 +153,8 @@ class Bot:
 
         The waiting message is logged once when the watcher becomes idle, not on every cycle,
         so an idle watcher doesn't fill the log
+        A SIGTERM stops the watcher after the current upload (at once if it is waiting), and so does an upgrade
+        of the installed package (the code loaded is no longer the code installed): it must be restarted
         Each moved entry is processed in its own child process: if it crashes or is still running after
         'timeout' seconds, it is stopped and the watcher goes on with the next entry
 
@@ -170,6 +179,7 @@ class Bot:
         report.journal = None
         # Log the waiting message only when the watcher becomes idle
         announce_idle = True
+        previous_handler = self._handle_sigterm()
         try:
             # Go on with the uploads left by the last run
             if queue.due():
@@ -179,6 +189,11 @@ class Bot:
 
             # Watchdog loop
             while True:
+                stop_reason = self._stop_reason()
+                if stop_reason:
+                    custom_console.bot_warning_log(f"WATCHDOG: {stop_reason}. Exiting...")
+                    return True
+
                 # Return if the watcher path doesn't exist
                 if not watcher_path.exists():
                     custom_console.bot_error_log("Watcher path does not exist or is not configured\n")
@@ -196,7 +211,11 @@ class Bot:
                                            f" Ctrl-c to Exit")
                     announce_idle = False
 
-                custom_console.bot_countdown(duration)
+                self._idle = True
+                try:
+                    custom_console.bot_countdown(duration)
+                finally:
+                    self._idle = False
 
                 # Second check
                 current_snapshot = self._snapshot(watcher_path)
@@ -236,7 +255,36 @@ class Bot:
 
         except KeyboardInterrupt:
             custom_console.bot_log("Exiting...")
+        finally:
+            if previous_handler is not None:
+                signal.signal(signal.SIGTERM, previous_handler)
         return True
+
+    def _handle_sigterm(self):
+        """
+        A SIGTERM stops the watcher at once if it is waiting, after the current upload otherwise.
+        Returns the previous handler, None where it can't be set (not the main thread)
+        """
+        def stop(signum, frame):
+            self._stop_requested = True
+            if self._idle:
+                raise KeyboardInterrupt
+            custom_console.bot_warning_log("WATCHDOG: SIGTERM received, stopping after the current upload")
+        try:
+            return signal.signal(signal.SIGTERM, stop)
+        except ValueError:
+            return None
+
+    def _stop_reason(self) -> str | None:
+        """
+        Why the watcher must stop before the next upload: a SIGTERM or a new version installed
+        """
+        if self._stop_requested:
+            return "stopped by SIGTERM"
+        installed = installed_version()
+        if installed and installed != __version__:
+            return f"ITTup {installed} has been installed, this watcher still runs {__version__}: restart it"
+        return None
 
     def _process_queue(self, queue: UploadQueue, timeout: int, quarantine_path: str | None,
                        max_retries: int, journal: str | None = None) -> None:
@@ -244,6 +292,8 @@ class Bot:
         Upload the entries of the queue that are due: retry the temporary errors, quarantine the failures
         """
         for entry in queue.due():
+            if self._stop_reason():
+                break
             name = os.path.basename(entry.path)
             if not os.path.exists(entry.path):
                 custom_console.bot_warning_log(f"'{entry.path}' is no longer there: removed from the watcher queue")
@@ -252,7 +302,11 @@ class Bot:
             if entry.attempts:
                 custom_console.bot_log(f"WATCHDOG: retry {entry.attempts}/{max_retries} of '{name}'")
 
-            outcome = self._run_isolated(include_path=entry.path, timeout=timeout, journal=journal)
+            working_on(name)
+            try:
+                outcome = self._run_isolated(include_path=entry.path, timeout=timeout, journal=journal)
+            finally:
+                working_on(None)
 
             if outcome.status != "done":
                 # The torrent files never uploaded: left in the archive the next attempt would skip them

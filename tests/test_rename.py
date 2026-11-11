@@ -119,6 +119,17 @@ def test_rename_a_season_pack(tmp_path):
     assert (media.category, media.guess_season, media.torrent_pack) == ("tv", 4, True)
 
 
+def test_a_season_folder_with_an_e_and_a_number_in_the_group_is_a_pack(tmp_path):
+    # #114: the 'e7' in 'byMe7alh' is not an episode
+    folder = tmp_path / "S02" / "Show S02 (720p Ita Eng Spa SubS) byMe7alh"
+    folder.mkdir(parents=True)
+    for name in ["Show S02E01 720p.mkv", "Show S02E02 720p.mkv"]:
+        (folder / name).write_bytes(b"x")
+    media = contents(folder)[0]
+
+    assert (media.category, media.torrent_pack, media.pack) == ("tv", True, "S02")
+
+
 def test_a_folder_with_more_movies_keeps_the_file_names(tmp_path):
     folder = tmp_path / "saga"
     folder.mkdir()

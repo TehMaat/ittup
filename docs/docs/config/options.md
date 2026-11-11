@@ -10,6 +10,7 @@
 "RESIZE_SCSHOT": "False",
 "TIMEOUT_SCSHOT": 120,
 "TONEMAP_SCSHOT": "False",
+"SCREENSHOTS_QUORUM": "False",
 "WEBP_ENABLED": "False",
 ```
 
@@ -21,6 +22,7 @@
 | `TIMEOUT_SCSHOT` | Max **seconds** ffmpeg can take for a single screenshot (`0` = no limit) |
 | `TONEMAP_SCSHOT` | `True` = tone maps the HDR screenshots to SDR. `False` (default) = original HDR frames (faster, washed out colors) |
 | `WEBP_ENABLED` | Adds an animated webp to the torrent description |
+| `SCREENSHOTS_QUORUM` | `True` = a content is uploaded only with all its screenshots on the image hosts, see [Image hosts](imagehosts.md#every-screenshot-or-no-upload). `False` (default) = uploaded with the screenshots that made it |
 
 Screenshots are taken evenly between 10% and 90% of the video. A frame that is too dark is replaced with a brighter one close to it. With `TONEMAP_SCSHOT` set to `True`, HDR videos (HDR10, HDR10+, HLG, Dolby Vision with an HDR10 base layer) are tone mapped to SDR, so the colors don't look washed out: this needs an ffmpeg build with the `zscale` filter (libzimg), included in the common builds. With a Vulkan GPU the `libplacebo` filter is used instead, which also fixes the colors of Dolby Vision profile 5. Without a GPU (e.g. in a container) Vulkan runs on the CPU and libplacebo is very slow: zscale is used, and libplacebo only for what zscale can't handle. If the 4K HDR screenshots stop with `Time Out`, raise `TIMEOUT_SCSHOT`.
 

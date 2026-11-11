@@ -102,7 +102,7 @@ def test_the_rebuilt_config_is_valid(tmp_path):
 @pytest.mark.parametrize("missing", [True, False])
 def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
     config = Load.default_config()
-    for field in ("TIMEOUT_SCSHOT", "TONEMAP_SCSHOT"):
+    for field in ("TIMEOUT_SCSHOT", "TONEMAP_SCSHOT", "SCREENSHOTS_QUORUM"):
         if missing:
             del config["user_preferences"][field]
         else:
@@ -113,6 +113,7 @@ def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
     data = JsonConfig(path).process()
 
     saved = json.loads(path.read_text(encoding="utf-8"))["user_preferences"]
-    assert (saved["TIMEOUT_SCSHOT"], saved["TONEMAP_SCSHOT"]) == (120, "False")
+    assert (saved["TIMEOUT_SCSHOT"], saved["TONEMAP_SCSHOT"], saved["SCREENSHOTS_QUORUM"]) == (120, "False", "False")
     preferences = Config(**data).user_preferences
-    assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT) == (120, False)
+    assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT, preferences.SCREENSHOTS_QUORUM) == \
+        (120, False, False)

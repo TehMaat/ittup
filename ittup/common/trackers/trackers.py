@@ -3,6 +3,7 @@
 import os
 import re
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from ittup.common.utility import ManageTitles
 from ittup.common.trackers.tags_list import TAGS_LIST
@@ -54,19 +55,31 @@ class TRACKData:
 
     def type_tags(self, name: str) -> list[str]:
         """
-        TYPE_ID tags written in the name. A longer tag hides the shorter ones inside it (WEB-DLMux is not DLMux)
+        TYPE_ID tags written in the name, after the title
         """
         name = re.sub(r"[._\s()\[\]{}+,]+", " ", name.lower())
-        # Skip the title: the tags start from the year, the season or the resolution ('Charlotte's Web 2006 BluRay')
-        start = TITLE_END.search(name)
-        if start and start.start() > 0:
-            name = name[start.start():]
         # NFRip, AMZNRip.. are WEBRip from a streaming platform
         name = PLATFORM_RIP.sub("webrip", name)
         name = re.sub(r"(?<![a-z0-9])full disc(?![a-z0-9])", "full-disc", name)
+        # Skip the title: the tags start from the year, the season or the resolution ('Charlotte's Web 2006 BluRay')
+        title = ""
+        start = TITLE_END.search(name)
+        if start and start.start() > 0:
+            title, name = name[:start.start()], name[start.start():]
 
+        found = self.match_tags(name, self.type_id)
+        # No year or season: the source can be written between the title and the resolution ('Titolo_BDRip_1080p')
+        if title and RESOLUTION_START.match(name):
+            found += self.match_tags(title, [tag for tag in self.type_id if tag in TITLE_SOURCES])
+        return found
+
+    @staticmethod
+    def match_tags(name: str, tags: Iterable[str]) -> list[str]:
+        """
+        Tags written in the name. A longer tag hides the shorter ones inside it (WEB-DLMux is not DLMux)
+        """
         found = []
-        for tag in sorted(self.type_id, key=len, reverse=True):
+        for tag in sorted(tags, key=len, reverse=True):
             # 'altro' is the default type, not a tag (es. 'Un altro giro')
             if tag == "altro":
                 continue
@@ -100,6 +113,14 @@ def type_priority(tag: str) -> int:
 
 # Year, season or resolution after the title
 TITLE_END = re.compile(r"(?<![a-z0-9])(?:(?:19|20)\d{2}|s\d{1,2}(?:e\d+)?|\d{3,4}[pi])(?![a-z0-9])")
+RESOLUTION_START = re.compile(r"\d{3,4}[pi](?![a-z0-9])")
+
+# Sources read also before the resolution, when the name has no year or season: never a word of a title,
+# unlike 'web', 'md' or '3d' ('Charlotte's Web 1080p')
+TITLE_SOURCES = {
+    "full-disc", "fulldisc", "bdmux", "web-dlmux", "dlmux", "webmux", "bd-untouched", "untouched", "bdremux",
+    "remux", "web-dl", "webdl", "webrip", "hdtv", "bdrip", "dvdrip", "bluray", "hdrip",
+}
 
 # NFRip, AMZNRip, DSNPRip..
 PLATFORM_RIP = re.compile(

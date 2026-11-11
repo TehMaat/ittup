@@ -131,6 +131,14 @@ class CommandLine:
         special_group.add_argument("-hs", "--highspeed", action="store_true", help="Highspeed")
         special_group.add_argument("-inter", "--intern_r", action="store_true", help="Internal releases")
         special_group.add_argument("-pr", "--prelease", action="store_true", help="Personal")
+        special_group.add_argument(
+            "-upgrade", "--upgrade",
+            nargs="?",
+            const="ask",
+            choices=["ask", "wait", "stop", "force", "check"],
+            help="Upgrade ITTup. With other ITTup processes running: ask, wait for them, stop them, force the upgrade."
+                 " 'check' only checks for a new version"
+        )
 
         # /////////////////////////
         # Parse args

@@ -53,6 +53,8 @@ Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder 
 
 La sorgente scritta nel nome (`WEB-DL`, `WEBRip`, `REMUX`, `DLMux`…) decide anche il **tipo** del torrent sul tracker: vince su codec e tag generici scritti prima (`HEVC`, `FullHD`, `BluRay`), quindi `Film.2020.1080p.HEVC.WEB-DL` è un WEB-DL e `Film.2020.1080p.BluRay.REMUX` un Remux. Il bot guarda prima il nome della cartella, poi quello del file video. Senza sorgente nel nome, un codec (`x264`, `HEVC`…) vale Encode.
 
+La sorgente può stare tra punti, underscore, trattini o parentesi (`Film_2020_BDRip_1080p`, `Film.2020.(WEB-DL).1080p`). Senza anno o stagione nel nome viene letta anche prima della risoluzione (`Film_BDRip_1080p`), ma solo per le sorgenti che non possono essere una parola del titolo: `Charlotte's Web 1080p` non è un WEB-DL.
+
 I rip delle piattaforme streaming vengono divisi in piattaforma e sorgente: `NFRip` diventa `NF WEBRip` (vale per tutte le piattaforme di `tags_list.json`, es. `AMZNRip` → `AMZN WEBRip`).
 
 ### Sorgente dal MediaInfo
@@ -66,9 +68,9 @@ Se il MediaInfo non dice la sorgente, il titolo resta senza. Nel log trovi `Sour
 
 ## Codec audio
 
-Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Dopo il codec vengono scritti i canali letti dal MediaInfo: `1.0`, `2.0`, `5.1` o `7.1`.
+Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec ENG** (senza italiano né inglese, il miglior codec della lingua scritta). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Dopo il codec vengono scritti i canali letti dal MediaInfo: `1.0`, `2.0`, `5.1` o `7.1`.
 
-Dopo i codec vengono le lingue: `ITA`, la lingua originale, poi le altre lingue del file, che hanno solo la bandiera e nessun codec. Esempio con tracce italiana, inglese e giapponese di un film giapponese: `DD 5.1 DTS-HD MA 5.1 ITA JPN ENG`.
+Dopo i codec vengono le lingue: con una o due lingue audio sono scritte tutte, prima `ITA` (es. `DD+ 5.1 ITA ENG`, `DD 5.1 DTS-HD MA 5.1 ITA JPN`). Con tre o più lingue sono scritte solo `ITA` e `ENG`, o solo quella delle due presente nel file, e le altre diventano il tag `multi` (`MULTI`), es. `MULTI DD 5.1 DD+ 5.1 ITA ENG`; un file senza italiano né inglese ha la bandiera della sua prima lingua.
 
 ## I tre file di personalizzazione
 

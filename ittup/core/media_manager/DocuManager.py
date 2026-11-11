@@ -3,6 +3,7 @@ from argparse import Namespace
 from collections.abc import Callable
 import os
 
+from ittup.common.external_services.imageHost import ScreenshotsUploadFailed
 from ittup.common.bittorrent import BittorrentData
 
 from ittup.core.media_manager.common import UserContent
@@ -10,6 +11,7 @@ from ittup.core.pvtDocu import PdfImages
 from ittup.core.upload import UploadBot
 from ittup.core import config_settings
 from ittup.core.media import Media
+from ittup.core.report import report
 
 from ittup.view import custom_console
 
@@ -50,7 +52,13 @@ class DocuManager:
 
             # Get the cover image
             docu_info = PdfImages(content.file_name)
-            docu_info.build_info()
+            # Not every page is on an image host: skip this content and go on with the next
+            try:
+                docu_info.build_info()
+            except ScreenshotsUploadFailed as e:
+                report.failed(content.display_name, str(e))
+                custom_console.rule()
+                continue
 
 
             # Tracker payload

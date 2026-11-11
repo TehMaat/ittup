@@ -2,9 +2,12 @@
 import argparse
 import os
 import json
+import signal
+import sys
 
 import pytest
 
+from ittup.core import bot as bot_module
 from ittup.core.bot import Bot, run_outcome
 from ittup.core.report import report, TemporaryFailure, TEMPORARY_FAILURE
 from ittup.core.watcher_queue import UploadQueue, RunOutcome, quarantine
@@ -245,3 +248,69 @@ def test_the_quarantine_path_of_the_config(tmp_path):
     assert Validate.unit3dup_path("~/discarded", "WATCHER_QUARANTINE_PATH", "default",
                                   must_exist=False) == os.path.expanduser("~/discarded")
     assert Validate.unit3dup_path("", "WATCHER_QUARANTINE_PATH", "default", must_exist=False) == "default"
+
+
+no_sigterm = pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is not a signal a process can handle on Windows")
+
+
+@no_sigterm
+def test_a_sigterm_during_an_upload_stops_the_watcher_after_it(tmp_path):
+    queue, movie = queue_with(tmp_path)
+    second = movie.parent / "Second.mkv"
+    second.write_bytes(b"x")
+    queue.add(str(second))
+    bot = FakeBot(lambda path: True)
+    runs = []
+
+    def run_isolated(include_path, timeout, journal=None):
+        runs.append(include_path)
+        # Sent by 'ittup --upgrade stop' while the first upload runs: it ends
+        signal.raise_signal(signal.SIGTERM)
+        return RunOutcome("done")
+
+    bot._run_isolated = run_isolated
+    previous = bot._handle_sigterm()
+    try:
+        bot._process_queue(queue, timeout=0, quarantine_path=None, max_retries=2)
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    # The second upload is never started and stays in the queue for the next run
+    assert runs == [str(movie)]
+    assert [entry.path for entry in queue.entries] == [str(second)]
+    assert bot._stop_reason() == "stopped by SIGTERM"
+
+
+@no_sigterm
+def test_a_sigterm_while_waiting_stops_the_watcher_at_once():
+    bot = FakeBot(lambda path: True)
+    previous = bot._handle_sigterm()
+    try:
+        bot._idle = True
+        with pytest.raises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGTERM)
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
+def test_the_watcher_stops_when_a_new_version_is_installed(tmp_path, monkeypatch):
+    queue, movie = queue_with(tmp_path)
+    monkeypatch.setattr(bot_module, "installed_version", lambda: "99.0.0")
+    bot = FakeBot(lambda path: True)
+    runs = []
+    bot._run_isolated = lambda include_path, timeout, journal=None: runs.append(include_path) or RunOutcome("done")
+    (tmp_path / "watch").mkdir()
+    handler = signal.getsignal(signal.SIGTERM)
+    # It returns before waiting for a cycle, and before uploading with modules of two versions
+    assert bot.watcher(duration=3600, watcher_path=str(tmp_path / "watch"), destination_path=str(movie.parent),
+                       queue_file=str(tmp_path / "queue.json")) is True
+    assert runs == []
+    assert "99.0.0 has been installed" in bot._stop_reason()
+    # The handler of SIGTERM is restored
+    assert signal.getsignal(signal.SIGTERM) is handler
+
+
+def test_the_watcher_goes_on_with_the_same_version(monkeypatch):
+    monkeypatch.setattr(bot_module, "installed_version", lambda: bot_module.__version__)
+    assert FakeBot(lambda path: True)._stop_reason() is None
+    monkeypatch.setattr(bot_module, "installed_version", lambda: None)
+    assert FakeBot(lambda path: True)._stop_reason() is None

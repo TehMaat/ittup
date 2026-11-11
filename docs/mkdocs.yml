@@ -92,6 +92,7 @@ nav:
       - Linux: install/linux.md
       - Seedbox ultra.cc: install/seedbox.md
       - Upgrade: install/upgrade.md
+      - Release candidate: install/rc.md
   - Configuration:
       - Getting started: config/intro.md
       - Tracker: config/trackers.md

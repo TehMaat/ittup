@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import signal
 import sys
 
 # Python builds without sqlite3 (e.g. pyenv on a seedbox without libsqlite3-dev) would
@@ -23,8 +24,13 @@ def main():
     # Parse the arguments before loading the config: '-h' prints the help and exits without a config file
     cli = CommandLine()
 
+    # Before the configuration: an upgrade can fix a configuration that no longer loads
+    if cli.args.upgrade:
+        from ittup.common.upgrade import upgrade
+        sys.exit(upgrade(cli.args.upgrade))
+
     # Ask PyPI for a newer version while the bot starts: the answer is shown after the configuration
-    from ittup.common.update_check import UpdateCheck, UPGRADE_DOCS_URL
+    from ittup.common.update_check import UpdateCheck
     update_check = UpdateCheck().start()
 
     # These modules load the user configuration on import
@@ -32,7 +38,9 @@ def main():
     from ittup.common.settings import (Load, DEFAULT_JSON_PATH, USER_TAGS_PATH, USER_SIGN_PATH, BAN_TAGS_PATH,
                                        WATCHER_QUEUE_PATH, version)
     from ittup.common.trackers import TRACKER_NAME
-    from ittup.common.about import APP_NAME
+    from ittup.common.about import APP_NAME, PACKAGE_NAME
+    from ittup.common.processes import register, running
+    from ittup.common.update_check import release_url
 
     from ittup.core.torrent import View
     from ittup.core import pvtTracker
@@ -59,7 +67,14 @@ def main():
     newer_version = update_check.newer_version()
     if newer_version:
         custom_console.bot_warning_log(f"{APP_NAME} {newer_version} is available (installed: {version}). "
-                                       f"How to upgrade: {UPGRADE_DOCS_URL}\n")
+                                       f"What's new: {release_url(newer_version)}")
+        others = running()
+        if others:
+            custom_console.bot_warning_log(f"Other {APP_NAME} processes running: {len(others)}. "
+                                           f"'{PACKAGE_NAME} --upgrade' asks what to do with them:")
+            for process in others:
+                custom_console.bot_warning_log(f"  {process.describe()}")
+        custom_console.bot_warning_log(f"Upgrade with '{PACKAGE_NAME} --upgrade'\n")
 
     # Get the torrent archive path
     if config.user_preferences.TORRENT_ARCHIVE_PATH:
@@ -127,6 +142,15 @@ def main():
     except FileNotFoundError:
         custom_console.bot_error_log(
             f"Ban list file {BAN_TAGS_PATH} not found. Please update your configuration file")
+
+    # Tell the other ITTup processes that this one is uploading. A SIGTERM ends it with SystemExit, so the run file
+    # is removed (the watcher handles it: it stops after the current upload)
+    commands = {"watcher": cli.args.watcher, "reseed": cli.args.reseed, "scan": cli.args.scan,
+                "folder": cli.args.folder, "upload": cli.args.upload, "ftp": cli.args.ftp}
+    mode = next((name for name, value in commands.items() if value), None)
+    if mode:
+        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+        register(mode, item=cli.args.upload or cli.args.folder or cli.args.scan)
 
     # Manual upload mode
     if cli.args.upload:

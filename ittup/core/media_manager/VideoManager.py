@@ -6,6 +6,7 @@ import os
 import unicodedata
 
 from ittup.common.external_services.theMovieDB.core.api import DbOnline
+from ittup.common.external_services.imageHost import ScreenshotsUploadFailed
 from ittup.common.bittorrent import BittorrentData
 from ittup.common.frames import VideoFrame
 from ittup.common.integrity import MediaIntegrity, MIN_FFPROBE_VERSION, UnsupportedFFprobe
@@ -250,8 +251,9 @@ class VideoManager:
         # One content at a time: the screenshots are extracted while the torrent is hashed
         self.screenshots_executor = ThreadPoolExecutor(max_workers=1)
         for content, db in checked:
-            # Skip the corrupted video files: ffprobe reads the container and decodes a few frames
-            if config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
+            # Skip the corrupted video files: ffprobe reads the container and decodes a few frames.
+            # Disabled until #128 is fixed: VC-1 frames in MKV have no timestamp after the seek and the file looks truncated
+            if False and config_settings.user_preferences.CHECK_CORRUPTED and self.corrupted(content):
                 continue
 
             screenshots = self.extract_screenshots(content)
@@ -267,7 +269,13 @@ class VideoManager:
             # Get meta from the media video
             video_info = Video(media=content, tmdb_id=db.video_id, trailer_key=db.trailer_key,
                                screenshots=screenshots)
-            video_info.build_info()
+            # Not every screenshot is on an image host: skip this content and go on with the next
+            try:
+                video_info.build_info()
+            except ScreenshotsUploadFailed as e:
+                report.failed(content.display_name, str(e))
+                custom_console.rule()
+                continue
 
             # Print the title shown on the torrent page on a single line
             custom_console.bot_log(f"\n[GENERATING DISPLAYNAME..]")

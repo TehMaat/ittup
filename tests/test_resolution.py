@@ -18,7 +18,10 @@ from ittup.core.media import Media
     (1024, 576, "576p"),
     (720, 576, "576p"),
     (720, 480, "480p"),
-    (640, 360, "360p"),
+    (736, 414, "480p"),
+    (720, 404, "480p"),
+    (640, 360, "480p"),
+    (480, 270, "480p"),
 ])
 def test_the_resolution_is_the_highest_one_reached_by_the_width_or_the_height(width, height, resolution):
     assert Media.resolution_from_size(width, height) == resolution
@@ -26,6 +29,7 @@ def test_the_resolution_is_the_highest_one_reached_by_the_width_or_the_height(wi
 
 def test_without_the_height_the_width_is_used():
     assert Media.resolution_from_size(1920, None) == "1080p"
+    assert Media.resolution_from_size(736, None) == "480p"
 
 
 @pytest.mark.parametrize("width, height, resolution", [
@@ -33,6 +37,7 @@ def test_without_the_height_the_width_is_used():
     (1440, 1080, "1080i"),
     (720, 576, "576i"),
     (720, 480, "480i"),
+    (736, 414, "480i"),
     (1280, 720, "720p"),
     (3840, 2160, "2160p"),
 ])

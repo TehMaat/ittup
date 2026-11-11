@@ -40,4 +40,10 @@ In `user_preferences` every host has a priority — **0 = first attempt**:
 
 The bot tries the hosts in increasing priority order; on the first error (invalid key, service down, rate limit) it moves to the next one.
 
+## Every screenshot or no upload
+
+With `"SCREENSHOTS_QUORUM": "True"` (off by default) a content is uploaded only if **all** its screenshots (`NUMBER_OF_SCREENSHOTS`) are on an image host, on one or more hosts. If a screenshot can't be uploaded on any host, the bot doesn't upload that content: it says why, removes the screenshots already uploaded from the hosts with their delete link, and goes on with the next content. A screenshot that can't be removed is logged with its delete link, to remove it by hand. ImgBB has no API to delete an image: its screenshots are always left to remove by hand, from the delete link in the log.
+
+The screenshots left on the hosts are also appended to `screenshots_to_delete.txt` in the config folder, one per line: date, content, host, image URL and delete link.
+
 Screenshot options (`NUMBER_OF_SCREENSHOTS`, compression, resize, webp) are in [Advanced options](options.md).

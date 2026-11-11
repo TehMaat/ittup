@@ -6,29 +6,49 @@ from ittup.common.rename import TitleInfo
 from ittup.core.media import Media
 from ittup.view import custom_console
 
-# From hdr format
-hdr_map = {
-    "DOLBY VISION": "DV",
-    "DOLBY VISION DV": "DV",
-    "DOLBY VISION HDR": "DV HDR",
-    "DOLBY VISION HDR10": "DV HDR10",
-    "DOLBY VISION HDR10+": "DV HDR10+",
-    "HDR10PLUS": "HDR10+",
-    "HDRPLUS+": "HDR10+",
-    "HDR10+": "HDR10+",
-    "HDR10": "HDR10",
-    "BLU-RAY / HDR10": "HDR10",
-    "BLU-RAY / HDR10+": "HDR10+",
-    "HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10+": "HDR10+",
-    "HDR10 / HDR10 / HDR10+": "HDR10+",
-    "SMPTE ST 2086": "HDR10",
-    "SMPTE ST 2094": "HDR10+",
+# HDR tags from the parts of the MediaInfo HDR format, split on " / " (e.g. "Dolby Vision / SMPTE ST 2094 App 4",
+# "HDR10 / HDR10+", "Blu-ray / HDR10"): each part is read on its own, so every combination gets a tag
+HDR10PLUS_FORMATS = ("SMPTE ST 2094", "SMPTE ST 2094 APP 4")
+HDR10_FORMATS = ("SMPTE ST 2086",)
+# Parts with no HDR tag of their own: the Blu-ray compatibility of Dolby Vision profile 7
+NEUTRAL_HDR_FORMATS = ("", "BLU-RAY")
 
-    "DOVI": "DV",
-    "HDR": "HDR",
-}
+
+def hdr_part(part: str) -> str | None:
+    """HDR tag of one part of the MediaInfo HDR format: '' when it adds nothing, None when it is unknown"""
+    part = part.strip().upper()
+    if part.startswith(("DOLBY VISION", "DOVI")):
+        return "DV"
+    if part.startswith(("HDR10+", "HDR10PLUS", "HDRPLUS")) or part in HDR10PLUS_FORMATS:
+        return "HDR10+"
+    if part.startswith("HDR10") or part in HDR10_FORMATS:
+        return "HDR10"
+    if part == "HDR":
+        return "HDR"
+    if part in NEUTRAL_HDR_FORMATS:
+        return ""
+    return None
+
+
+def hdr_tag(*formats: str) -> tuple[str, list[str]]:
+    """
+    HDR tag from the MediaInfo HDR formats (commercial name and format): 'DV' plus the best of HDR10+/HDR10.
+    Returns the tag and the unknown parts. An unknown format never leaves the tag empty: 'DV' or at least 'HDR'
+    """
+    tags = set()
+    unknown = []
+    for hdr_format in formats:
+        for part in hdr_format.split(" / "):
+            tag = hdr_part(part)
+            if tag is None:
+                if part.strip() not in unknown:
+                    unknown.append(part.strip())
+            elif tag:
+                tags.add(tag)
+    base = next((tag for tag in ("HDR10+", "HDR10", "HDR") if tag in tags), "")
+    tag = " ".join(t for t in ("DV" if "DV" in tags else "", base) if t)
+    return tag or "HDR", unknown
+
 
 audio_translate = {
     "AC3": "DD",
@@ -52,9 +72,11 @@ audio_channels = {1: "1.0", 2: "2.0", 6: "5.1", 8: "7.1"}
 
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
-# The title keeps the best ITA codec and the best codec in the original language, then fills up to
-# MAX_AUDIO_CODECS with the tracks with no language. Tracks in other languages only add their flag
+# The title keeps the best codec of each written language, then fills up to MAX_AUDIO_CODECS with the
+# tracks with no language
 MAX_AUDIO_CODECS = 2
+# Up to MAX_AUDIO_LANGUAGES all the audio languages are written; with more only ITA and ENG and MULTI
+MAX_AUDIO_LANGUAGES = 2
 # Original language (TMDB ISO 639-1) when it is not known yet
 DEFAULT_ORIGINAL_LANGUAGE = "en"
 
@@ -211,12 +233,22 @@ class SearchTags(object):
 
         # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
         tags = {}
+        positions = {}
         for p, category in patterns:
             regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
-            matches = regex.findall(text)
-            if matches:
+            match = regex.search(text)
+            if match:
                 # Normalize Tag_list
-                tags.setdefault(category, []).append(TAG_NORMALIZE.get(matches[0].upper(), matches[0]))
+                tags.setdefault(category, []).append(TAG_NORMALIZE.get(match.group(0).upper(), match.group(0)))
+                positions.setdefault(category, []).append(match.start())
+        # Remux tags in the order of the name, but always 'VU REMUX' (the ItaTorrents type), never 'REMUX VU'
+        if len(tags.get('remux', [])) > 1:
+            remux = [tag for _, tag in sorted(zip(positions['remux'], tags['remux']))]
+            upper = [tag.upper() for tag in remux]
+            if 'VU' in upper and 'REMUX' in upper:
+                vu = remux.pop(upper.index('VU'))
+                remux.insert([tag.upper() for tag in remux].index('REMUX'), vu)
+            tags['remux'] = remux
         return tags
 
     def process(self) -> tuple[str, dict]:
@@ -387,19 +419,13 @@ class SearchTags(object):
         rank = len(audio_rank) - audio_rank.index(codec) if codec in audio_rank else 0
         return rank, atmos, channel_s
 
-    def is_original_language(self, audio: dict) -> bool:
-        codes = [str(code).lower() for code in audio.get('other_language', []) + [audio.get('language') or '']]
-        return self.original_language in codes
-
     def mediainfo_audio(self, category: str) -> dict:
         languages = []
-        original_languages = []
-        # [(score, label, language, original language)]
+        # [(score, label, language)]
         tracks = []
         if self.mediafile.audio_track:
             for audio in self.mediafile.audio_track:
                 language = self.audio_language(audio)
-                original = self.is_original_language(audio)
                 other_format = audio.get('other_format', [])
                 if other_format:
                     codec_translated = audio_translate.get(other_format[0], '')
@@ -413,31 +439,33 @@ class SearchTags(object):
                     # Add channels
                     ch = audio_channels.get(channel_s, "")
                     tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
-                                   f"{codec_translated} {ch} {atmos}".strip(), language, original))
+                                   f"{codec_translated} {ch} {atmos}".strip(), language))
 
                 # Add flags
                 if language:
                     languages.append(language)
-                    if original:
-                        original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
-                # Add multilanguage tag when languages > 2
-                if len(languages) > 2:
-                    self.tags_dict.update({'multi': 'MULTI'})
 
-        # Best ITA codec + best original language codec, then the tracks with no language up to MAX_AUDIO_CODECS
+        # Flags: up to MAX_AUDIO_LANGUAGES all the languages, ITA and ENG first. With more only ITA and ENG
+        # (the first language of the file without them) and MULTI stands for the other languages
+        if len(languages) <= MAX_AUDIO_LANGUAGES:
+            flags = list(dict.fromkeys(language for language in ["ITA", "ENG"] + languages if language in languages))
+        else:
+            flags = [language for language in ["ITA", "ENG"] if language in languages] or languages[:1]
+        if len(languages) > len(flags):
+            self.tags_dict.update({'multi': 'MULTI'})
+        else:
+            self.tags_dict.pop('multi', None)
+
+        # Best codec of each flag, then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
-        picked = [track for track in best_first if track[2] == "ITA"][:1]
-        picked += [track for track in best_first if track[3]][:1]
+        picked = [track for flag in flags for track in [track for track in best_first if track[2] == flag][:1]]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
-        for _, label, _, _ in picked:
+        for _, label, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
-
-        # Flags: ITA, the original language, then the other languages with no codec
-        first = [language for language in ["ITA"] + original_languages[:1] if language in languages]
-        audio_codecs.extend(dict.fromkeys(first + languages))
+        audio_codecs.extend(flags)
         return {category: audio_codecs}
 
     def mediainfo_source(self) -> dict[str, list[str]]:
@@ -581,33 +609,24 @@ class SearchTags(object):
                 bit_depth = video.get('bit_depth', "")
                 transfer_characteristics = video.get('transfer_characteristics', "")
                 # Check hdr
-                if hdr_format_commercial:
-                    hdr = ''
-                    if hdr_format_commercial.upper() in hdr_map:
-                        hdr = hdr_map[hdr_format_commercial.upper()]
-
-                    # if hdr not in hdr_map:
-                    if not hdr:
+                if hdr_format_commercial or hdr_format:
+                    hdr, unknown = hdr_tag(hdr_format_commercial, hdr_format)
+                    custom_console.bot_log(f"Hdr format: '{hdr_format}'")
+                    custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                    if unknown:
                         custom_console.bot_warning_log(
-                            f"<> HDR Warning: '{hdr_format_commercial}' not found in hdr_map")
-                    else:
-                        custom_console.bot_log(f"Hdr format: '{hdr_format}'")
-                        custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                            f"<> HDR Warning: unknown HDR format {unknown} in '{hdr_format_commercial}',"
+                            f" the tag is '{hdr}'")
 
-                    if 'DOLBY VISION' in hdr_format_commercial.upper() or 'DOLBY VISION' in hdr_format.upper():
-                        # Search for fake remux
-                        if any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
-                            if self.tags_dict.get('remux', ''):
-                                remux = self.tags_dict.get('remux', '')
-                                remux.append('HYBRID')
-                                self.tags_dict.update({'remux': remux})
-                                custom_console.bot_warning_log(
-                                    f"<> Warning: HYBRID REMUX with {other_hdr_format}")
-                                hdr = f"DOLBY VISION {hdr}"
-                                return {category: f"{hdr_map.get(hdr, '*HDR')}"}
-
-                        hdr = f"DOLBY VISION {hdr}"
-                    return {category: hdr_map.get(hdr, '*HDR')}
+                    # Search for fake remux
+                    if hdr.startswith("DV") and any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
+                        if self.tags_dict.get('remux', ''):
+                            remux = self.tags_dict.get('remux', '')
+                            remux.append('HYBRID')
+                            self.tags_dict.update({'remux': remux})
+                            custom_console.bot_warning_log(
+                                f"<> Warning: HYBRID REMUX with {other_hdr_format}")
+                    return {category: hdr}
                 else:
                     if "2020" in colour_primaries and "2020" in matrix_coefficients:
                         if bit_depth == 10 and transfer_characteristics.strip() == 'PQ':

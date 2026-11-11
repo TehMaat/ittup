@@ -44,6 +44,8 @@ WATCHER_QUARANTINE_PATH: Path = CONFIG_DIR / "watcher_quarantine_path"
 WATCHER_QUEUE_PATH: Path = CONFIG_DIR / "watcher_queue.json"
 CACHE_PATH: Path = CONFIG_DIR / "cache_path"
 TORRENT_ARCHIVE_PATH: Path = CONFIG_DIR / "torrent_archive_path"
+# The screenshots of the contents not uploaded that the image hosts could not delete: remove them by hand
+SCREENSHOTS_TO_DELETE_PATH: Path = CONFIG_DIR / "screenshots_to_delete.txt"
 DEFAULT_JSON_PATH: Path = CONFIG_DIR / f"{config_file}"
 USER_TAGS_PATH: Path = CONFIG_DIR / f"{user_tags_file}"
 USER_SIGN_PATH: Path = CONFIG_DIR / f"{user_sign_file}"
@@ -65,7 +67,7 @@ EMPTY_MEANS_DEFAULT: dict[str, set[str]] = {
                          "CHECK_CORRUPTED_END", "CHECK_CORRUPTED_IGNORE_DV", "WATCHER_TIMEOUT",
                          "WATCHER_MAX_RETRIES", "WATCHER_PATH", "WATCHER_DESTINATION_PATH",
                          "WATCHER_QUARANTINE_PATH", "TORRENT_ARCHIVE_PATH", "CACHE_PATH", "TIMEOUT_SCSHOT",
-                         "TONEMAP_SCSHOT"},
+                         "TONEMAP_SCSHOT", "SCREENSHOTS_QUORUM"},
 }
 
 
@@ -161,6 +163,7 @@ class UserPreferences(BaseModel):
     RESIZE_SCSHOT: bool = False
     TIMEOUT_SCSHOT: int = 120
     TONEMAP_SCSHOT: bool = False
+    SCREENSHOTS_QUORUM: bool = False
     TORRENT_COMMENT: str | None = "no_comment"
     PREFERRED_LANG: str | None = "all"
     RELEASER_SIGN: str | None = None
@@ -534,7 +537,7 @@ class Config(BaseModel):
 
                 # New attribute added to an existing json file with an empty value: use the default
                 if field in ['TMDB_DEBUG', 'RENAME_FILES', 'CHECK_CORRUPTED_IGNORE_DV',
-                             'TONEMAP_SCSHOT'] and section[field] == '':
+                             'TONEMAP_SCSHOT', 'SCREENSHOTS_QUORUM'] and section[field] == '':
                     section[field] = 'False'
                 if field == 'CHECK_CORRUPTED' and section[field] == '':
                     section[field] = 'True'
@@ -544,7 +547,8 @@ class Config(BaseModel):
 
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
-                             'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV', 'TONEMAP_SCSHOT']:
+                             'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV', 'TONEMAP_SCSHOT',
+                             'SCREENSHOTS_QUORUM']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
@@ -744,6 +748,7 @@ class Load:
                 "RESIZE_SCSHOT": "False",
                 "TIMEOUT_SCSHOT": 120,
                 "TONEMAP_SCSHOT": "False",
+                "SCREENSHOTS_QUORUM": "False",
                 "TORRENT_COMMENT": "no_comment",
                 "PREFERRED_LANG": "all",
                 "ANON": "False",

@@ -36,6 +36,16 @@ pdftocairo -v
 pip install ittup
 ```
 
+!!! tip "In a virtualenv"
+    To keep ITTup and its packages separate from the other Python programs, install it in a virtualenv (Command Prompt):
+
+    ```bat
+    py -m venv %USERPROFILE%\ittup-venv
+    %USERPROFILE%\ittup-venv\Scripts\pip install ittup
+    ```
+
+    Then start it with `%USERPROFILE%\ittup-venv\Scripts\ittup`, or activate the virtualenv first with `%USERPROFILE%\ittup-venv\Scripts\activate`: the `ittup` and `pip` commands are then the virtualenv's ones.
+
 ## 4. First run
 
 ```bash

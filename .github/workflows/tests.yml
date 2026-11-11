@@ -98,10 +98,12 @@ jobs:
         run: bandit -q -c pyproject.toml -r ittup -lll
 
       # Known vulnerabilities in the pinned dependencies: a warning on pull requests and main,
-      # an error nightly and on an rc tag
+      # an error nightly and on an rc tag.
+      # Ignored: PYSEC-2026-2447 (CVE-2025-69872, diskcache pickle) has no fixed release; it needs write
+      # access to CACHE_PATH, a local user directory, so whoever has it can already run code as the user
       - name: pip-audit
         continue-on-error: ${{ github.event_name != 'schedule' && github.ref_type != 'tag' }}
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r requirements.txt --ignore-vuln PYSEC-2026-2447
 
   build:
     runs-on: ubuntu-latest

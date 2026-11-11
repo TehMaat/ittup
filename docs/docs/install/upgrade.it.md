@@ -3,26 +3,55 @@
 Quando esce una nuova versione:
 
 !!! tip
-    A ogni avvio il bot chiede a PyPI l'ultima versione e, se ce n'è una più recente, mostra `ITTup X.Y.Z is available (installed: ...)` dopo il riepilogo della configurazione. È solo un messaggio: il bot continua con la versione installata, e se PyPI non risponde entro un secondo non viene mostrato nulla.
+    A ogni avvio il bot chiede a PyPI l'ultima versione e, se ce n'è una più recente, mostra `ITTup X.Y.Z is available (installed: ...)` dopo il riepilogo della configurazione, con il link alle note di rilascio e gli altri processi ITTup attivi. È solo un messaggio: il bot continua con la versione installata, e se PyPI non risponde entro un secondo non viene mostrato nulla. Vengono annunciate solo le release, mai le [release candidate](rc.md).
+
+## Con `ittup --upgrade`
 
 ```bash
-pip install ittup --upgrade
+ittup --upgrade
 ```
 
-Se l'hai installato con pipx (come nella guida [Linux](linux.md)):
+Installa la nuova versione con il `pip` del Python che esegue ITTup (lo stesso virtualenv). Se un watcher, uno scan, un reseed o un upload è ancora in esecuzione, aggiornare lo fermerebbe a metà o lo lascerebbe girare con il codice vecchio: vengono elencati e il bot chiede cosa fare.
+
+```text
+⚠ ITTup processes running: 1
+  PID 12345   watcher   started 2026-10-16 10:02   working on: Film.2024.1080p.mkv
+Upgrading now can stop an upload halfway.
+[W]ait for them to end / [S]top them and upgrade (a watcher ends its upload first) / [F]orce the upgrade / [N]o, cancel:
+```
+
+| Risposta | Argomento | Cosa succede |
+|---|---|---|
+| Wait | `ittup --upgrade wait` | Aspetta che finiscano, poi aggiorna |
+| Stop | `ittup --upgrade stop` | Manda loro un SIGTERM: il watcher finisce l'upload in corso ed esce, gli altri comandi si fermano subito. Poi aggiorna. Non su Windows |
+| Force | `ittup --upgrade force` | Aggiorna subito: riavviali dopo |
+| No | — | Annulla |
+
+Gli argomenti rispondono alla domanda in uno script o in un cron; senza terminale e senza argomento l'aggiornamento viene annullato. `ittup --upgrade check` controlla e basta: exit code 0 se ITTup è aggiornato, 1 se è uscita una nuova versione, 2 se PyPI non risponde.
+
+Un watcher che si accorge di una nuova versione installata sotto di lui (per esempio con `pip` a mano) si ferma prima dell'upload successivo: riavvialo.
+
+## Con pip
+
+Aggiorna con il `pip` dell'ambiente in cui hai installato ITTup. In un virtualenv (come nelle guide [Linux](linux.md) e [Seedbox ultra.cc](seedbox.md)):
 
 ```bash
-pipx upgrade ittup
+~/.venvs/ittup/bin/pip install --upgrade ittup
 ```
 
-Se l'hai installato con uv (come nella guida [Seedbox ultra.cc](seedbox.md)):
+Senza virtualenv (come nella guida [Windows](windows.md)), o con il virtualenv attivo:
 
 ```bash
-uv tool upgrade ittup
+pip install --upgrade ittup
 ```
+
+Senza `--pre`, pip installa solo le release e non torna mai a una versione più vecchia.
+
+!!! note "Installato con pipx o uv tool?"
+    Le versioni precedenti di queste guide installavano il bot con pipx (Linux) o `uv tool` (seedbox). Passa a un virtualenv una volta sola: `pipx uninstall ittup` o `uv tool uninstall ittup`, poi installalo di nuovo seguendo la guida. La configurazione in `ittup_config` resta.
 
 !!! note "Installato da GitHub?"
-    Fino alla 1.5.0 il bot si installava da GitHub (`git+https://github.com/TehMaat/ittup`). Ora è su [PyPI](https://pypi.org/project/ittup/): passa a PyPI una volta sola con `pip install ittup --upgrade`, `pipx install --force ittup` o `uv tool install --force --python 3.12 ittup`, poi aggiorna con i comandi qui sopra.
+    Fino alla 1.5.0 il bot si installava da GitHub (`git+https://github.com/TehMaat/ittup`). Ora è su [PyPI](https://pypi.org/project/ittup/): passa a PyPI una volta sola con `pip install --upgrade ittup`, poi aggiorna con i comandi qui sopra.
 
 La versione installata è visibile all'avvio del bot:
 
@@ -78,11 +107,7 @@ Non devi per forza disinstallare Unit3Dup: i due possono restare installati insi
 Se li usi tutti e due, tieni presente che:
 
 - I percorsi personalizzati copiati dalla configurazione di Unit3Dup (vedi la nota sopra) sono in comune tra i due. Non far girare i due watcher sulla stessa cartella, altrimenti gli stessi file possono essere caricati due volte: dai a ITTup cartelle sue in `ittup.json`, oppure impostale a `no_path`.
-- Se il tuo Unit3Dup è più vecchio della 0.14.x, installare ITTup nello stesso ambiente può aggiornare librerie che usa anche Unit3Dup. Per tenerli separati, installa ITTup con pipx o in un virtualenv:
-
-    ```bash
-    pipx install ittup
-    ```
+- Se il tuo Unit3Dup è più vecchio della 0.14.x, installare ITTup nello stesso ambiente può aggiornare librerie che usa anche Unit3Dup. Per tenerli separati, installa ITTup in un suo virtualenv, come nella guida [Linux](linux.md).
 
 Quando Unit3Dup non ti serve più, disinstallalo — così vengono rimossi anche i vecchi moduli `common`, `view` e `unit3dup` che aveva installato:
 

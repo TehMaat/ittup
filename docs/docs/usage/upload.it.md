@@ -20,6 +20,8 @@ Crea **un unico torrent con il contenuto della cartella**, che prende il nome de
 
 Usalo per: stagioni complete, film in più parti, contenuti con file di accompagnamento.
 
+Nel torrent vanno solo i file che stanno direttamente nella cartella. Una serie con una cartella per stagione (`Serie/Serie.S01…/`, `Serie/Serie.S02…/`) e nessun video suo si ferma con un errore: carica una stagione alla volta con `-f`, o tutta la serie con `-scan`.
+
 ## `-scan` — tutto il contenuto di un percorso
 
 ```bash
@@ -27,6 +29,8 @@ ittup -scan "/home/ITT/upload"
 ```
 
 È `-u` e `-f` insieme: analizza **ogni file e ogni cartella** dentro il percorso (ricorsivamente) e processa tutto, un torrent per ogni elemento trovato. Gli elementi vengono caricati in ordine alfanumerico (`E2` prima di `E10`).
+
+Una serie con una cartella per stagione e nessun video suo viene divisa nelle sue stagioni: un season pack per ogni cartella con la stagione nel nome (`Serie.S01…`, `Serie.S02…`), anche quando fai lo scan della cartella che contiene la serie. Ogni pack prende la stagione della sua cartella, anche dentro una cartella chiamata `Serie.S01-S02`.
 
 !!! tip "Quanti contenuti alla volta?"
     Su cartelle molto grandi puoi limitare il numero di elementi processati con `FAST_LOAD` nelle [Opzioni avanzate](../config/options.md).

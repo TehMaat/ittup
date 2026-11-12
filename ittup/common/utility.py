@@ -293,14 +293,20 @@ class ManageTitles:
         """
         Season or episode pack written in the name: 'S04' or 'S04E01-06' (es. from 'Show S04 E01-06')
         None if it is a single episode or a movie
+        In a path the deepest folder that has a season wins: 'Show.S01-S02/Show.S02' is S02, not S01 (#116)
         """
-        match = ManageTitles.EPISODE_PACK.search(name)
-        if match:
-            season, first, e, last = match.group(1, 2, 3, 4)
-            return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
-        # A season with no single episode after it
-        match = re.search(rf"{ManageTitles.SEASON}(?!.*{ManageTitles.EPISODE})", name, re.IGNORECASE)
-        return f"S{int(match.group(1)):02d}" if match else None
+        for part in reversed(re.split(r"[/\\]", name)):
+            match = ManageTitles.EPISODE_PACK.search(part)
+            if match:
+                season, first, e, last = match.group(1, 2, 3, 4)
+                return f"S{int(season):02d}E{int(first):02d}-{e.upper()}{int(last):02d}"
+            # A single episode, whatever the folders above it say
+            if re.search(ManageTitles.EPISODE, part, re.IGNORECASE):
+                return None
+            match = re.search(ManageTitles.SEASON, part, re.IGNORECASE)
+            if match:
+                return f"S{int(match.group(1)):02d}"
+        return None
 
     @staticmethod
     def pack_episodes(pack: str | None) -> tuple[int, int, int] | None:

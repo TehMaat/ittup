@@ -47,12 +47,34 @@ They combine with `-u`, `-f` and `-scan`:
 | `-personal` | Marks the upload as a **personal release** |
 | `-fl25` `-fl50` `-fl75` `-fl100` | Uploads as **freeleech** 25, 50, 75 or 100% (`--freeleech25`…). The tracker applies it only if your account can set the freeleech |
 | `-int` | Uploads as an **internal release** (`--internal`) |
+| `-mod` | Asks the tracker to **moderate** the upload (`--moderation`): the torrent waits for the staff's approval |
 | `-force <category>` | Forces the category: `movie`, `tv`, `game`, `edicola` (without argument: `movie`) |
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
 
 !!! note "`-int` and freeleech need the permission"
     The tracker applies `-int` and `-fl25`…`-fl100` only to staff and to the members of an internal group: for the other accounts it uploads the torrent without them, with no error. After the upload the bot reads the torrent back and warns you if they were not applied.
+
+## Moderation
+
+When MediaInfo says that a file may not be what its name says, the bot still uploads it but asks the tracker to **moderate** it, even if your account is trusted: a staff member checks it before it goes online. Today this happens for:
+
+- a **possible fake REMUX**: a REMUX whose video track was encoded with x264/x265;
+- a **possible WEBRip**: a WEB-DL, DLMux or WEBMux whose video track was encoded with x264/x265 CRF and no VBV limit, which a streaming service never does.
+
+The log says why:
+
+```
+<> Warning: possible fake REMUX, the video track was encoded with 'x264 core 164 ...'
+Sent to moderation: possible fake REMUX: video encoded with x264 core 164 ...
+
+<> Warning: possible WEBRip, the video track was encoded with x264 crf=21.0, no VBV: a WEB-DL keeps the stream of the service. Check the source in the name
+Sent to moderation: possible WEBRip: x264 crf=21.0, no VBV
+```
+
+The title, the type and the description don't change: the staff corrects, approves or rejects the torrent. The other warnings (unknown HDR format, PQ10, HYBRID) don't send the upload to moderation. If your account isn't trusted, every upload already waits for moderation.
+
+With `"AUTO_MODERATION": "False"` in the [Advanced options](../config/options.md) the bot only shows the warning, as before. `-mod` always asks for moderation.
 
 ## Characters refused by the tracker
 

@@ -26,6 +26,13 @@ MOVIE = "Dummy.Movie.2020.1080p.WEB-DL.AAC2.0.H.264.mkv"
 SEASON = "Dummy.Show.S01.1080p.WEB-DL.AAC2.0.H.264"
 # #114: the 'e7' in the group is not an episode
 SEASON_GROUP = "Dummy.Show.S01.1080p.WEB-DL.AAC2.0.H.264-byMe7alh"
+# #116: a series with a folder for each season
+SERIES = "Dummy.Show.1080p.WEB-DL.AAC2.0.H.264"
+MULTI_SEASON = "Dummy.Show.S01-S02.1080p.WEB-DL.AAC2.0.H.264"
+SEASON_UPLOADS = [
+    ("Serie Finta S01 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "1", "0"),
+    ("Serie Finta S02 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "2", "0"),
+]
 
 
 def dummy_video(path: Path, seconds: int) -> None:
@@ -62,6 +69,18 @@ def shows(tmp_path_factory) -> Path:
     for season in (1, 2):
         dummy_video(folder / "seasons" / f"Dummy.Show.S{season:02d}.1080p.WEB-DL.AAC2.0.H.264"
                     / f"Dummy.Show.S{season:02d}E01.1080p.WEB-DL.AAC2.0.H.264.mkv", seconds=12)
+    # #116: a series with a folder for each season, in a folder with other series
+    for parent in (Path("tv") / SERIES, Path(MULTI_SEASON)):
+        for season in (1, 2):
+            season_folder = folder / parent / f"Dummy.Show.S{season:02d}.1080p.WEB-DL.AAC2.0.H.264"
+            season_folder.mkdir(parents=True)
+            # The same video as the 'seasons' folder: a hard link, or a copy
+            source = (folder / "seasons" / season_folder.name
+                      / f"Dummy.Show.S{season:02d}E01.1080p.WEB-DL.AAC2.0.H.264.mkv")
+            try:
+                os.link(source, season_folder / source.name)
+            except OSError:
+                shutil.copy(source, season_folder / source.name)
     return folder
 
 
@@ -192,3 +211,27 @@ def test_scan_uploads_a_pack_for_each_season_folder(home, shows):
         ("Serie Finta S01 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "1", "0"),
         ("Serie Finta S02 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264", "2", "0"),
     ]
+
+
+def test_folder_mode_stops_on_a_series_with_a_folder_for_each_season(home, shows):
+    """ #116: -f uploads the files of a folder, not the seasons in its subfolders """
+    run = ittup(home, "-f", str(shows / "tv" / SERIES), "-noseed")
+
+    assert run.uploads() == []
+    assert "upload one season at a time" in run.output
+
+
+def test_scan_of_a_multi_season_folder_names_each_season(home, shows):
+    """ #116: 'S01-S02' in the folder of the series is not the season of 'Dummy.Show.S02..' """
+    run = ittup(home, "-scan", str(shows / MULTI_SEASON), "-noseed")
+
+    assert_clean(run)
+    assert [(u["name"], u["season_number"], u["episode_number"]) for u in run.uploads()] == SEASON_UPLOADS
+
+
+def test_scan_of_the_folder_of_the_series_uploads_each_season(home, shows):
+    """ #116: -scan /tv splits the series in its seasons """
+    run = ittup(home, "-scan", str(shows / "tv"), "-noseed")
+
+    assert_clean(run)
+    assert [(u["name"], u["season_number"], u["episode_number"]) for u in run.uploads()] == SEASON_UPLOADS

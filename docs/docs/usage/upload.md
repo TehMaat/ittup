@@ -20,6 +20,8 @@ Creates **a single torrent with the folder contents**, named after the folder. I
 
 Use it for: full seasons, multi-part movies, content with companion files.
 
+Only the files directly in the folder go into the torrent. A series with a folder for each season (`Show/Show.S01…/`, `Show/Show.S02…/`) and no video file of its own stops with an error: upload one season at a time with `-f`, or the whole series with `-scan`.
+
 ## `-scan` — everything inside a path
 
 ```bash
@@ -27,6 +29,8 @@ ittup -scan "/home/ITT/upload"
 ```
 
 It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found. Items are uploaded in alphanumeric order (`E2` before `E10`).
+
+A series with a folder for each season and no video file of its own is split into its seasons: one season pack for each folder with a season in its name (`Show.S01…`, `Show.S02…`), also when you scan the folder that holds the series. Each pack takes the season of its own folder, even inside a folder named `Show.S01-S02`.
 
 !!! tip "Too much content?"
     On very large folders you can cap the number of processed items with `FAST_LOAD` in the [Advanced options](../config/options.md).

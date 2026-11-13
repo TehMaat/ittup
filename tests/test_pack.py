@@ -44,6 +44,13 @@ from ittup.common.utility import ManageTitles
     ("Show-S01-1080p", "S01"),
     ("/tv/Show S01/Show_S01E01_1080p.mkv", None),
     ("/tv/Show S01/Show-S01-E01-1080p.mkv", None),
+    # The deepest folder with a season wins over the multi-season folder above it (#116)
+    ("/tv/Show.S01-S02.1080p/Show.S02.1080p.WEB-DL", "S02"),
+    ("/tv/Show.S01-S02.1080p/Show.S02.1080p.WEB-DL/", "S02"),
+    ("/tv/Show S01/Show S02 E01-06 1080p", "S02E01-06"),
+    ("/tv/Show S01-S02/Show S02/Extras", "S02"),
+    ("C:\\tv\\Show.S01-S02\\Show.S02.1080p", "S02"),
+    ("/tv/Show.S01-S02.1080p/Show.S02.1080p/Show.S02E01.mkv", None),
 ])
 def test_season_pack(name, pack):
     assert ManageTitles.season_pack(name) == pack

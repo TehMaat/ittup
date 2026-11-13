@@ -13,9 +13,8 @@ def fake_results() -> list[dict]:
 
 def make_client(monkeypatch, choice: int) -> IGDBClient:
     client = IGDBClient()
-    # No network: no HTTP request and no trailers lookup
+    # No network: no HTTP request
     monkeypatch.setattr(client.igdb, "request", lambda *args, **kwargs: None)
-    monkeypatch.setattr(client, "trailers", lambda videos_id: [])
     # No console: the user picks the result at index `choice`
     monkeypatch.setattr(client.viewer, "view_results", lambda igdb_results: None)
     monkeypatch.setattr(client.viewer, "select_result", lambda results: choice)
@@ -33,7 +32,6 @@ def test_user_enter_igdb_uses_the_chosen_result(monkeypatch):
 
     assert game.id == 202
     assert game.name == "Game Two"
-    assert game.description.startswith("Second summary")
 
 
 def test_user_enter_igdb_first_result(monkeypatch):
@@ -42,7 +40,7 @@ def test_user_enter_igdb_first_result(monkeypatch):
     game = client.user_enter_igdb(igdb_results=fake_results(), content=content(), candidate="Game One")
 
     assert game.id == 101
-    assert game.description.startswith("First summary")
+    assert game.name == "Game One"
 
 
 def test_user_enter_igdb_skip(monkeypatch):

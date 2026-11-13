@@ -5,9 +5,17 @@ from rich.table import Table
 
 from ittup.common.external_services.igdb.core.models.search import Game
 from ittup.common.external_services.igdb.core.api import IGDBapi
+from ittup.common.external_services.igdb.description import GameImages, game_bbcode
+from ittup.common.external_services.steam.client import SteamClient
 
 from ittup.core.media import Media
 from ittup.view import custom_console
+
+# Everything the description needs, in a single query: the expander returns the fields of the linked items
+GAME_FIELDS = ("fields id,name,summary,url,first_release_date,cover.image_id,screenshots.image_id,platforms.name,"
+               "genres.name,game_modes.name,involved_companies.company.name,involved_companies.developer,"
+               "involved_companies.publisher,videos.name,videos.video_id,external_games.uid,"
+               "external_games.external_game_source;")
 
 class IGDBViewer:
     def __init__(self):
@@ -38,16 +46,7 @@ class IGDBViewer:
     def to_game(results: list) -> list['Game'] | None:
 
         if results:
-            return [
-                Game(
-                    id=game_data.get('id'),
-                    name=game_data.get('name'),
-                    summary=game_data.get('summary'),
-                    videos=game_data.get('videos', []),
-                    url=game_data.get('url','there is no page url for this game'),
-                )
-                for game_data in results
-            ]
+            return [Game.from_igdb(game_data) for game_data in results]
         return None
 
     def select_result(self, results: list) -> int | None:
@@ -89,65 +88,41 @@ class IGDBClient:
         self.igdb = IGDBapi()
         self.viewer = IGDBViewer()
 
-        # Filter by category to include main games, DLCs, remakes, remasters, expansions, and expanded games
-        self.category_filter = "category = (0, 1, 2, 8, 9, 10)"
-
-        self.queries = {
-            "media" : "fields game,name,video_id; where id = {video_id};",
-            "title" : 'fields id,name,summary,videos; search "{title}";'
-                      ' where platforms = ({platform_name}) & {category_filter};',
-            "title_no_platform": 'fields id,name,summary,videos; search "{title}";',
-        }
+        # Main games, DLCs, remakes, remasters, expansions and expanded games (game_type replaces the deprecated
+        # category, with the same values)
+        self.game_type_filter = "game_type = (0, 1, 2, 8, 9, 10)"
 
     def connect(self)-> bool:
         return self.igdb.login()
 
 
-    def trailers(self, videos_id: list)-> list:
-        return [
-            response[0].get('video_id', None)
-            for video_id in videos_id
-            if (response := self.igdb.request(query=self.queries['media'].format(video_id=video_id),
-                                              endpoint="game_videos")) is not None
-        ]
-
-    def game_description(self, mygame: Game)-> Game:
-
-        trailers_id = self.trailers(mygame.videos)
-        if mygame.summary:
-            bbcode = mygame.summary
-        else:
-            bbcode = ''
-        bbcode += "\n\n[b]Game Trailers:[/b]\n"
-
-        if trailers_id:
-            for video_id in trailers_id:
-                bbcode += (f"\n[b][spoiler=Spoiler: PLAY GAME TRAILER][center][youtube]{video_id}"
-                           f"[/youtube][/center][/spoiler][/b]\n")
-        else:
-            bbcode+="\nNo trailers available.\n"
-
-        mygame.description = bbcode
+    def game_description(self, mygame: Game, content: Media)-> Game:
+        """
+        The description of the chosen game, with the cover and the screenshots uploaded on the image hosts and,
+        for a PC game on Steam, the system requirements and the Italian description
+        """
+        cover, screenshots = GameImages(http=self.igdb.http_client,
+                                        filename=content.display_name).upload_all(mygame)
+        steam = SteamClient(http=self.igdb.http_client).app(game=mygame, content=content)
+        mygame.description = game_bbcode(mygame, cover=cover, screenshots=screenshots, steam=steam)
         return mygame
 
 
     def search(self, title: str, platform_name: str)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,platforms,url; search "{title}";'
-                                       f' where platforms = ({platform_name}) & ({self.category_filter});',
+        return self.igdb.request(query=f'{GAME_FIELDS} search "{title}";'
+                                       f' where platforms = ({platform_name}) & ({self.game_type_filter});',
                                  endpoint="games")
 
     def search_no_platform(self, title: str)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,platforms,url; search "{title}";',endpoint="games")
+        return self.igdb.request(query=f'{GAME_FIELDS} search "{title}";', endpoint="games")
 
     def search_by_id(self, igdb_id: int)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,url; where id = {igdb_id};',endpoint="games")
+        return self.igdb.request(query=f'{GAME_FIELDS} where id = {igdb_id};', endpoint="games")
 
     def preview_results(self, results: list)-> Game | None:
         if results:
             # Only one game was chosen from the menù
-            mygame = self.viewer.to_game(results)
-            # Add a description
-            mygame = self.game_description(mygame=mygame[0])
+            mygame = self.viewer.to_game(results)[0]
             # Show the results
             self.viewer.view_results(igdb_results=[mygame])
             return mygame
@@ -182,10 +157,7 @@ class IGDBClient:
                    custom_console.bot_question_log("* IGDB Not found * Re-try\n")
             else:
                 # User makes their choices
-                mygame = self.viewer.to_game(igdb_results)
-                # Add a description to the chosen game
-                mygame = self.game_description(mygame=mygame[user_choice])
-                return mygame
+                return self.viewer.to_game(igdb_results)[user_choice]
 
 
     def broader(self, game_title: str)-> (list, str):
@@ -228,12 +200,15 @@ class IGDBClient:
         # Search by IGDB id in the title string
         if content.igdb_id:
             search_result = self.search_by_id(igdb_id=content.igdb_id)
-            return self.preview_results(results=search_result)
+            mygame = self.preview_results(results=search_result)
+        else:
+            # Try a broader search...
+            igdb_results, candidate = self.broader(game_title=content.game_title)
+            # Show the results and ask the user to choose an IGDB ID if there are multiple options or no results
+            mygame = self.user_enter_igdb(igdb_results=igdb_results, content=content, candidate=candidate)
 
-        # Try a broader search...
-        igdb_results, candidate = self.broader(game_title=content.game_title)
-        # Show the results and ask the user to choose an IGDB ID in case there are multiple options or no results
-        return self.user_enter_igdb(igdb_results=igdb_results, content=content, candidate=candidate)
+        # Add a description to the chosen game
+        return self.game_description(mygame=mygame, content=content) if mygame else None
 
 
     @staticmethod

@@ -47,7 +47,7 @@ Il tipo di release, letto dai tag source/remux del nome del file, decide come si
 | WEB-DL | `WEB-DL`, `WEB`, `WEBDL`, `WEB-DLMUX`, `WEBMUX`, `DLMUX`, `HDTV` | `H.264` / `H.265` |
 | Encode | `ENCODE`, `WEBRIP`, `BDRIP`, `BRRIP`, `DVDRIP`, `UHDRIP`, `FHDRIP`, `WEB-DLRIP` | `x264` / `x265` |
 
-Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 mostra solo un avviso di "possibile falso REMUX". Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
+Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 non cambia il titolo: mostra un avviso di "possibile falso REMUX" e manda l'upload in [moderazione](upload.md#moderazione). Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
 
 ## Sorgente e tipo sul tracker
 

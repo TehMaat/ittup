@@ -47,12 +47,26 @@ Si combinano con `-u`, `-f` e `-scan`:
 | `-personal` | Marca l'upload come **personal release** |
 | `-fl25` `-fl50` `-fl75` `-fl100` | Carica in **freeleech** 25, 50, 75 o 100% (`--freeleech25`…). Il tracker lo applica solo se il tuo account può impostare il freeleech |
 | `-int` | Carica come **release internal** (`--internal`) |
+| `-mod` | Chiede al tracker di **moderare** l'upload (`--moderation`): il torrent aspetta l'approvazione dello staff |
 | `-force <categoria>` | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-notitle "<titolo>"` | Usa questo titolo per la ricerca su TMDB invece di quello ricavato dal nome del file |
 | `-reseed` | Modalità reseed ([Reseed](reseed.md)) |
 
 !!! note "`-int` e il freeleech richiedono il permesso"
     Il tracker applica `-int` e `-fl25`…`-fl100` solo allo staff e ai membri di un gruppo internal: per gli altri account carica il torrent senza, e senza errori. Dopo l'upload il bot rilegge il torrent e ti avvisa se non sono stati applicati.
+
+## Moderazione
+
+Quando il MediaInfo dice che un file potrebbe non essere quello che dice il nome, il bot lo carica comunque ma chiede al tracker di **moderarlo**, anche se il tuo account è trusted: uno staffer lo controlla prima che vada online. Oggi succede per un **possibile falso REMUX**, un REMUX con la traccia video ricodificata con x264/x265. Il log dice il motivo:
+
+```
+<> Warning: possible fake REMUX, the video track was encoded with 'x264 core 164 ...'
+Sent to moderation: possible fake REMUX: video encoded with x264 core 164 ...
+```
+
+Il titolo, il tipo e la descrizione non cambiano: è lo staff a correggere, approvare o rifiutare il torrent. Gli altri avvisi (formato HDR sconosciuto, PQ10, HYBRID) non mandano l'upload in moderazione. Se il tuo account non è trusted, ogni upload va già in moderazione.
+
+Con `"AUTO_MODERATION": "False"` nelle [Opzioni avanzate](../config/options.md) il bot mostra solo l'avviso, come prima. `-mod` chiede sempre la moderazione.
 
 ## Caratteri rifiutati dal tracker
 

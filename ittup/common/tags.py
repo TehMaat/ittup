@@ -138,6 +138,8 @@ class SearchTags(object):
         # The source and remux tags read from MediaInfo when the file name has no source
         self.mediainfo_tags: dict[str, list[str]] = {}
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
+        # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
+        self.review_reasons: list[str] = []
 
         self.TAG_TYPES: dict = tags_list
         self.SIGNS_LIST: dict = sign_list
@@ -531,6 +533,13 @@ class SearchTags(object):
         families &= {"264", "265"}
         return families.pop() if len(families) == 1 else None
 
+    def add_review_reason(self, reason: str) -> None:
+        """
+        A reason to ask the tracker to moderate the upload: the file may not be what its name says
+        """
+        if reason not in self.review_reasons:
+            self.review_reasons.append(reason)
+
     @staticmethod
     def encoder_signature(video: dict) -> str | None:
         """
@@ -587,9 +596,10 @@ class SearchTags(object):
         # The encoder in MediaInfo is only a check: it is never read on a WEB-DL
         if self.release_type == "untouched":
             if self.encoder_signature(video):
+                encoder = video.get('writing_library') or 'x' + family
                 custom_console.bot_warning_log(
-                    f"<> Warning: possible fake REMUX, the video track was encoded with"
-                    f" '{video.get('writing_library') or 'x' + family}'")
+                    f"<> Warning: possible fake REMUX, the video track was encoded with '{encoder}'")
+                self.add_review_reason(f"possible fake REMUX: video encoded with {encoder}")
             label = "untouched"
         elif self.release_type in ("encode", "web"):
             label = self.release_type

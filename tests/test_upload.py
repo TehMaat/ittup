@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from ittup.core.report import report, TemporaryFailure
+from ittup.core import upload
 from ittup.core.upload import UploadBot
 
 
@@ -40,3 +41,61 @@ def test_a_refused_upload_is_a_failure_of_the_report():
     assert report.failures == ["'Movie 2020 1080p': upload refused by the tracker: UploadBot - "
                                "The name has already been taken. : "]
     report.reset()
+
+
+FAKE_REMUX = "possible fake REMUX: video encoded with x264 core 164 r3095 baee400"
+
+
+@pytest.fixture
+def logged(monkeypatch):
+    messages = []
+    monkeypatch.setattr(upload.custom_console, "bot_warning_log", messages.append)
+    monkeypatch.setattr(upload.config_settings.user_preferences, "AUTO_MODERATION", True)
+    monkeypatch.setattr(upload.config_settings.user_preferences, "PERSONAL_RELEASE", False)
+    return messages
+
+
+def video_upload(review_reasons: list[str], moderation: bool = False) -> dict:
+    """ The data of a video upload, as sent to the tracker """
+    upload_bot = UploadBot.__new__(UploadBot)
+    upload_bot.cli = SimpleNamespace(moderation=moderation, personal=False, internal=False, freeleech=None)
+    upload_bot.sign = "[sign]"
+    upload_bot.content = SimpleNamespace(
+        display_name="Movie 2020 1080p BluRay REMUX AVC-GRP", category="movie", resolution="1080p",
+        mediainfo_source=None, torrent_name="Movie.2020.1080p.BluRay.REMUX.AVC-GRP",
+        file_name="Movie.2020.1080p.BluRay.REMUX.AVC-GRP.mkv", guess_season=None, guess_episode=None,
+        torrent_pack=False, review_reasons=review_reasons)
+    upload_bot.tracker_data = SimpleNamespace(category={"movie": 1}, resolution={"1080p": 3},
+                                              filter_type=lambda *names: 42)
+    upload_bot.tracker = SimpleNamespace(data={})
+    video_info = SimpleNamespace(mediainfo="mediainfo", description="[screenshots]", is_hd=0)
+    return upload_bot.data(show_id=1, imdb_id=2, tvdb_id=0, show_keywords_list="", video_info=video_info).data
+
+
+def test_a_fake_remux_is_sent_to_moderation(logged):
+    data = video_upload([FAKE_REMUX])
+    assert data["mod_queue_opt_in"] == 1
+    assert logged == [f"Sent to moderation: {FAKE_REMUX}"]
+    # The staff decides: the title, the type and the public description don't change
+    assert data["name"] == "Movie 2020 1080p BluRay REMUX AVC-GRP"
+    assert data["type_id"] == 42
+    assert data["description"] == "[screenshots][sign]"
+
+
+@pytest.mark.parametrize("moderation", [False, True])
+def test_without_reasons_only_the_flag_asks_for_moderation(logged, moderation):
+    assert video_upload([], moderation=moderation)["mod_queue_opt_in"] == int(moderation)
+    assert not logged
+
+
+@pytest.mark.parametrize("moderation", [False, True])
+def test_auto_moderation_off_leaves_only_the_warning(logged, monkeypatch, moderation):
+    monkeypatch.setattr(upload.config_settings.user_preferences, "AUTO_MODERATION", False)
+    assert video_upload([FAKE_REMUX], moderation=moderation)["mod_queue_opt_in"] == int(moderation)
+    assert not logged
+
+
+def test_a_content_without_review_reasons():
+    # A content that didn't go through SearchTags
+    upload_bot = SimpleNamespace(cli=SimpleNamespace(moderation=False), content=SimpleNamespace())
+    assert UploadBot.moderation(upload_bot) == 0

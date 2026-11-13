@@ -117,3 +117,21 @@ def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
     preferences = Config(**data).user_preferences
     assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT, preferences.SCREENSHOTS_QUORUM) == \
         (120, False, False)
+
+
+@pytest.mark.parametrize("value, expected", [(None, True), ("False", False), ("True", True)])
+def test_auto_moderation(tmp_path, value, expected):
+    config = Load.default_config()
+    assert config["user_preferences"]["AUTO_MODERATION"] == "True"
+    if value is None:
+        # A config file of an older version
+        del config["user_preferences"]["AUTO_MODERATION"]
+    else:
+        config["user_preferences"]["AUTO_MODERATION"] = value
+    path = write(tmp_path / "ittup.json", config)
+
+    data = JsonConfig(path).process()
+
+    assert json.loads(path.read_text(encoding="utf-8"))["user_preferences"]["AUTO_MODERATION"] == \
+        (value or "True")
+    assert Config(**data).user_preferences.AUTO_MODERATION is expected

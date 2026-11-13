@@ -22,9 +22,9 @@ def warnings(monkeypatch):
     return logged
 
 
-def build_title(filename: str, video_format: str | None, writing_library: str = "",
+def search_tags(filename: str, video_format: str | None, writing_library: str = "",
                 encoding_settings: str = "", tags_position: list | None = None,
-                **video_fields) -> tuple[str, dict]:
+                **video_fields) -> SearchTags:
     video_track = []
     if video_format:
         video_track.append({"format": video_format, "writing_library": writing_library,
@@ -34,7 +34,13 @@ def build_title(filename: str, video_format: str | None, writing_library: str = 
     search = SearchTags(filename=filename, title="Movie", year="2020", season=None, episode=None, media=media,
                         tags_position=list(tags_position or TAGS_POSITION), tags_list=TAGS_LIST, sign_list={},
                         ban_list={"dummy": "banned"}, releaser_sign="")
-    return search.process()
+    search.process()
+    return search
+
+
+def build_title(filename: str, video_format: str | None, **kwargs) -> tuple[str, dict]:
+    search = search_tags(filename, video_format, **kwargs)
+    return search.ordered_title()
 
 
 def vcodec(filename: str, video_format: str | None, **kwargs) -> str | None:
@@ -135,3 +141,42 @@ def test_platform_rip_is_the_platform_and_webrip():
     assert tags_dict["source"] == ["WEBRip"]
     assert tags_dict["vcodec"] == "x264"
     assert "NF WEBRip" in title
+
+
+def test_a_fake_remux_is_a_review_reason(warnings):
+    search = search_tags("Movie.2020.1080p.BluRay.REMUX.AVC-GRP.mkv", "AVC", writing_library=X264_LIBRARY)
+    assert search.review_reasons == [f"possible fake REMUX: video encoded with {X264_LIBRARY}"]
+    # The warning is still there
+    assert any("fake REMUX" in message for message in warnings)
+    # The title doesn't change
+    assert "REMUX" in search.ordered_title()[0]
+
+
+def test_a_fake_remux_from_the_encoding_settings_is_a_review_reason(warnings):
+    search = search_tags("Movie.2020.1080p.BluRay.REMUX.AVC-GRP.mkv", "AVC", encoding_settings="cabac=1 / ref=4")
+    assert search.review_reasons == ["possible fake REMUX: video encoded with x264"]
+
+
+@pytest.mark.parametrize("filename, video_format, writing_library", [
+    ("Movie.2020.2160p.BluRay.REMUX.HEVC-GRP.mkv", "HEVC", ""),
+    ("Movie.2020.1080p.AMZN.WEB-DL.DDP5.1.H.264-GRP.mkv", "AVC", X264_LIBRARY),
+    ("Movie.2020.1080p.BluRay.x265-GRP.mkv", "HEVC", X265_LIBRARY),
+    ("Movie.2020.1080p.WEBRip.x264-GRP.mkv", "AVC", X264_LIBRARY),
+])
+def test_no_review_reason(warnings, filename, video_format, writing_library):
+    assert search_tags(filename, video_format, writing_library=writing_library).review_reasons == []
+
+
+def test_hdr_warnings_are_not_review_reasons(warnings):
+    # Unknown HDR format and HYBRID REMUX: only warnings
+    search = search_tags("Movie.2020.2160p.BluRay.REMUX.HEVC-GRP.mkv", "HEVC",
+                         hdr_format_commercial="Dolby Vision / Brand New HDR", hdr_format="Dolby Vision",
+                         other_hdr_format=["dvhe.08.06"])
+    assert any("HDR Warning" in message for message in warnings)
+    assert any("HYBRID REMUX" in message for message in warnings)
+    assert search.review_reasons == []
+    # PQ10 warning
+    search = search_tags("Movie.2020.2160p.BluRay.REMUX.HEVC-GRP.mkv", "HEVC", color_primaries="BT.2020",
+                         matrix_coefficients="BT.2020 non-constant", bit_depth=8, transfer_characteristics="PQ")
+    assert any("PQ10" in message for message in warnings)
+    assert search.review_reasons == []

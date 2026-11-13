@@ -88,3 +88,18 @@ def test_internal_is_sent_for_every_category():
     from ittup.core.upload import UploadBot
     assert UploadBot.internal(SimpleNamespace(cli=SimpleNamespace(internal=True))) == 1
     assert UploadBot.internal(SimpleNamespace(cli=SimpleNamespace(internal=False))) == 0
+
+
+def test_moderation_flag_is_an_upload_option(monkeypatch):
+    assert parse(monkeypatch, "-u", "/tmp/movie.mkv", "-mod").moderation is True
+    assert parse(monkeypatch, "-u", "/tmp/movie.mkv", "--moderation").moderation is True
+    assert parse(monkeypatch, "-u", "/tmp/movie.mkv").moderation is False
+
+
+def test_moderation_flag_help(monkeypatch, capsys):
+    with pytest.raises(SystemExit):
+        parse(monkeypatch, "--help")
+    help_text = capsys.readouterr().out
+    upload_options = help_text[help_text.index("Upload Commands:"):help_text.index("Search Commands:")]
+    assert "Ask the tracker to moderate the upload" in upload_options
+    assert "In moderation" not in help_text

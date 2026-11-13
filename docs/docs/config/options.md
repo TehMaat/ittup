@@ -179,7 +179,7 @@ Folder where the bot archives the generated `.torrent` files, inside the `ITT` s
 |---|---|
 | `YOUTUBE_PREF_LANG` | Country/language code (ISO 3166, e.g. `IT`) used to search trailers on YouTube |
 | `SKIP_YOUTUBE` | Skips the YouTube trailer search entirely |
-| `SKIP_TMDB` | Skips the TMDB lookup (not recommended for videos) |
+| `SKIP_TMDB` | Doesn't ask for the TMDB ID of a title TMDB doesn't find (not recommended for videos); the IDs typed in previous uploads are still used ([Titles not found on TMDB](../usage/upload.md#titles-not-found-on-tmdb)) |
 
 ## FAST_LOAD
 

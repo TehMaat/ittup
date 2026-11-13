@@ -73,6 +73,21 @@ Il formato `{imdb-tt…}` è quello di Radarr, Sonarr e Plex, `[tmdbid-…]` que
 
 Senza ID, il bot cerca su TMDB il titolo ricavato dal nome. Se non lo trova riprova con il nome completo prima dell'anno (`(500) Days of Summer`) e con i titoli tra parentesi (`Lo Chiamavano Jeeg Robot (They Call Me Jeeg)`), e infine con una tolleranza sull'anno: un anno di differenza per i film (uscite a fine anno), l'anno di una stagione successiva per le serie.
 
+## Titoli non trovati su TMDB
+
+Quando TMDB non trova il titolo, il bot chiede l'ID TMDB (`0` salta). L'ID inserito viene salvato in `ittup_config/manual_ids.json`, così al prossimo caricamento dello stesso titolo non viene chiesto di nuovo: gli altri episodi della stessa serie, o lo stesso film caricato più tardi. Nel log il bot scrive `TMDB ID … from the IDs typed in a previous upload`.
+
+- Un film deve avere lo stesso titolo e lo stesso anno; una serie va bene anche quando il nome dell'episodio non ha l'anno.
+- Con `SKIP_TMDB` il bot non chiede, ma usa comunque gli ID salvati prima.
+- Un ID nel nome del file ha la precedenza su quello salvato. Lo skip (`0`) non viene salvato.
+- Hai inserito un ID sbagliato? Togli la sua riga da `manual_ids.json` (o cancella il file). Se il file non si può leggere, il bot lo tiene come `manual_ids.json.bad` e ne crea uno nuovo.
+
+```json
+{
+    "tv|bake off italia|": {"tmdb_id": 12345, "title": "Bake Off Italia - Dolci in forno", "saved": "2026-11-07"}
+}
+```
+
 ## Esempio completo
 
 ```bash

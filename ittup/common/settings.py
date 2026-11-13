@@ -72,6 +72,20 @@ EMPTY_MEANS_DEFAULT: dict[str, set[str]] = {
                          "TONEMAP_SCSHOT", "SCREENSHOTS_QUORUM"},
 }
 
+# Renamed attributes, section -> {old name: new name}: the new one takes the value of the old one,
+# unless the user's json file already has it. The old name is obsolete (it stays in the backup)
+RENAMED_KEYS: dict[str, dict[str, str]] = {
+    # ImgFI (imgfi.com) replaced by OnlyImage (onlyimage.org)
+    "tracker_config": {"IMGFI_KEY": "ONLYIMAGE_KEY"},
+    "user_preferences": {"IMGFI_PRIORITY": "ONLYIMAGE_PRIORITY"},
+}
+
+# Old name -> what the user should check after the value moved to the new name
+RENAMED_KEYS_NOTES: dict[str, str] = {
+    "IMGFI_KEY": "ImgFI has been replaced by OnlyImage: your ImgFI key is now ONLYIMAGE_KEY. If the uploads"
+                 " to OnlyImage fail, create a key on https://onlyimage.org and put it in ONLYIMAGE_KEY",
+}
+
 
 def get_default_path(field: str) -> str:
     default_paths = {
@@ -102,7 +116,7 @@ class TrackerConfig(BaseModel):
     FREE_IMAGE_KEY: str | None = None
     LENSDUMP_KEY: str | None = None
     PTSCREENS_KEY: str | None = None
-    IMGFI_KEY: str | None = None
+    ONLYIMAGE_KEY: str | None = None
     PASSIMA_KEY: str | None = None
     IMARIDE_KEY: str | None = None
     YOUTUBE_KEY: str | None = None
@@ -140,7 +154,7 @@ class UserPreferences(BaseModel):
     LENSDUMP_PRIORITY: int = 1
     FREE_IMAGE_PRIORITY: int = 2
     IMGBB_PRIORITY: int = 3
-    IMGFI_PRIORITY: int = 4
+    ONLYIMAGE_PRIORITY: int = 4
     PASSIMA_PRIORITY: int = 5
     IMARIDE_PRIORITY: int = 6
     TAGS_POSITION_MOVIE: list[str] | None = None
@@ -685,7 +699,7 @@ class Load:
                 "FREE_IMAGE_KEY": "no_key",
                 "LENSDUMP_KEY": "no_key",
                 "PTSCREENS_KEY": "no_key",
-                "IMGFI_KEY": "no_key",
+                "ONLYIMAGE_KEY": "no_key",
                 "PASSIMA_KEY": "no_key",
                 "IMARIDE_KEY": "no_key",
                 "YOUTUBE_KEY": "no_key",
@@ -720,7 +734,7 @@ class Load:
                 "LENSDUMP_PRIORITY": 1,
                 "FREE_IMAGE_PRIORITY": 2,
                 "IMGBB_PRIORITY": 3,
-                "IMGFI_PRIORITY": 4,
+                "ONLYIMAGE_PRIORITY": 4,
                 "PASSIMA_PRIORITY": 5,
                 "IMARIDE_PRIORITY": 6,
                 "NUMBER_OF_SCREENSHOTS": 4,
@@ -907,6 +921,12 @@ class JsonConfig:
         # section -> [attribute] for the attributes, or the sections, not used anymore
         self.obsolete_keys: dict[str, list] = {}
 
+        # section -> {old name: new name} for the renamed attributes that kept the user's value
+        self.renamed_keys: dict[str, dict[str, str]] = {}
+
+        # What to check after a renamed attribute kept a value set by the user
+        self.renamed_notes: list[str] = []
+
     def get_config_updated(self) -> dict:
         """
         The default config with the user's values, in the order of the default config
@@ -918,6 +938,12 @@ class JsonConfig:
                 user_section = {}
             # The attributes are read case-insensitively
             user_values = {key.upper(): value for key, value in user_section.items()}
+            for old, new in RENAMED_KEYS.get(section, {}).items():
+                if old in user_values and new not in user_values:
+                    user_values[new] = user_values[old]
+                    self.renamed_keys.setdefault(section, {})[old] = new
+                    if old in RENAMED_KEYS_NOTES and user_values[old] not in ("", "no_key", None):
+                        self.renamed_notes.append(RENAMED_KEYS_NOTES[old])
 
             rebuilt[section] = {}
             for key, default in defaults.items():
@@ -991,6 +1017,12 @@ class JsonConfig:
 
         for section, keys in self.filled_keys.items():
             message += f"Empty '{section}' attributes, set to the default value: {keys}\n"
+
+        for section, keys in self.renamed_keys.items():
+            message += f"Renamed '{section}' attributes, with your value: {keys}\n"
+
+        for note in self.renamed_notes:
+            message += f"{note}\n"
 
         for section, keys in self.obsolete_keys.items():
             message += f"Obsolete '{section}' attributes, removed (they are kept in the backup): {keys}\n"

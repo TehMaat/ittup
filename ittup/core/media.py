@@ -68,7 +68,7 @@ class Media:
         self._torrent_pack: bool = False
         self._pack: str | None = None
         self._doc_description: str | None = None
-        self._game_nfo: str | None = None
+        self._nfo: str | None = None
         self._tmdb_id: int | None = None
         self._imdb_id: int | None = None
         self._tvdb_id: int | None = None
@@ -109,6 +109,9 @@ class Media:
         self.torrent_name = os.path.basename(path)
 
         if is_folder:
+            # The NFO is in the renamed folder now
+            if self.nfo:
+                self.nfo = os.path.join(path, os.path.basename(self.nfo))
             file = os.path.basename(old_file_name)
             self.file_name = os.path.join(path, renamed_files.get(file, file))
             meta = [{**item, "path": [renamed_files.get(item["path"][0], item["path"][0])]}
@@ -144,12 +147,13 @@ class Media:
         return self._platform_list
 
     @property
-    def game_nfo(self) -> str:
-        return self._game_nfo
+    def nfo(self) -> str | None:
+        """Path of the NFO of the release, sent to the tracker with the torrent"""
+        return self._nfo
 
-    @game_nfo.setter
-    def game_nfo(self, value):
-        self._game_nfo = value
+    @nfo.setter
+    def nfo(self, value):
+        self._nfo = value
 
     @property
     def game_title(self):

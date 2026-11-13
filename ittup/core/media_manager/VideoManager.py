@@ -300,8 +300,8 @@ class VideoManager:
                 custom_console.bot_warning_log(f"No Upload active. Done.")
                 continue
 
-            # Send to the tracker
-            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath)
+            # Send to the tracker, with the NFO of the release if there is one
+            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath, nfo_path=content.nfo)
 
             # Store response for the torrent clients
             bittorrent_list.append(

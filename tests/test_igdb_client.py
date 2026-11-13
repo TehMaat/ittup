@@ -13,9 +13,8 @@ def fake_results() -> list[dict]:
 
 def make_client(monkeypatch, choice: int) -> IGDBClient:
     client = IGDBClient()
-    # No network: no HTTP request and no trailers lookup
+    # No network: no HTTP request
     monkeypatch.setattr(client.igdb, "request", lambda *args, **kwargs: None)
-    monkeypatch.setattr(client, "trailers", lambda videos_id: [])
     # No console: the user picks the result at index `choice`
     monkeypatch.setattr(client.viewer, "view_results", lambda igdb_results: None)
     monkeypatch.setattr(client.viewer, "select_result", lambda results: choice)

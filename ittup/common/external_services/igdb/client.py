@@ -9,6 +9,12 @@ from ittup.common.external_services.igdb.core.api import IGDBapi
 from ittup.core.media import Media
 from ittup.view import custom_console
 
+# Everything the description needs, in a single query: the expander returns the fields of the linked items
+GAME_FIELDS = ("fields id,name,summary,url,first_release_date,cover.image_id,screenshots.image_id,platforms.name,"
+               "genres.name,game_modes.name,involved_companies.company.name,involved_companies.developer,"
+               "involved_companies.publisher,videos.name,videos.video_id,external_games.uid,"
+               "external_games.external_game_source;")
+
 class IGDBViewer:
     def __init__(self):
         pass
@@ -38,16 +44,7 @@ class IGDBViewer:
     def to_game(results: list) -> list['Game'] | None:
 
         if results:
-            return [
-                Game(
-                    id=game_data.get('id'),
-                    name=game_data.get('name'),
-                    summary=game_data.get('summary'),
-                    videos=game_data.get('videos', []),
-                    url=game_data.get('url','there is no page url for this game'),
-                )
-                for game_data in results
-            ]
+            return [Game.from_igdb(game_data) for game_data in results]
         return None
 
     def select_result(self, results: list) -> int | None:
@@ -89,58 +86,37 @@ class IGDBClient:
         self.igdb = IGDBapi()
         self.viewer = IGDBViewer()
 
-        # Filter by category to include main games, DLCs, remakes, remasters, expansions, and expanded games
-        self.category_filter = "category = (0, 1, 2, 8, 9, 10)"
-
-        self.queries = {
-            "media" : "fields game,name,video_id; where id = {video_id};",
-            "title" : 'fields id,name,summary,videos; search "{title}";'
-                      ' where platforms = ({platform_name}) & {category_filter};',
-            "title_no_platform": 'fields id,name,summary,videos; search "{title}";',
-        }
+        # Main games, DLCs, remakes, remasters, expansions and expanded games (game_type replaces the deprecated
+        # category, with the same values)
+        self.game_type_filter = "game_type = (0, 1, 2, 8, 9, 10)"
 
     def connect(self)-> bool:
         return self.igdb.login()
 
 
-    def trailers(self, videos_id: list)-> list:
-        return [
-            response[0].get('video_id', None)
-            for video_id in videos_id
-            if (response := self.igdb.request(query=self.queries['media'].format(video_id=video_id),
-                                              endpoint="game_videos")) is not None
-        ]
+    @staticmethod
+    def game_description(mygame: Game)-> Game:
 
-    def game_description(self, mygame: Game)-> Game:
-
-        trailers_id = self.trailers(mygame.videos)
-        if mygame.summary:
-            bbcode = mygame.summary
-        else:
-            bbcode = ''
-        bbcode += "\n\n[b]Game Trailers:[/b]\n"
-
-        if trailers_id:
-            for video_id in trailers_id:
-                bbcode += (f"\n[b][spoiler=Spoiler: PLAY GAME TRAILER][center][youtube]{video_id}"
-                           f"[/youtube][/center][/spoiler][/b]\n")
-        else:
-            bbcode+="\nNo trailers available.\n"
+        bbcode = mygame.summary or ''
+        trailer = mygame.trailer
+        if trailer:
+            bbcode += (f"\n\n[b][spoiler=Spoiler: PLAY GAME TRAILER][center][youtube]{trailer.video_id}"
+                       f"[/youtube][/center][/spoiler][/b]\n")
 
         mygame.description = bbcode
         return mygame
 
 
     def search(self, title: str, platform_name: str)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,platforms,url; search "{title}";'
-                                       f' where platforms = ({platform_name}) & ({self.category_filter});',
+        return self.igdb.request(query=f'{GAME_FIELDS} search "{title}";'
+                                       f' where platforms = ({platform_name}) & ({self.game_type_filter});',
                                  endpoint="games")
 
     def search_no_platform(self, title: str)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,platforms,url; search "{title}";',endpoint="games")
+        return self.igdb.request(query=f'{GAME_FIELDS} search "{title}";', endpoint="games")
 
     def search_by_id(self, igdb_id: int)-> list:
-        return self.igdb.request(query=f'fields id,name,summary,videos,url; where id = {igdb_id};',endpoint="games")
+        return self.igdb.request(query=f'{GAME_FIELDS} where id = {igdb_id};', endpoint="games")
 
     def preview_results(self, results: list)-> Game | None:
         if results:

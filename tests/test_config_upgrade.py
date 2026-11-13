@@ -117,3 +117,58 @@ def test_the_screenshot_options_get_the_default_value(tmp_path, missing):
     preferences = Config(**data).user_preferences
     assert (preferences.TIMEOUT_SCSHOT, preferences.TONEMAP_SCSHOT, preferences.SCREENSHOTS_QUORUM) == \
         (120, False, False)
+
+
+def imgfi_config(**new):
+    """ A config file of a version with ImgFI: IMGFI_KEY and IMGFI_PRIORITY instead of the OnlyImage ones """
+    config = Load.default_config()
+    del config["tracker_config"]["ONLYIMAGE_KEY"]
+    del config["user_preferences"]["ONLYIMAGE_PRIORITY"]
+    config["tracker_config"]["IMGFI_KEY"] = "abc"
+    config["user_preferences"]["IMGFI_PRIORITY"] = 1
+    for section, values in new.items():
+        config[section].update(values)
+    return config
+
+
+def test_the_imgfi_key_and_priority_move_to_onlyimage(tmp_path, capsys):
+    path = write(tmp_path / "ittup.json", imgfi_config())
+
+    config = JsonConfig(path)
+    data = config.process()
+
+    assert data["tracker_config"]["ONLYIMAGE_KEY"] == "abc"
+    assert data["user_preferences"]["ONLYIMAGE_PRIORITY"] == 1
+    assert "IMGFI_KEY" not in data["tracker_config"]
+    assert "IMGFI_PRIORITY" not in data["user_preferences"]
+    assert config.obsolete_keys == {"tracker_config": ["IMGFI_KEY"], "user_preferences": ["IMGFI_PRIORITY"]}
+    assert config.renamed_keys == {"tracker_config": {"IMGFI_KEY": "ONLYIMAGE_KEY"},
+                                   "user_preferences": {"IMGFI_PRIORITY": "ONLYIMAGE_PRIORITY"}}
+    backup = json.loads(next(tmp_path.glob("ittup.json.bak-*")).read_text(encoding="utf-8"))
+    assert backup["tracker_config"]["IMGFI_KEY"] == "abc"
+    assert backup["user_preferences"]["IMGFI_PRIORITY"] == 1
+    assert "create a key on https://onlyimage.org" in capsys.readouterr().out
+
+    assert Config(**data).tracker_config.ONLYIMAGE_KEY == "abc"
+
+
+def test_an_onlyimage_value_is_not_overwritten_by_an_imgfi_one(tmp_path):
+    config = imgfi_config(tracker_config={"ONLYIMAGE_KEY": "new"}, user_preferences={"ONLYIMAGE_PRIORITY": 6})
+    path = write(tmp_path / "ittup.json", config)
+
+    json_config = JsonConfig(path)
+    data = json_config.process()
+
+    assert data["tracker_config"]["ONLYIMAGE_KEY"] == "new"
+    assert data["user_preferences"]["ONLYIMAGE_PRIORITY"] == 6
+    assert json_config.renamed_keys == {}
+    assert json_config.obsolete_keys == {"tracker_config": ["IMGFI_KEY"], "user_preferences": ["IMGFI_PRIORITY"]}
+
+
+def test_an_imgfi_config_without_key_has_no_onlyimage_note(tmp_path, capsys):
+    path = write(tmp_path / "ittup.json", imgfi_config(tracker_config={"IMGFI_KEY": "no_key"}))
+
+    data = JsonConfig(path).process()
+
+    assert data["tracker_config"]["ONLYIMAGE_KEY"] == "no_key"
+    assert "onlyimage.org" not in capsys.readouterr().out

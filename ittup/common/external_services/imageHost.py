@@ -205,11 +205,11 @@ class LensDump(ImageUploader):
         return 'source'
 
 
-class ImgFi(ImageUploader):
+class OnlyImage(ImageUploader):
 
-    priority= config_settings.user_preferences.IMGFI_PRIORITY
+    priority= config_settings.user_preferences.ONLYIMAGE_PRIORITY
     def get_endpoint(self) -> str:
-        return "https://imgfi.com/api/1/upload"
+        return "https://onlyimage.org/api/1/upload"
 
     def get_data(self) -> dict:
         return {
@@ -313,7 +313,7 @@ class ImageUploaderFallback:
         if uploader_host == "PtScreens":
             return response['image']['url']
 
-        if uploader_host == "ImgFi":
+        if uploader_host == "OnlyImage":
             return response['image']['url']
 
         if uploader_host == "PassIMA":
@@ -343,7 +343,7 @@ class Build:
         self.FREE_IMAGE_KEY = config_settings.tracker_config.FREE_IMAGE_KEY
         self.LENSDUMP_KEY= config_settings.tracker_config.LENSDUMP_KEY
         self.PTSCREENS_KEY= config_settings.tracker_config.PTSCREENS_KEY
-        self.IMGFI_KEY = config_settings.tracker_config.IMGFI_KEY
+        self.ONLYIMAGE_KEY = config_settings.tracker_config.ONLYIMAGE_KEY
         self.PASSIMA_KEY = config_settings.tracker_config.PASSIMA_KEY
         self.IMARIDE_KEY = config_settings.tracker_config.IMARIDE_KEY
         self.extracted_frames = extracted_frames
@@ -360,7 +360,7 @@ class Build:
             (Freeimage, self.FREE_IMAGE_KEY),
             (PtScreens, self.PTSCREENS_KEY),
             (LensDump, self.LENSDUMP_KEY),
-            (ImgFi, self.IMGFI_KEY),
+            (OnlyImage, self.ONLYIMAGE_KEY),
             (PassIMA, self.PASSIMA_KEY),
             (ImaRide, self.IMARIDE_KEY),
         ]
@@ -456,7 +456,7 @@ class Build:
         description = "[center]\n"
 
         custom_console.bot_log(f"\n[STARTING IMAGE UPLOAD..]")
-        keys = [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY, self.PTSCREENS_KEY, self.IMGFI_KEY,
+        keys = [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY, self.PTSCREENS_KEY, self.ONLYIMAGE_KEY,
                 self.PASSIMA_KEY, self.IMARIDE_KEY]
         if not any(self.has_key(key) for key in keys):
             custom_console.bot_error_log("No image host API key found in settings.json, skip the upload")

@@ -10,9 +10,12 @@ The bot extracts screenshots from the video and uploads them to an image hosting
 | LensDump | [lensdump.com](https://lensdump.com) | `LENSDUMP_KEY` |
 | FreeImage | [freeimage.host](https://freeimage.host) | `FREE_IMAGE_KEY` |
 | ImgBB | [imgbb.com](https://imgbb.com) | `IMGBB_KEY` |
-| ImgFI | [imgfi.com](https://imgfi.com) | `IMGFI_KEY` |
+| OnlyImage | [onlyimage.org](https://onlyimage.org) | `ONLYIMAGE_KEY` |
 | PassIMA | [passtheima.ge](https://passtheima.ge) | `PASSIMA_KEY` |
 | ImaRide | [imageride.net](https://www.imageride.net) | `IMARIDE_KEY` |
+
+!!! note "From ImgFI to OnlyImage"
+    OnlyImage replaced ImgFI (imgfi.com). An `ittup.json` with `IMGFI_KEY` / `IMGFI_PRIORITY` is converted automatically: their values move to `ONLYIMAGE_KEY` / `ONLYIMAGE_PRIORITY` and the old names stay in the backup of the file. If the uploads to OnlyImage fail with the ImgFI key, create a key on [onlyimage.org](https://onlyimage.org) and put it in `ONLYIMAGE_KEY`.
 
 For each host: sign up on the site, generate the API key, paste it into `ittup.json`:
 
@@ -33,7 +36,7 @@ In `user_preferences` every host has a priority — **0 = first attempt**:
 "LENSDUMP_PRIORITY": 1,
 "FREE_IMAGE_PRIORITY": 2,
 "IMGBB_PRIORITY": 3,
-"IMGFI_PRIORITY": 4,
+"ONLYIMAGE_PRIORITY": 4,
 "PASSIMA_PRIORITY": 5,
 "IMARIDE_PRIORITY": 6,
 ```

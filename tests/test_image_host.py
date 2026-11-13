@@ -22,7 +22,7 @@ class FakeResponse:
 @pytest.fixture
 def only_imgbb(monkeypatch):
     """ ImgBB is the only host with an API key, no wait between the attempts """
-    for key in ("FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "IMGFI_KEY", "PASSIMA_KEY", "IMARIDE_KEY"):
+    for key in ("FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "ONLYIMAGE_KEY", "PASSIMA_KEY", "IMARIDE_KEY"):
         monkeypatch.setattr(config_settings.tracker_config, key, "no_key")
     monkeypatch.setattr(config_settings.tracker_config, "IMGBB_KEY", "imgbb-key")
     monkeypatch.setattr(imageHost.time, "sleep", lambda seconds: None)

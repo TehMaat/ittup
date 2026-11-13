@@ -57,11 +57,19 @@ They combine with `-u`, `-f` and `-scan`:
 
 ## Moderation
 
-When MediaInfo says that a file may not be what its name says, the bot still uploads it but asks the tracker to **moderate** it, even if your account is trusted: a staff member checks it before it goes online. Today this happens for a **possible fake REMUX**, a REMUX whose video track was encoded with x264/x265. The log says why:
+When MediaInfo says that a file may not be what its name says, the bot still uploads it but asks the tracker to **moderate** it, even if your account is trusted: a staff member checks it before it goes online. Today this happens for:
+
+- a **possible fake REMUX**: a REMUX whose video track was encoded with x264/x265;
+- a **possible WEBRip**: a WEB-DL, DLMux or WEBMux whose video track was encoded with x264/x265 CRF and no VBV limit, which a streaming service never does.
+
+The log says why:
 
 ```
 <> Warning: possible fake REMUX, the video track was encoded with 'x264 core 164 ...'
 Sent to moderation: possible fake REMUX: video encoded with x264 core 164 ...
+
+<> Warning: possible WEBRip, the video track was encoded with x264 crf=21.0, no VBV: a WEB-DL keeps the stream of the service. Check the source in the name
+Sent to moderation: possible WEBRip: x264 crf=21.0, no VBV
 ```
 
 The title, the type and the description don't change: the staff corrects, approves or rejects the torrent. The other warnings (unknown HDR format, PQ10, HYBRID) don't send the upload to moderation. If your account isn't trusted, every upload already waits for moderation.

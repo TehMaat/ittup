@@ -81,7 +81,7 @@ The log shows how many torrents it checked (`Duplicate check: N torrents on the 
 | `PREFERRED_LANG` | Preferred language code (ISO 3166, e.g. `it`) or `all`: the bot warns when the audio doesn't match |
 | `ANON` | **Anonymous** upload: your username doesn't appear on the torrent page |
 | `PERSONAL_RELEASE` | Marks every upload as a personal release (same as the `-personal` flag) |
-| `AUTO_MODERATION` | `True` (default) = a file that may not be what its name says (a possible fake REMUX) is uploaded and sent to the staff's moderation, see [Upload](../usage/upload.md#moderation). `False` = only a warning in the log |
+| `AUTO_MODERATION` | `True` (default) = a file that may not be what its name says (a possible fake REMUX or WEBRip) is uploaded and sent to the staff's moderation, see [Upload](../usage/upload.md#moderation). `False` = only a warning in the log |
 | `RELEASER_SIGN` | Your releaser signature, appended to the title (max 20 characters; see [Tags and titles](../usage/tags.md)) |
 | `TORRENT_COMMENT` | Comment embedded in the `.torrent` file |
 

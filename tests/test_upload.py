@@ -72,10 +72,11 @@ def video_upload(review_reasons: list[str], moderation: bool = False) -> dict:
     return upload_bot.data(show_id=1, imdb_id=2, tvdb_id=0, show_keywords_list="", video_info=video_info).data
 
 
-def test_a_fake_remux_is_sent_to_moderation(logged):
-    data = video_upload([FAKE_REMUX])
+@pytest.mark.parametrize("reason", [FAKE_REMUX, "possible WEBRip: x264 crf=21.0, no VBV"])
+def test_a_suspicious_file_is_sent_to_moderation(logged, reason):
+    data = video_upload([reason])
     assert data["mod_queue_opt_in"] == 1
-    assert logged == [f"Sent to moderation: {FAKE_REMUX}"]
+    assert logged == [f"Sent to moderation: {reason}"]
     # The staff decides: the title, the type and the public description don't change
     assert data["name"] == "Movie 2020 1080p BluRay REMUX AVC-GRP"
     assert data["type_id"] == 42

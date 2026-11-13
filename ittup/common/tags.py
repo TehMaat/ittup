@@ -682,18 +682,14 @@ class SearchTags(object):
         # # Search for signs in the base_name only at the end of the string
         base_name = re.sub(pattern, "", base_name, flags=re.IGNORECASE)
 
-        # Search for signs in the base_name_normalized
+        # Search for the sign at the end of base_name: '-', '_', '.' and spaces between the words of a sign
+        # are interchangeable, so 'IDN-CREW' also finds 'iDN_CreW' instead of stopping at 'CreW'
         for token in tokens_signs_list_sorted:
-            token = str(token)
-            pattern = re.escape(token)
+            words = [word for word in re.split(r"[-_. ]+", str(token)) if word]
+            if not words:
+                continue
+            pattern = r"[-_. ]+".join(re.escape(word) for word in words) + "$"
             match = re.search(pattern, base_name, re.IGNORECASE)
-
             if match:
-                # Sign must be the last words
-                base_name_len = len(base_name)
-                match_len = match.end() - base_name_len
-                if match_len == 0:
-                    # Capture any characters from the start to the end of base_name
-                    sign = base_name[match.start(): match.end()]
-                    return f"-{sign}"
+                return f"-{match.group(0)}"
         return ""

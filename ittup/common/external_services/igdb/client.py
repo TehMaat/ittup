@@ -6,6 +6,7 @@ from rich.table import Table
 from ittup.common.external_services.igdb.core.models.search import Game
 from ittup.common.external_services.igdb.core.api import IGDBapi
 from ittup.common.external_services.igdb.description import GameImages, game_bbcode
+from ittup.common.external_services.steam.client import SteamClient
 
 from ittup.core.media import Media
 from ittup.view import custom_console
@@ -97,11 +98,13 @@ class IGDBClient:
 
     def game_description(self, mygame: Game, content: Media)-> Game:
         """
-        The description of the chosen game, with the cover and the screenshots uploaded on the image hosts
+        The description of the chosen game, with the cover and the screenshots uploaded on the image hosts and,
+        for a PC game on Steam, the system requirements and the Italian description
         """
         cover, screenshots = GameImages(http=self.igdb.http_client,
                                         filename=content.display_name).upload_all(mygame)
-        mygame.description = game_bbcode(mygame, cover=cover, screenshots=screenshots)
+        steam = SteamClient(http=self.igdb.http_client).app(game=mygame, content=content)
+        mygame.description = game_bbcode(mygame, cover=cover, screenshots=screenshots, steam=steam)
         return mygame
 
 

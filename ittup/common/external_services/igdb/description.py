@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from ittup.common.external_services.igdb.core.models.search import Game
 from ittup.common.external_services.imageHost import UPLOAD_WORKERS, Build
 from ittup.common.external_services.sessions.session import MyHttp
+from ittup.common.external_services.steam.client import SteamApp
 from ittup.view import custom_console
 
 IGDB_IMAGE_URL = "https://images.igdb.com/igdb/image/upload/{size}/{image_id}.jpg"
@@ -101,10 +102,23 @@ def info_table(game: Game) -> str:
     return "[table]" + "".join(f"[tr][td][b]{label}[/b][/td][td]{value}[/td][/tr]" for label, value in rows) + "[/table]"
 
 
-def game_bbcode(game: Game, cover: str | None = None, screenshots: list[str] | None = None) -> str:
+def requirements(steam: SteamApp | None) -> str:
+    """ The minimum and recommended system requirements of a PC game on Steam """
+    if not steam or not (steam.minimum or steam.recommended):
+        return ""
+    parts = ["[b]Requisiti di sistema[/b]"]
+    if steam.minimum:
+        parts.append(f"[b]Minimi[/b]\n{steam.minimum}")
+    if steam.recommended:
+        parts.append(f"[b]Consigliati[/b]\n{steam.recommended}")
+    return "\n\n".join(parts)
+
+
+def game_bbcode(game: Game, cover: str | None = None, screenshots: list[str] | None = None,
+                steam: SteamApp | None = None) -> str:
     """
-    The description of a game, in sections: cover, title and year, information, description, screenshots,
-    trailer and link to IGDB. A section without data is left out
+    The description of a game, in sections: cover, title and year, information, description, system
+    requirements, screenshots, trailer and links to IGDB and Steam. A section without data is left out
     """
     sections = []
     if cover:
@@ -117,8 +131,14 @@ def game_bbcode(game: Game, cover: str | None = None, screenshots: list[str] | N
     if table:
         sections.append(table)
 
-    if game.summary:
-        sections.append(f"[b]Descrizione[/b]\n{game.summary}")
+    # The Italian description of Steam, when there is one
+    summary = steam.short_description if steam and steam.short_description else game.summary
+    if summary:
+        sections.append(f"[b]Descrizione[/b]\n{summary}")
+
+    system_requirements = requirements(steam)
+    if system_requirements:
+        sections.append(system_requirements)
 
     if screenshots:
         sections.append("[b]Screenshot[/b]\n[center]" + "".join(
@@ -129,7 +149,10 @@ def game_bbcode(game: Game, cover: str | None = None, screenshots: list[str] | N
     if trailer:
         sections.append(f"[spoiler=Trailer][center][youtube]{trailer.video_id}[/youtube][/center][/spoiler]")
 
-    if game.url.startswith("http"):
-        sections.append(f"[url={game.url}]IGDB[/url]")
+    links = [f"[url={game.url}]IGDB[/url]"] if game.url.startswith("http") else []
+    if steam:
+        links.append(f"[url={steam.url}]Steam[/url]")
+    if links:
+        sections.append(" · ".join(links))
 
     return "\n\n".join(sections) + "\n"

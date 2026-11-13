@@ -5,6 +5,7 @@ from rich.table import Table
 
 from ittup.common.external_services.igdb.core.models.search import Game
 from ittup.common.external_services.igdb.core.api import IGDBapi
+from ittup.common.external_services.igdb.description import GameImages, game_bbcode
 
 from ittup.core.media import Media
 from ittup.view import custom_console
@@ -94,16 +95,13 @@ class IGDBClient:
         return self.igdb.login()
 
 
-    @staticmethod
-    def game_description(mygame: Game)-> Game:
-
-        bbcode = mygame.summary or ''
-        trailer = mygame.trailer
-        if trailer:
-            bbcode += (f"\n\n[b][spoiler=Spoiler: PLAY GAME TRAILER][center][youtube]{trailer.video_id}"
-                       f"[/youtube][/center][/spoiler][/b]\n")
-
-        mygame.description = bbcode
+    def game_description(self, mygame: Game, content: Media)-> Game:
+        """
+        The description of the chosen game, with the cover and the screenshots uploaded on the image hosts
+        """
+        cover, screenshots = GameImages(http=self.igdb.http_client,
+                                        filename=content.display_name).upload_all(mygame)
+        mygame.description = game_bbcode(mygame, cover=cover, screenshots=screenshots)
         return mygame
 
 
@@ -121,9 +119,7 @@ class IGDBClient:
     def preview_results(self, results: list)-> Game | None:
         if results:
             # Only one game was chosen from the menù
-            mygame = self.viewer.to_game(results)
-            # Add a description
-            mygame = self.game_description(mygame=mygame[0])
+            mygame = self.viewer.to_game(results)[0]
             # Show the results
             self.viewer.view_results(igdb_results=[mygame])
             return mygame
@@ -158,10 +154,7 @@ class IGDBClient:
                    custom_console.bot_question_log("* IGDB Not found * Re-try\n")
             else:
                 # User makes their choices
-                mygame = self.viewer.to_game(igdb_results)
-                # Add a description to the chosen game
-                mygame = self.game_description(mygame=mygame[user_choice])
-                return mygame
+                return self.viewer.to_game(igdb_results)[user_choice]
 
 
     def broader(self, game_title: str)-> (list, str):
@@ -204,12 +197,15 @@ class IGDBClient:
         # Search by IGDB id in the title string
         if content.igdb_id:
             search_result = self.search_by_id(igdb_id=content.igdb_id)
-            return self.preview_results(results=search_result)
+            mygame = self.preview_results(results=search_result)
+        else:
+            # Try a broader search...
+            igdb_results, candidate = self.broader(game_title=content.game_title)
+            # Show the results and ask the user to choose an IGDB ID if there are multiple options or no results
+            mygame = self.user_enter_igdb(igdb_results=igdb_results, content=content, candidate=candidate)
 
-        # Try a broader search...
-        igdb_results, candidate = self.broader(game_title=content.game_title)
-        # Show the results and ask the user to choose an IGDB ID in case there are multiple options or no results
-        return self.user_enter_igdb(igdb_results=igdb_results, content=content, candidate=candidate)
+        # Add a description to the chosen game
+        return self.game_description(mygame=mygame, content=content) if mygame else None
 
 
     @staticmethod

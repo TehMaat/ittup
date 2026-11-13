@@ -32,7 +32,6 @@ def test_user_enter_igdb_uses_the_chosen_result(monkeypatch):
 
     assert game.id == 202
     assert game.name == "Game Two"
-    assert game.description.startswith("Second summary")
 
 
 def test_user_enter_igdb_first_result(monkeypatch):
@@ -41,7 +40,7 @@ def test_user_enter_igdb_first_result(monkeypatch):
     game = client.user_enter_igdb(igdb_results=fake_results(), content=content(), candidate="Game One")
 
     assert game.id == 101
-    assert game.description.startswith("First summary")
+    assert game.name == "Game One"
 
 
 def test_user_enter_igdb_skip(monkeypatch):

@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 
 from ittup.common.external_services.igdb.client import GAME_FIELDS, IGDBClient
+from ittup.common.external_services.igdb.description import game_bbcode
 from ittup.common.external_services.igdb.core.models.search import ExternalGame, Game, Video
 
 
@@ -68,14 +69,14 @@ def test_without_trailer_in_the_name_the_first_video():
 
 
 def test_a_single_trailer_in_the_description():
-    description = IGDBClient.game_description(Game.from_igdb(igdb_game())).description
+    description = game_bbcode(Game.from_igdb(igdb_game()))
 
     assert description.count("[youtube]") == 1
     assert "[youtube]trailer1[/youtube]" in description
 
 
 def test_no_video_no_trailer_section():
-    description = IGDBClient.game_description(Game.from_igdb(igdb_game(videos=[]))).description
+    description = game_bbcode(Game.from_igdb(igdb_game(videos=[])))
 
     assert "[youtube]" not in description
     assert "No trailers" not in description
@@ -108,7 +109,7 @@ def test_every_field_in_a_single_query(monkeypatch):
     sent = requests(monkeypatch, client)
     monkeypatch.setattr(client.viewer, "view_results", lambda igdb_results: None)
 
-    game = client.game(content=SimpleNamespace(igdb_id=1877))
+    game = client.game(content=SimpleNamespace(igdb_id=1877, display_name="Cyberpunk 2077"))
 
     # No request to game_videos for each video: one query to games
     assert [endpoint for endpoint, _ in sent] == ["games"]

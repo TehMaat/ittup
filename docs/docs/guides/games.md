@@ -34,3 +34,17 @@ The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`
 
 !!! tip "Wrong category?"
     If the bot mistakes the game for a movie, force the category with `-force game`.
+
+## 4. Description
+
+The torrent description is built from IGDB, in sections:
+
+1. the cover, centered;
+2. title and release year;
+3. a table with platforms, genre, developer, publisher, release date and game modes (a row without data is left out);
+4. the description (the IGDB `summary`);
+5. up to 4 screenshots;
+6. the trailer, inside a spoiler: the first video with "trailer" in its name, otherwise the first video;
+7. the link to the IGDB page.
+
+The cover and the screenshots are downloaded from IGDB and uploaded again on the [image hosts](../config/imagehosts.md) with a key, in the same order of priority as the screenshots of the videos. They are decorative: without an image host key, or when an image fails, the description goes without it and the upload goes on, even with `SCREENSHOTS_QUORUM` on.

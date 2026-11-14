@@ -472,15 +472,18 @@ class System:
     def get_size(folder_path: str) -> tuple[float, str]:
         """
         Returns the size of a folder or file in GB or MB
+
+        Symlinks are followed like torf does when it builds the torrent (files and folders),
+        so a folder of symlinks has the size of the files they point to; broken links are skipped
         """
         if os.path.isfile(folder_path):
             total_size = os.path.getsize(folder_path)
         else:
             total_size = 0
-            for dir_path, _, filenames in os.walk(folder_path):
+            for dir_path, _, filenames in os.walk(folder_path, followlinks=True):
                 for file in filenames:
                     file_path = os.path.join(dir_path, file)
-                    if not os.path.islink(file_path):
+                    if os.path.isfile(file_path):
                         total_size += os.path.getsize(file_path)
 
         return (round(total_size / (1024 ** 3), 2), 'GB') if total_size > 1024 ** 3 \

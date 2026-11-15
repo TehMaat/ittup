@@ -20,6 +20,9 @@ RESOLUTION_THRESHOLDS = (
     ("576p", 960, 540),
 )
 
+# Below 576p the video is SD: the tracker has no resolution lower than 480p, so a 736x414 or a 640x360 video is 480p
+SD_RESOLUTION = "480p"
+
 # The interlaced resolutions of the tracker: 2160p and 720p are always progressive
 INTERLACED_RESOLUTIONS = {"1080p": "1080i", "576p": "576i", "480p": "480i"}
 
@@ -65,7 +68,7 @@ class Media:
         self._torrent_pack: bool = False
         self._pack: str | None = None
         self._doc_description: str | None = None
-        self._game_nfo: str | None = None
+        self._nfo: str | None = None
         self._tmdb_id: int | None = None
         self._imdb_id: int | None = None
         self._tvdb_id: int | None = None
@@ -75,6 +78,8 @@ class Media:
         self.mediainfo_source: str | None = None
         # What the file names should say according to the title and MediaInfo (RENAME_FILES)
         self.title_info = None
+        # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
+        self.review_reasons: list[str] = []
 
     def move_to(self, path: str) -> None:
         """
@@ -106,6 +111,9 @@ class Media:
         self.torrent_name = os.path.basename(path)
 
         if is_folder:
+            # The NFO is in the renamed folder now
+            if self.nfo:
+                self.nfo = os.path.join(path, os.path.basename(self.nfo))
             file = os.path.basename(old_file_name)
             self.file_name = os.path.join(path, renamed_files.get(file, file))
             meta = [{**item, "path": [renamed_files.get(item["path"][0], item["path"][0])]}
@@ -141,12 +149,13 @@ class Media:
         return self._platform_list
 
     @property
-    def game_nfo(self) -> str:
-        return self._game_nfo
+    def nfo(self) -> str | None:
+        """Path of the NFO of the release, sent to the tracker with the torrent"""
+        return self._nfo
 
-    @game_nfo.setter
-    def game_nfo(self, value):
-        self._game_nfo = value
+    @nfo.setter
+    def nfo(self, value):
+        self._nfo = value
 
     @property
     def game_title(self):
@@ -379,11 +388,11 @@ class Media:
     @staticmethod
     def resolution_from_size(width: int, height: int | None, interlaced: bool = False) -> str:
         """
-        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), the height under 576p.
+        The resolution of a video from its width and height (RESOLUTION_THRESHOLDS), 480p under 576p (SD_RESOLUTION).
         An interlaced video is 1080i, 576i or 480i (INTERLACED_RESOLUTIONS)
         """
         resolution = next((resolution for resolution, min_width, min_height in RESOLUTION_THRESHOLDS
-                           if width >= min_width or (height and height >= min_height)), f"{height}p")
+                           if width >= min_width or (height and height >= min_height)), SD_RESOLUTION)
         return INTERLACED_RESOLUTIONS.get(resolution, resolution) if interlaced else resolution
 
     @property

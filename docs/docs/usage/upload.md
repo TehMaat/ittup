@@ -20,6 +20,8 @@ Creates **a single torrent with the folder contents**, named after the folder. I
 
 Use it for: full seasons, multi-part movies, content with companion files.
 
+Only the files directly in the folder go into the torrent. A series with a folder for each season (`Show/Show.S01…/`, `Show/Show.S02…/`) and no video file of its own stops with an error: upload one season at a time with `-f`, or the whole series with `-scan`.
+
 ## `-scan` — everything inside a path
 
 ```bash
@@ -27,6 +29,8 @@ ittup -scan "/home/ITT/upload"
 ```
 
 It's `-u` and `-f` combined: it analyzes **every file and every folder** inside the path (recursively) and processes everything, one torrent per item found. Items are uploaded in alphanumeric order (`E2` before `E10`).
+
+A series with a folder for each season and no video file of its own is split into its seasons: one season pack for each folder with a season in its name (`Show.S01…`, `Show.S02…`), also when you scan the folder that holds the series. Each pack takes the season of its own folder, even inside a folder named `Show.S01-S02`.
 
 !!! tip "Too much content?"
     On very large folders you can cap the number of processed items with `FAST_LOAD` in the [Advanced options](../config/options.md).
@@ -43,12 +47,34 @@ They combine with `-u`, `-f` and `-scan`:
 | `-personal` | Marks the upload as a **personal release** |
 | `-fl25` `-fl50` `-fl75` `-fl100` | Uploads as **freeleech** 25, 50, 75 or 100% (`--freeleech25`…). The tracker applies it only if your account can set the freeleech |
 | `-int` | Uploads as an **internal release** (`--internal`) |
+| `-mod` | Asks the tracker to **moderate** the upload (`--moderation`): the torrent waits for the staff's approval |
 | `-force <category>` | Forces the category: `movie`, `tv`, `game`, `edicola` (without argument: `movie`) |
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |
 
 !!! note "`-int` and freeleech need the permission"
     The tracker applies `-int` and `-fl25`…`-fl100` only to staff and to the members of an internal group: for the other accounts it uploads the torrent without them, with no error. After the upload the bot reads the torrent back and warns you if they were not applied.
+
+## Moderation
+
+When MediaInfo says that a file may not be what its name says, the bot still uploads it but asks the tracker to **moderate** it, even if your account is trusted: a staff member checks it before it goes online. Today this happens for:
+
+- a **possible fake REMUX**: a REMUX whose video track was encoded with x264/x265;
+- a **possible WEBRip**: a WEB-DL, DLMux or WEBMux whose video track was encoded with x264/x265 CRF and no VBV limit, which a streaming service never does.
+
+The log says why:
+
+```
+<> Warning: possible fake REMUX, the video track was encoded with 'x264 core 164 ...'
+Sent to moderation: possible fake REMUX: video encoded with x264 core 164 ...
+
+<> Warning: possible WEBRip, the video track was encoded with x264 crf=21.0, no VBV: a WEB-DL keeps the stream of the service. Check the source in the name
+Sent to moderation: possible WEBRip: x264 crf=21.0, no VBV
+```
+
+The title, the type and the description don't change: the staff corrects, approves or rejects the torrent. The other warnings (unknown HDR format, PQ10, HYBRID) don't send the upload to moderation. If your account isn't trusted, every upload already waits for moderation.
+
+With `"AUTO_MODERATION": "False"` in the [Advanced options](../config/options.md) the bot only shows the warning, as before. `-mod` always asks for moderation.
 
 ## Characters refused by the tracker
 
@@ -72,6 +98,21 @@ The.Matrix.1999.tt0133093.1080p.mkv
 The `{imdb-tt…}` format is the one used by Radarr, Sonarr and Plex, `[tmdbid-…]` the Jellyfin one; round brackets, `=` instead of the dash (Emby) and the IMDB ID alone (`tt0133093`) work too. With the IMDB ID only, the bot asks TMDB for the matching TMDB ID; with the TMDB ID only, it takes the IMDB ID from TMDB. Both are sent to the tracker. The tag is removed from the title shown on the tracker.
 
 Without an ID, the bot searches TMDB for the title taken from the name. When it isn't found it retries with the whole name before the year (`(500) Days of Summer`) and with the titles in brackets (`Lo Chiamavano Jeeg Robot (They Call Me Jeeg)`), and finally with a year tolerance: one year for movies (end-of-year releases), the year of a later season for TV shows.
+
+## Titles not found on TMDB
+
+When TMDB doesn't find the title, the bot asks for the TMDB ID (`0` skips it). The ID you type is saved in `ittup_config/manual_ids.json`, so the next upload of the same title is not asked again: the other episodes of the same show, or the same movie uploaded later. The bot writes `TMDB ID … from the IDs typed in a previous upload` in the log.
+
+- A movie needs the same title and year; a TV show also matches when the name of the episode has no year.
+- With `SKIP_TMDB` the bot doesn't ask, but it still uses the IDs saved before.
+- An ID in the file name wins over the saved one. A skip (`0`) is not saved.
+- Typed a wrong ID? Remove its line from `manual_ids.json` (or delete the file). If the file can't be read, the bot keeps it as `manual_ids.json.bad` and starts a new one.
+
+```json
+{
+    "tv|bake off italia|": {"tmdb_id": 12345, "title": "Bake Off Italia - Dolci in forno", "saved": "2026-11-07"}
+}
+```
 
 ## Full example
 

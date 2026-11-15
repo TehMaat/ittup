@@ -92,7 +92,7 @@ class GameManager:
                 continue
 
             # Send to the tracker
-            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath, nfo_path=content.game_nfo)
+            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath, nfo_path=content.nfo)
 
             bittorrent_list.append(
                 BittorrentData(

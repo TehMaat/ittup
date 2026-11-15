@@ -71,6 +71,7 @@ The log shows how many torrents it checked (`Duplicate check: N torrents on the 
 "PREFERRED_LANG": "all",
 "ANON": "False",
 "PERSONAL_RELEASE": "False",
+"AUTO_MODERATION": "True",
 "RELEASER_SIGN": "",
 "TORRENT_COMMENT": "no_comment",
 ```
@@ -80,6 +81,7 @@ The log shows how many torrents it checked (`Duplicate check: N torrents on the 
 | `PREFERRED_LANG` | Preferred language code (ISO 3166, e.g. `it`) or `all`: the bot warns when the audio doesn't match |
 | `ANON` | **Anonymous** upload: your username doesn't appear on the torrent page |
 | `PERSONAL_RELEASE` | Marks every upload as a personal release (same as the `-personal` flag) |
+| `AUTO_MODERATION` | `True` (default) = a file that may not be what its name says (a possible fake REMUX or WEBRip) is uploaded and sent to the staff's moderation, see [Upload](../usage/upload.md#moderation). `False` = only a warning in the log |
 | `RELEASER_SIGN` | Your releaser signature, appended to the title (max 20 characters; see [Tags and titles](../usage/tags.md)) |
 | `TORRENT_COMMENT` | Comment embedded in the `.torrent` file |
 
@@ -179,7 +181,7 @@ Folder where the bot archives the generated `.torrent` files, inside the `ITT` s
 |---|---|
 | `YOUTUBE_PREF_LANG` | Country/language code (ISO 3166, e.g. `IT`) used to search trailers on YouTube |
 | `SKIP_YOUTUBE` | Skips the YouTube trailer search entirely |
-| `SKIP_TMDB` | Skips the TMDB lookup (not recommended for videos) |
+| `SKIP_TMDB` | Doesn't ask for the TMDB ID of a title TMDB doesn't find (not recommended for videos); the IDs typed in previous uploads are still used ([Titles not found on TMDB](../usage/upload.md#titles-not-found-on-tmdb)) |
 
 ## FAST_LOAD
 

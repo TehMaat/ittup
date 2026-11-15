@@ -44,6 +44,12 @@ class Auto:
 
             if self.auto == "folder":
                 # -f command (single folder series or 'saga')
+                if self.season_folders(self.path):
+                    # -f uploads the files of the folder, not the ones in its subfolders (#116)
+                    custom_console.bot_error_log(
+                        f"'{os.path.basename(self.path)}' has a folder for each season and no video file of its own: "
+                        "upload one season at a time with -f <season folder>, or all of them with -scan")
+                    return []
                 return self._lists(files_path=[], subfolders_path=[self.path])
             return None
         else:
@@ -83,6 +89,9 @@ class Auto:
                         subfolders_path = [
                             os.path.join(self.path, subdir) for subdir in sub_dirs
                         ]
+            # A series with a folder for each season: a pack for each season (#116)
+            subfolders_path = [season for folder in subfolders_path
+                               for season in self.season_folders(folder) or [folder]]
         return self._lists(files_path=files_path, subfolders_path=subfolders_path)
 
     def _lists(self, files_path: list, subfolders_path: list):
@@ -106,6 +115,19 @@ class Auto:
             int: The depth level of the path, where depth < 1 indicates a maximum of one level of subfolders
         """
         return path[len(self.path):].count(os.sep)
+
+    @staticmethod
+    def season_folders(folder: str) -> list[str]:
+        """
+        The season folders of a series: the subfolders with a season in the name ('Show.S01..') and video
+        files, when the folder has no video file of its own. Empty for any other folder
+        """
+        if Auto.list_video_files(folder):
+            return []
+        subfolders = (os.path.join(folder, name) for name in os.listdir(folder))
+        return sorted((path for path in subfolders
+                       if os.path.isdir(path) and ManageTitles.season_pack(os.path.basename(path))
+                       and Auto.list_video_files(path)), key=System.natural_key)
 
     @staticmethod
     def list_video_files(manual_path: str) -> list:

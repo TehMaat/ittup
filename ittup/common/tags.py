@@ -12,29 +12,49 @@ from ittup.common.rename import TitleInfo
 from ittup.core.media import Media
 from ittup.view import custom_console
 
-# From hdr format
-hdr_map = {
-    "DOLBY VISION": "DV",
-    "DOLBY VISION DV": "DV",
-    "DOLBY VISION HDR": "DV HDR",
-    "DOLBY VISION HDR10": "DV HDR10",
-    "DOLBY VISION HDR10+": "DV HDR10+",
-    "HDR10PLUS": "HDR10+",
-    "HDRPLUS+": "HDR10+",
-    "HDR10+": "HDR10+",
-    "HDR10": "HDR10",
-    "BLU-RAY / HDR10": "HDR10",
-    "BLU-RAY / HDR10+": "HDR10+",
-    "HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10 / HDR10": "HDR10",
-    "HDR10 / HDR10+": "HDR10+",
-    "HDR10 / HDR10 / HDR10+": "HDR10+",
-    "SMPTE ST 2086": "HDR10",
-    "SMPTE ST 2094": "HDR10+",
+# HDR tags from the parts of the MediaInfo HDR format, split on " / " (e.g. "Dolby Vision / SMPTE ST 2094 App 4",
+# "HDR10 / HDR10+", "Blu-ray / HDR10"): each part is read on its own, so every combination gets a tag
+HDR10PLUS_FORMATS = ("SMPTE ST 2094", "SMPTE ST 2094 APP 4")
+HDR10_FORMATS = ("SMPTE ST 2086",)
+# Parts with no HDR tag of their own: the Blu-ray compatibility of Dolby Vision profile 7
+NEUTRAL_HDR_FORMATS = ("", "BLU-RAY")
 
-    "DOVI": "DV",
-    "HDR": "HDR",
-}
+
+def hdr_part(part: str) -> str | None:
+    """HDR tag of one part of the MediaInfo HDR format: '' when it adds nothing, None when it is unknown"""
+    part = part.strip().upper()
+    if part.startswith(("DOLBY VISION", "DOVI")):
+        return "DV"
+    if part.startswith(("HDR10+", "HDR10PLUS", "HDRPLUS")) or part in HDR10PLUS_FORMATS:
+        return "HDR10+"
+    if part.startswith("HDR10") or part in HDR10_FORMATS:
+        return "HDR10"
+    if part == "HDR":
+        return "HDR"
+    if part in NEUTRAL_HDR_FORMATS:
+        return ""
+    return None
+
+
+def hdr_tag(*formats: str) -> tuple[str, list[str]]:
+    """
+    HDR tag from the MediaInfo HDR formats (commercial name and format): 'DV' plus the best of HDR10+/HDR10.
+    Returns the tag and the unknown parts. An unknown format never leaves the tag empty: 'DV' or at least 'HDR'
+    """
+    tags = set()
+    unknown = []
+    for hdr_format in formats:
+        for part in hdr_format.split(" / "):
+            tag = hdr_part(part)
+            if tag is None:
+                if part.strip() not in unknown:
+                    unknown.append(part.strip())
+            elif tag:
+                tags.add(tag)
+    base = next((tag for tag in ("HDR10+", "HDR10", "HDR") if tag in tags), "")
+    tag = " ".join(t for t in ("DV" if "DV" in tags else "", base) if t)
+    return tag or "HDR", unknown
+
 
 audio_translate = {
     "AC3": "DD",
@@ -58,9 +78,11 @@ audio_channels = {1: "1.0", 2: "2.0", 6: "5.1", 8: "7.1"}
 
 # Audio codecs from the best to the worst: only the best ones go in the title
 audio_rank = ["TrueHD", "DTS-HD MA", "FLAC", "PCM", "DTS-ES", "DTS", "DD+", "DD", "AAC", "HE-AAC", "Opus", "MPEG"]
-# The title keeps the best ITA codec and the best codec in the original language, then fills up to
-# MAX_AUDIO_CODECS with the tracks with no language. Tracks in other languages only add their flag
+# The title keeps the best codec of each written language, then fills up to MAX_AUDIO_CODECS with the
+# tracks with no language
 MAX_AUDIO_CODECS = 2
+# Up to MAX_AUDIO_LANGUAGES all the audio languages are written; with more only ITA and ENG and MULTI
+MAX_AUDIO_LANGUAGES = 2
 # Original language (TMDB ISO 639-1) when it is not known yet
 DEFAULT_ORIGINAL_LANGUAGE = "en"
 
@@ -74,6 +96,8 @@ video_family = {
 # DLMUX is in the "remux" category but it is a WEB-DL
 UNTOUCHED_TAGS = {"REMUX", "BDREMUX", "BDMUX", "VU", "UNTOUCHED", "DVDMUX", "FULL DISC"}
 WEB_TAGS = {"WEB-DL", "WEB", "WEBDL", "WEB-DLMUX", "WEBDLMUX", "WEB-MUX", "WEBMUX", "DLMUX", "HDTV"}
+# The WEB tags whose video is the stream of the service: HDTV is a capture, often encoded
+WEB_DL_TAGS = WEB_TAGS - {"HDTV"}
 ENCODE_TAGS = {"ENCODE", "WEBRIP", "BDRIP", "BRRIP", "DVDRIP", "UHDRIP", "FHDRIP", "WEB-DLRIP", "WEBDLRIP"}
 
 # How each release type writes the 264/265 codec
@@ -128,6 +152,8 @@ class SearchTags(object):
         # The source and remux tags read from MediaInfo when the file name has no source
         self.mediainfo_tags: dict[str, list[str]] = {}
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
+        # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
+        self.review_reasons: list[str] = []
 
         self.TAG_TYPES: dict = TAGS_LIST
 
@@ -405,19 +431,13 @@ class SearchTags(object):
         rank = len(audio_rank) - audio_rank.index(codec) if codec in audio_rank else 0
         return rank, atmos, channel_s
 
-    def is_original_language(self, audio: dict) -> bool:
-        codes = [str(code).lower() for code in audio.get('other_language', []) + [audio.get('language') or '']]
-        return self.original_language in codes
-
     def mediainfo_audio(self, category: str) -> dict:
         languages = []
-        original_languages = []
-        # [(score, label, language, original language)]
+        # [(score, label, language)]
         tracks = []
         if self.mediafile.audio_track:
             for audio in self.mediafile.audio_track:
                 language = self.audio_language(audio)
-                original = self.is_original_language(audio)
                 other_format = audio.get('other_format', [])
                 if other_format:
                     codec_translated = audio_translate.get(other_format[0], '')
@@ -431,33 +451,30 @@ class SearchTags(object):
                     # Add channels
                     ch = audio_channels.get(channel_s, "")
                     tracks.append((self.audio_score(codec_translated, bool(atmos), channel_s),
-                                   f"{codec_translated} {ch} {atmos}".strip(), language, original))
+                                   f"{codec_translated} {ch} {atmos}".strip(), language))
 
                 # Add flags
                 if language:
                     languages.append(language)
-                    if original:
-                        original_languages.append(language)
                 languages = list(dict.fromkeys(languages))
 
-        # Flags: only ITA and the original language (the first language of the file without them),
-        # MULTI stands for the other languages
-        flags = list(dict.fromkeys(language for language in ["ITA"] + original_languages[:1] if language in languages))
-        flags = flags or languages[:1]
+        # Flags: up to MAX_AUDIO_LANGUAGES all the languages, ITA and ENG first. With more only ITA and ENG
+        # (the first language of the file without them) and MULTI stands for the other languages
+        if len(languages) <= MAX_AUDIO_LANGUAGES:
+            flags = list(dict.fromkeys(language for language in ["ITA", "ENG"] + languages if language in languages))
+        else:
+            flags = [language for language in ["ITA", "ENG"] if language in languages] or languages[:1]
         if len(languages) > len(flags):
             self.tags_dict.update({'multi': 'MULTI'})
         else:
             self.tags_dict.pop('multi', None)
 
-        # Best ITA codec + best original language codec (or the codec of the flag written without them),
-        # then the tracks with no language up to MAX_AUDIO_CODECS
+        # Best codec of each flag, then the tracks with no language up to MAX_AUDIO_CODECS
         best_first = sorted(tracks, key=lambda track: track[0], reverse=True)
-        picked = [track for track in best_first if track[2] == "ITA"][:1]
-        picked += [track for track in best_first if track[3]][:1]
-        picked += [track for track in best_first if track[2] in flags][:1]
+        picked = [track for flag in flags for track in [track for track in best_first if track[2] == flag][:1]]
         picked += [track for track in best_first if track[2] is None]
         audio_codecs = []
-        for _, label, _, _ in picked:
+        for _, label, _ in picked:
             if label not in audio_codecs and len(audio_codecs) < MAX_AUDIO_CODECS:
                 audio_codecs.append(label)
         audio_codecs.extend(flags)
@@ -526,6 +543,20 @@ class SearchTags(object):
         families &= {"264", "265"}
         return families.pop() if len(families) == 1 else None
 
+    def web_dl_source(self) -> bool:
+        """
+        The name says WEB-DL, DLMux, WEBMux...: the video should be the stream of the service
+        """
+        tags = self.tags_dict.get('source', []) + self.tags_dict.get('remux', [])
+        return bool({str(tag).upper() for tag in tags} & WEB_DL_TAGS)
+
+    def add_review_reason(self, reason: str) -> None:
+        """
+        A reason to ask the tracker to moderate the upload: the file may not be what its name says
+        """
+        if reason not in self.review_reasons:
+            self.review_reasons.append(reason)
+
     @staticmethod
     def encoder_signature(video: dict) -> str | None:
         """
@@ -541,6 +572,32 @@ class SearchTags(object):
         if "cpuid=" in settings or "ctu=" in settings:
             return "265"
         return None
+
+    @staticmethod
+    def home_encode_settings(video: dict) -> str | None:
+        """
+        x264/x265 settings of an encode with CRF and no VBV limit (es. 'x264 crf=21.0, no VBV'), None otherwise.
+        A streaming service always caps the bitrate (VBV): a WEB-DL with these settings was encoded again
+        """
+        family = SearchTags.encoder_signature(video)
+        if not family:
+            return None
+        settings = {}
+        for item in str(video.get('encoding_settings') or '').split('/'):
+            key, separator, value = item.strip().partition('=')
+            if separator:
+                settings[key.strip().lower()] = value.strip()
+        if settings.get('rc', '').lower() != 'crf' or not settings.get('crf'):
+            return None
+        # x264 writes vbv_maxrate only with a limit, x265 always writes vbv-maxrate (0 = no limit)
+        maxrate = settings.get('vbv_maxrate', settings.get('vbv-maxrate'))
+        if maxrate is not None:
+            try:
+                if float(maxrate) > 0:
+                    return None
+            except ValueError:
+                return None
+        return f"x{family} crf={settings['crf']}, no VBV"
 
     @staticmethod
     def normalize_other_codec(video: dict, filename: str) -> str:
@@ -582,12 +639,20 @@ class SearchTags(object):
         # The encoder in MediaInfo is only a check: it is never read on a WEB-DL
         if self.release_type == "untouched":
             if self.encoder_signature(video):
+                encoder = video.get('writing_library') or 'x' + family
                 custom_console.bot_warning_log(
-                    f"<> Warning: possible fake REMUX, the video track was encoded with"
-                    f" '{video.get('writing_library') or 'x' + family}'")
+                    f"<> Warning: possible fake REMUX, the video track was encoded with '{encoder}'")
+                self.add_review_reason(f"possible fake REMUX: video encoded with {encoder}")
             label = "untouched"
         elif self.release_type in ("encode", "web"):
             label = self.release_type
+            if self.release_type == "web" and self.web_dl_source():
+                home_encode = self.home_encode_settings(video)
+                if home_encode:
+                    custom_console.bot_warning_log(
+                        f"<> Warning: possible WEBRip, the video track was encoded with {home_encode}:"
+                        f" a WEB-DL keeps the stream of the service. Check the source in the name")
+                    self.add_review_reason(f"possible WEBRip: {home_encode}")
         else:
             label = "encode" if self.encoder_signature(video) else "web"
 
@@ -604,33 +669,24 @@ class SearchTags(object):
                 bit_depth = video.get('bit_depth', "")
                 transfer_characteristics = video.get('transfer_characteristics', "")
                 # Check hdr
-                if hdr_format_commercial:
-                    hdr = ''
-                    if hdr_format_commercial.upper() in hdr_map:
-                        hdr = hdr_map[hdr_format_commercial.upper()]
-
-                    # if hdr not in hdr_map:
-                    if not hdr:
+                if hdr_format_commercial or hdr_format:
+                    hdr, unknown = hdr_tag(hdr_format_commercial, hdr_format)
+                    custom_console.bot_log(f"Hdr format: '{hdr_format}'")
+                    custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                    if unknown:
                         custom_console.bot_warning_log(
-                            f"<> HDR Warning: '{hdr_format_commercial}' not found in hdr_map")
-                    else:
-                        custom_console.bot_log(f"Hdr format: '{hdr_format}'")
-                        custom_console.bot_log(f"Hdr format commercial: '{hdr_format_commercial}'")
+                            f"<> HDR Warning: unknown HDR format {unknown} in '{hdr_format_commercial}',"
+                            f" the tag is '{hdr}'")
 
-                    if 'DOLBY VISION' in hdr_format_commercial.upper() or 'DOLBY VISION' in hdr_format.upper():
-                        # Search for fake remux
-                        if any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
-                            if self.tags_dict.get('remux', ''):
-                                remux = self.tags_dict.get('remux', '')
-                                remux.append('HYBRID')
-                                self.tags_dict.update({'remux': remux})
-                                custom_console.bot_warning_log(
-                                    f"<> Warning: HYBRID REMUX with {other_hdr_format}")
-                                hdr = f"DOLBY VISION {hdr}"
-                                return {category: f"{hdr_map.get(hdr, '*HDR')}"}
-
-                        hdr = f"DOLBY VISION {hdr}"
-                    return {category: hdr_map.get(hdr, '*HDR')}
+                    # Search for fake remux
+                    if hdr.startswith("DV") and any("dvhe.08" in s or "Profile 8" in s for s in other_hdr_format):
+                        if self.tags_dict.get('remux', ''):
+                            remux = self.tags_dict.get('remux', '')
+                            remux.append('HYBRID')
+                            self.tags_dict.update({'remux': remux})
+                            custom_console.bot_warning_log(
+                                f"<> Warning: HYBRID REMUX with {other_hdr_format}")
+                    return {category: hdr}
                 else:
                     if "2020" in colour_primaries and "2020" in matrix_coefficients:
                         if bit_depth == 10 and transfer_characteristics.strip() == 'PQ':
@@ -683,6 +739,16 @@ class SearchTags(object):
             match = re.search(r"(?<![^\W_])" + re.escape(sign) + r"\]?$", base_name, re.IGNORECASE)
             if match:
                 return f"-{base_name[match.start():match.end()].rstrip(']')}"
+        # Search for the sign at the end of base_name: '-', '_', '.' and spaces between the words of a sign
+        # are interchangeable, so 'IDN-CREW' also finds 'iDN_CreW' instead of stopping at 'CreW'
+        for token in tokens_signs_list_sorted:
+            words = [word for word in re.split(r"[-_. ]+", str(token)) if word]
+            if not words:
+                continue
+            pattern = r"[-_. ]+".join(re.escape(word) for word in words) + "$"
+            match = re.search(pattern, base_name, re.IGNORECASE)
+            if match:
+                return f"-{match.group(0)}"
         return ""
 
     @staticmethod

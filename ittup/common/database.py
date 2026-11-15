@@ -51,21 +51,40 @@ class Database:
     """
     Create a new database and populate it with torrents attributes
     Search torrents based on attributes
+
+    The file is opened, and the table created again, at the first write: only -db and -dump save the
+    search results, so a duplicate check or a search never touches it (#156). Another ITTup process
+    that holds it, or a CACHE_PATH where SQLite can't lock, made every upload fail with "database is locked"
     """
 
-    def __init__(self, db_file):
+    # Seconds to wait for another process that holds the file before 'database is locked' (SQLite waits 5)
+    TIMEOUT = 30
+
+    def __init__(self, db_file: str) -> None:
         self.filename = db_file
         self.CACHE_PATH = config_settings.user_preferences.CACHE_PATH
-        self.database = sqlite3.connect(os.path.join(self.CACHE_PATH, f"{db_file}.db"))
-        self.cursor = self.database.cursor()
-        self.build()
+        self.database: sqlite3.Connection | None = None
+        self.cursor: sqlite3.Cursor | None = None
 
-    def build(self):
+    def connect(self) -> sqlite3.Cursor:
+        """
+        Opens the file and creates the table again the first time it is called
+        """
+        if self.cursor is None:
+            self.database = sqlite3.connect(os.path.join(self.CACHE_PATH, f"{self.filename}.db"),
+                                            timeout=self.TIMEOUT)
+            self.cursor = self.database.cursor()
+            self.build()
+        return self.cursor
+
+    def build(self) -> None:
+        assert self.database is not None and self.cursor is not None
         self.cursor.execute("DROP TABLE IF EXISTS torrents")
         self.cursor.execute(create_table_sql)
         self.database.commit()
 
-    def write(self, data: dict):
+    def write(self, data: dict) -> None:
+        cursor = self.connect()
         for key, value in data.items():
             if isinstance(value, (dict, list)):
                 data[key] = json.dumps(value)
@@ -74,5 +93,12 @@ class Database:
         placeholders = ', '.join(['?'] * len(data))
         values = tuple(data.values())
         sql = f'''INSERT INTO torrents ({keys}) VALUES ({placeholders})'''
-        self.cursor.execute(sql, values)
+        cursor.execute(sql, values)
+        assert self.database is not None
         self.database.commit()
+
+    def close(self) -> None:
+        if self.database is not None:
+            self.database.close()
+        self.database = None
+        self.cursor = None

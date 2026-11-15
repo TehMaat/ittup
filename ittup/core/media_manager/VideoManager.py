@@ -185,6 +185,7 @@ class VideoManager:
                                  media=content,
                                  )
         content.display_name, _ = search_tags.process()
+        content.review_reasons = search_tags.review_reasons
         if search_tags.mediainfo_tags:
             content.mediainfo_source = " ".join(sum(search_tags.mediainfo_tags.values(), []))
 
@@ -305,8 +306,8 @@ class VideoManager:
                 custom_console.bot_warning_log(f"No Upload active. Done.")
                 continue
 
-            # Send to the tracker
-            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath)
+            # Send to the tracker, with the NFO of the release if there is one
+            tracker_response, tracker_message = unit3d_up.send(torrent_archive=torrent_filepath, nfo_path=content.nfo)
 
             # Store response for the torrent clients
             bittorrent_list.append(

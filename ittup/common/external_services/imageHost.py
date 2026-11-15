@@ -353,6 +353,12 @@ class Build:
         # A host without an API key in settings.json ('no_key' or empty) can't upload
         return bool(key and key.strip()) and 'no_key' not in key.lower()
 
+    def has_any_key(self) -> bool:
+        """ At least one image host has an API key in settings.json """
+        return any(self.has_key(key) for key in [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY,
+                                                 self.PTSCREENS_KEY, self.IMGFI_KEY, self.PASSIMA_KEY,
+                                                 self.IMARIDE_KEY])
+
     def uploaders(self, img_bytes: bytes, image_name: str) -> list[ImageUploader]:
         """ The hosts with an API key, in order of priority """
         hosts = [
@@ -456,9 +462,7 @@ class Build:
         description = "[center]\n"
 
         custom_console.bot_log(f"\n[STARTING IMAGE UPLOAD..]")
-        keys = [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY, self.PTSCREENS_KEY, self.IMGFI_KEY,
-                self.PASSIMA_KEY, self.IMARIDE_KEY]
-        if not any(self.has_key(key) for key in keys):
+        if not self.has_any_key():
             custom_console.bot_error_log("No image host API key found in settings.json, skip the upload")
             return description + "\n[/center]"
 

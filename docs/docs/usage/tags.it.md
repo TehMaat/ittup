@@ -47,7 +47,7 @@ Il tipo di release, letto dai tag source/remux del nome del file, decide come si
 | WEB-DL | `WEB-DL`, `WEB`, `WEBDL`, `WEB-DLMUX`, `WEBMUX`, `DLMUX`, `HDTV` | `H.264` / `H.265` |
 | Encode | `ENCODE`, `WEBRIP`, `BDRIP`, `BRRIP`, `DVDRIP`, `UHDRIP`, `FHDRIP`, `WEB-DLRIP` | `x264` / `x265` |
 
-Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 mostra solo un avviso di "possibile falso REMUX". Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
+Con `BLURAY` da solo, o senza tipo di release nel nome, il bot guarda l'encoder scritto nel MediaInfo: `x264` / `x265` se trova la firma x264/x265, altrimenti `H.264` / `H.265`. Su una release untouched la firma x264/x265 non cambia il titolo: mostra un avviso di "possibile falso REMUX" e manda l'upload in [moderazione](upload.md#moderazione). Su un WEB-DL (o DLMux, WEBMux) il bot legge le impostazioni di encoding: x264/x265 con CRF e senza limite VBV vuol dire che il video è stato ricodificato, perché un servizio di streaming limita sempre il bitrate. Il titolo non cambia, compare un avviso di "possibile WEBRip" e l'upload va in moderazione. La sola firma x264 va bene: alcuni servizi codificano con x264. Gli altri codec (AV1, VP9, VC-1, MPEG-2, XviD…) vengono scritti così come sono.
 
 ## Sorgente e tipo sul tracker
 
@@ -68,9 +68,9 @@ Se il MediaInfo non dice la sorgente, il titolo resta senza. Nel log trovi `Sour
 
 ## Codec audio
 
-Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec nella lingua originale** del film o della serie (letta da TMDB, inglese se TMDB non la conosce). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Dopo il codec vengono scritti i canali letti dal MediaInfo: `1.0`, `2.0`, `5.1` o `7.1`.
+Il titolo tiene al massimo due codec audio: il **miglior codec ITA** e il **miglior codec ENG** (senza italiano né inglese, il miglior codec della lingua scritta). Se resta posto, viene riempito con le migliori tracce senza lingua. Codec dal migliore: `TrueHD`, `DTS-HD MA`, `FLAC`, `PCM`, `DTS-ES`, `DTS`, `DD+`, `DD`, `AAC`, `HE-AAC`, `Opus`, `MPEG`. A parità di codec vincono Atmos e poi più canali. Lo stesso codec viene scritto una volta sola. Dopo il codec vengono scritti i canali letti dal MediaInfo: `1.0`, `2.0`, `5.1` o `7.1`.
 
-Dopo i codec vengono le lingue: sono scritte solo `ITA` e la lingua originale, le altre lingue del file diventano il tag `multi` (`MULTI`). Esempio con tracce italiana, inglese e giapponese di un film giapponese: `MULTI DD 5.1 DTS-HD MA 5.1 ITA JPN`; con le sole tracce italiana e giapponese non c'è `MULTI`. Un file senza italiano né lingua originale ha la bandiera della sua prima lingua.
+Dopo i codec vengono le lingue: con una o due lingue audio sono scritte tutte, prima `ITA` (es. `DD+ 5.1 ITA ENG`, `DD 5.1 DTS-HD MA 5.1 ITA JPN`). Con tre o più lingue sono scritte solo `ITA` e `ENG`, o solo quella delle due presente nel file, e le altre diventano il tag `multi` (`MULTI`), es. `MULTI DD 5.1 DD+ 5.1 ITA ENG`; un file senza italiano né inglese ha la bandiera della sua prima lingua.
 
 ## Release group
 

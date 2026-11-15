@@ -87,6 +87,7 @@ Ogni chiave di `ittup.json`, sezione per sezione. "Default" è il valore nel fil
 | `CACHE_DBONLINE` | booleano | `False` | Cache su disco delle ricerche online (ID TMDB/IMDB/TVDB/IGDB) |
 | `TMDB_DEBUG` | booleano | `False` | Log dei punteggi di confronto titoli TMDB (richieste HTTP extra) |
 | `PERSONAL_RELEASE` | booleano | `False` | Personal release su ogni upload |
+| `AUTO_MODERATION` | booleano | `True` | Manda in moderazione allo staff un possibile falso REMUX o WEBRip |
 | `RENAME_FILES` | booleano | `False` | Rinomina i file originali come il titolo del tracker prima dell'upload |
 | `CHECK_CORRUPTED` | booleano | `True` | Salta i file video corrotti, controllati con ffprobe (5.1 o successivo) prima dell'upload |
 | `CHECK_CORRUPTED_START` | numero | `10` | Inizio dell'intervallo controllato, in percentuale della durata |

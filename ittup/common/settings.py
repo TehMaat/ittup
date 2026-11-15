@@ -175,6 +175,7 @@ class UserPreferences(BaseModel):
     CACHE_DBONLINE: bool = False
     TMDB_DEBUG: bool = False
     PERSONAL_RELEASE: bool = False
+    AUTO_MODERATION: bool = True
     RENAME_FILES: bool = False
     CHECK_CORRUPTED: bool = True
     CHECK_CORRUPTED_START: int = 10
@@ -550,7 +551,7 @@ class Config(BaseModel):
                 if field in ['DUPLICATE_ON', 'SKIP_DUPLICATE', 'SKIP_TMDB', 'SKIP_YOUTUBE', 'RESIZE_SCSHOT', 'ANON',
                              'WEBP_ENABLED', 'CACHE_SCR', 'CACHE_DBONLINE', 'TMDB_DEBUG', 'PERSONAL_RELEASE',
                              'RENAME_FILES', 'CHECK_CORRUPTED', 'CHECK_CORRUPTED_IGNORE_DV', 'TONEMAP_SCSHOT',
-                             'SCREENSHOTS_QUORUM']:
+                             'SCREENSHOTS_QUORUM', 'AUTO_MODERATION']:
                     section[field] = Validate.boolean(value=section[field], field_name=field)
 
                 if field in ['TORRENT_COMMENT', 'WATCHER_PATH']:
@@ -759,6 +760,7 @@ class Load:
                 "CACHE_DBONLINE": "False",
                 "TMDB_DEBUG": "False",
                 "PERSONAL_RELEASE": "False",
+                "AUTO_MODERATION": "True",
                 "RENAME_FILES": "False",
                 "CHECK_CORRUPTED": "True",
                 "CHECK_CORRUPTED_START": 10,

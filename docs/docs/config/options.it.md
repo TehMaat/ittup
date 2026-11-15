@@ -71,6 +71,7 @@ Nel log trovi quanti torrent ha controllato (`Duplicate check: N torrents on the
 "PREFERRED_LANG": "all",
 "ANON": "False",
 "PERSONAL_RELEASE": "False",
+"AUTO_MODERATION": "True",
 "RELEASER_SIGN": "",
 "TORRENT_COMMENT": "no_comment",
 ```
@@ -80,6 +81,7 @@ Nel log trovi quanti torrent ha controllato (`Duplicate check: N torrents on the
 | `PREFERRED_LANG` | Codice lingua preferita (ISO 3166, es. `it`) o `all`: il bot avvisa se l'audio non corrisponde |
 | `ANON` | Upload **anonimo**: il tuo username non compare sulla pagina del torrent |
 | `PERSONAL_RELEASE` | Marca ogni upload come personal release (equivale al flag `-personal`) |
+| `AUTO_MODERATION` | `True` (default) = un file che potrebbe non essere quello che dice il nome (un possibile falso REMUX o WEBRip) viene caricato e mandato in moderazione allo staff, vedi [Upload](../usage/upload.md#moderazione). `False` = solo un avviso nel log |
 | `RELEASER_SIGN` | La tua firma da releaser, aggiunta al titolo (max 20 caratteri; vedi [Tag e titoli](../usage/tags.md)) |
 | `TORRENT_COMMENT` | Commento inserito nel file `.torrent` |
 

@@ -165,7 +165,7 @@ def test_one_request_for_each_game_in_the_cache(monkeypatch, tmp_path):
 
 
 def test_the_pc_game_description_has_the_steam_data(monkeypatch):
-    for key in ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "IMGFI_KEY", "PASSIMA_KEY",
+    for key in ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "ONLYIMAGE_KEY", "PASSIMA_KEY",
                 "IMARIDE_KEY"]:
         monkeypatch.setattr(config_settings.tracker_config, key, "no_key")
     client = IGDBClient()

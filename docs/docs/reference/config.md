@@ -15,7 +15,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `FREE_IMAGE_KEY` | string | `no_key` | at least one host | FreeImage key |
 | `LENSDUMP_KEY` | string | `no_key` | at least one host | LensDump key |
 | `PTSCREENS_KEY` | string | `no_key` | at least one host | PtScreens key |
-| `IMGFI_KEY` | string | `no_key` | at least one host | ImgFI key |
+| `ONLYIMAGE_KEY` | string | `no_key` | at least one host | OnlyImage key (`IMGFI_KEY` is converted automatically) |
 | `PASSIMA_KEY` | string | `no_key` | at least one host | PassIMA key |
 | `IMARIDE_KEY` | string | `no_key` | at least one host | ImaRide key |
 | `YOUTUBE_KEY` | string | `no_key` | no | YouTube Data API key (trailers) |
@@ -54,7 +54,7 @@ Every key of `ittup.json`, section by section. "Default" is the value in the fil
 | `LENSDUMP_PRIORITY` | number | `1` | LensDump priority |
 | `FREE_IMAGE_PRIORITY` | number | `2` | FreeImage priority |
 | `IMGBB_PRIORITY` | number | `3` | ImgBB priority |
-| `IMGFI_PRIORITY` | number | `4` | ImgFI priority |
+| `ONLYIMAGE_PRIORITY` | number | `4` | OnlyImage priority (`IMGFI_PRIORITY` is converted automatically) |
 | `PASSIMA_PRIORITY` | number | `5` | PassIMA priority |
 | `IMARIDE_PRIORITY` | number | `6` | ImaRide priority |
 | `NUMBER_OF_SCREENSHOTS` | number | `4` | Screenshots extracted from the video (2–10) |

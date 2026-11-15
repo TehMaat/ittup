@@ -205,11 +205,11 @@ class LensDump(ImageUploader):
         return 'source'
 
 
-class ImgFi(ImageUploader):
+class OnlyImage(ImageUploader):
 
-    priority= config_settings.user_preferences.IMGFI_PRIORITY
+    priority= config_settings.user_preferences.ONLYIMAGE_PRIORITY
     def get_endpoint(self) -> str:
-        return "https://imgfi.com/api/1/upload"
+        return "https://onlyimage.org/api/1/upload"
 
     def get_data(self) -> dict:
         return {
@@ -313,7 +313,7 @@ class ImageUploaderFallback:
         if uploader_host == "PtScreens":
             return response['image']['url']
 
-        if uploader_host == "ImgFi":
+        if uploader_host == "OnlyImage":
             return response['image']['url']
 
         if uploader_host == "PassIMA":
@@ -343,7 +343,7 @@ class Build:
         self.FREE_IMAGE_KEY = config_settings.tracker_config.FREE_IMAGE_KEY
         self.LENSDUMP_KEY= config_settings.tracker_config.LENSDUMP_KEY
         self.PTSCREENS_KEY= config_settings.tracker_config.PTSCREENS_KEY
-        self.IMGFI_KEY = config_settings.tracker_config.IMGFI_KEY
+        self.ONLYIMAGE_KEY = config_settings.tracker_config.ONLYIMAGE_KEY
         self.PASSIMA_KEY = config_settings.tracker_config.PASSIMA_KEY
         self.IMARIDE_KEY = config_settings.tracker_config.IMARIDE_KEY
         self.extracted_frames = extracted_frames
@@ -356,7 +356,7 @@ class Build:
     def has_any_key(self) -> bool:
         """ At least one image host has an API key in settings.json """
         return any(self.has_key(key) for key in [self.IMGBB_KEY, self.FREE_IMAGE_KEY, self.LENSDUMP_KEY,
-                                                 self.PTSCREENS_KEY, self.IMGFI_KEY, self.PASSIMA_KEY,
+                                                 self.PTSCREENS_KEY, self.ONLYIMAGE_KEY, self.PASSIMA_KEY,
                                                  self.IMARIDE_KEY])
 
     def uploaders(self, img_bytes: bytes, image_name: str) -> list[ImageUploader]:
@@ -366,7 +366,7 @@ class Build:
             (Freeimage, self.FREE_IMAGE_KEY),
             (PtScreens, self.PTSCREENS_KEY),
             (LensDump, self.LENSDUMP_KEY),
-            (ImgFi, self.IMGFI_KEY),
+            (OnlyImage, self.ONLYIMAGE_KEY),
             (PassIMA, self.PASSIMA_KEY),
             (ImaRide, self.IMARIDE_KEY),
         ]

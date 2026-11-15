@@ -14,7 +14,8 @@ from ittup.common.external_services.imageHost import ImgBB
 
 from test_igdb_game import igdb_game
 
-HOST_KEYS = ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "IMGFI_KEY", "PASSIMA_KEY", "IMARIDE_KEY"]
+HOST_KEYS = ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "ONLYIMAGE_KEY", "PASSIMA_KEY",
+             "IMARIDE_KEY"]
 
 
 class FakeIGDBImages:

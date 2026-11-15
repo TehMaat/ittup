@@ -11,7 +11,7 @@ from ittup.common.external_services.imageHost import (Build, ImgBB, Freeimage, I
 @pytest.fixture
 def hosts(monkeypatch, tmp_path):
     """ ImgBB (priority 0) and Freeimage (priority 1) with a key, the other hosts without, quorum on """
-    for key in ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "IMGFI_KEY", "PASSIMA_KEY",
+    for key in ["IMGBB_KEY", "FREE_IMAGE_KEY", "LENSDUMP_KEY", "PTSCREENS_KEY", "ONLYIMAGE_KEY", "PASSIMA_KEY",
                 "IMARIDE_KEY"]:
         monkeypatch.setattr(config_settings.tracker_config, key, "no_key")
     monkeypatch.setattr(config_settings.tracker_config, "IMGBB_KEY", "imgbb-key")

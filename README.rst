@@ -160,7 +160,7 @@ The bot can upload images to the following image hosting platforms:
 +------------------+----------------------------+
 | ``LensDump``     | https://lensdump.com       |
 +------------------+----------------------------+
-| ``ImgFI``        | https://imgfi.com          |
+| ``OnlyImage``    | https://onlyimage.org      |
 +------------------+----------------------------+
 | ``PassIMA``      | https://passtheima.ge      |
 +------------------+----------------------------+

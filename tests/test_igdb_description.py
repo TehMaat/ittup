@@ -69,7 +69,8 @@ def test_the_sections_in_order(hosts):
     assert positions == sorted(positions)
     assert description.count("[img=400]") == 2
     assert "images.igdb.com" not in description
-    assert "t_cover_big/co7497" in hosts["uploads"][0]
+    # The images upload in parallel: the order of the uploads is not fixed
+    assert any("t_cover_big/co7497" in source for source in hosts["uploads"])
 
 
 def test_the_information_table(hosts):

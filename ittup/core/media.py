@@ -78,6 +78,8 @@ class Media:
         self.mediainfo_source: str | None = None
         # What the file names should say according to the title and MediaInfo (RENAME_FILES)
         self.title_info = None
+        # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
+        self.review_reasons: list[str] = []
 
     def move_to(self, path: str) -> None:
         """

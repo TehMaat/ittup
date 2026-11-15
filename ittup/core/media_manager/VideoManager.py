@@ -180,6 +180,7 @@ class VideoManager:
                                  media=content,
                                  )
         content.display_name, _ = search_tags.process()
+        content.review_reasons = search_tags.review_reasons
         if search_tags.mediainfo_tags:
             content.mediainfo_source = " ".join(sum(search_tags.mediainfo_tags.values(), []))
 

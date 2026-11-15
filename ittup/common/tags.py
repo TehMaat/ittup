@@ -90,6 +90,8 @@ video_family = {
 # DLMUX is in the "remux" category but it is a WEB-DL
 UNTOUCHED_TAGS = {"REMUX", "BDREMUX", "BDMUX", "VU", "UNTOUCHED", "DVDMUX", "FULL DISC"}
 WEB_TAGS = {"WEB-DL", "WEB", "WEBDL", "WEB-DLMUX", "WEBDLMUX", "WEB-MUX", "WEBMUX", "DLMUX", "HDTV"}
+# The WEB tags whose video is the stream of the service: HDTV is a capture, often encoded
+WEB_DL_TAGS = WEB_TAGS - {"HDTV"}
 ENCODE_TAGS = {"ENCODE", "WEBRIP", "BDRIP", "BRRIP", "DVDRIP", "UHDRIP", "FHDRIP", "WEB-DLRIP", "WEBDLRIP"}
 
 # How each release type writes the 264/265 codec
@@ -138,6 +140,8 @@ class SearchTags(object):
         # The source and remux tags read from MediaInfo when the file name has no source
         self.mediainfo_tags: dict[str, list[str]] = {}
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
+        # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
+        self.review_reasons: list[str] = []
 
         self.TAG_TYPES: dict = tags_list
         self.SIGNS_LIST: dict = sign_list
@@ -531,6 +535,20 @@ class SearchTags(object):
         families &= {"264", "265"}
         return families.pop() if len(families) == 1 else None
 
+    def web_dl_source(self) -> bool:
+        """
+        The name says WEB-DL, DLMux, WEBMux...: the video should be the stream of the service
+        """
+        tags = self.tags_dict.get('source', []) + self.tags_dict.get('remux', [])
+        return bool({str(tag).upper() for tag in tags} & WEB_DL_TAGS)
+
+    def add_review_reason(self, reason: str) -> None:
+        """
+        A reason to ask the tracker to moderate the upload: the file may not be what its name says
+        """
+        if reason not in self.review_reasons:
+            self.review_reasons.append(reason)
+
     @staticmethod
     def encoder_signature(video: dict) -> str | None:
         """
@@ -546,6 +564,32 @@ class SearchTags(object):
         if "cpuid=" in settings or "ctu=" in settings:
             return "265"
         return None
+
+    @staticmethod
+    def home_encode_settings(video: dict) -> str | None:
+        """
+        x264/x265 settings of an encode with CRF and no VBV limit (es. 'x264 crf=21.0, no VBV'), None otherwise.
+        A streaming service always caps the bitrate (VBV): a WEB-DL with these settings was encoded again
+        """
+        family = SearchTags.encoder_signature(video)
+        if not family:
+            return None
+        settings = {}
+        for item in str(video.get('encoding_settings') or '').split('/'):
+            key, separator, value = item.strip().partition('=')
+            if separator:
+                settings[key.strip().lower()] = value.strip()
+        if settings.get('rc', '').lower() != 'crf' or not settings.get('crf'):
+            return None
+        # x264 writes vbv_maxrate only with a limit, x265 always writes vbv-maxrate (0 = no limit)
+        maxrate = settings.get('vbv_maxrate', settings.get('vbv-maxrate'))
+        if maxrate is not None:
+            try:
+                if float(maxrate) > 0:
+                    return None
+            except ValueError:
+                return None
+        return f"x{family} crf={settings['crf']}, no VBV"
 
     @staticmethod
     def normalize_other_codec(video: dict, filename: str) -> str:
@@ -587,12 +631,20 @@ class SearchTags(object):
         # The encoder in MediaInfo is only a check: it is never read on a WEB-DL
         if self.release_type == "untouched":
             if self.encoder_signature(video):
+                encoder = video.get('writing_library') or 'x' + family
                 custom_console.bot_warning_log(
-                    f"<> Warning: possible fake REMUX, the video track was encoded with"
-                    f" '{video.get('writing_library') or 'x' + family}'")
+                    f"<> Warning: possible fake REMUX, the video track was encoded with '{encoder}'")
+                self.add_review_reason(f"possible fake REMUX: video encoded with {encoder}")
             label = "untouched"
         elif self.release_type in ("encode", "web"):
             label = self.release_type
+            if self.release_type == "web" and self.web_dl_source():
+                home_encode = self.home_encode_settings(video)
+                if home_encode:
+                    custom_console.bot_warning_log(
+                        f"<> Warning: possible WEBRip, the video track was encoded with {home_encode}:"
+                        f" a WEB-DL keeps the stream of the service. Check the source in the name")
+                    self.add_review_reason(f"possible WEBRip: {home_encode}")
         else:
             label = "encode" if self.encoder_signature(video) else "web"
 

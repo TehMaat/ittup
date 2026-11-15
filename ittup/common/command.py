@@ -69,6 +69,8 @@ class CommandLine:
         upload_group.add_argument("-dup", "--duplicate", action="store_true", help="Check duplicates")
         upload_group.add_argument("-personal", "--personal", action="store_true", help="Personal release")
         upload_group.add_argument("-int", "--internal", action="store_true", help="Upload as internal release")
+        upload_group.add_argument("-mod", "--moderation", action="store_true",
+                                  help="Ask the tracker to moderate the upload")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
 
         # Freeleech of the uploaded torrents
@@ -92,7 +94,6 @@ class CommandLine:
         search_group.add_argument("-d", "--description", type=str, help="By description")
         search_group.add_argument("-bd", "--bdinfo", type=str, help="Show BDInfo")
         search_group.add_argument("-m", "--mediainfo", type=str, help="Show MediaInfo")
-        search_group.add_argument("-mod", "--moderation", action="store_true", help="In moderation")
 
 
         # /////////////////////////

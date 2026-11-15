@@ -172,3 +172,19 @@ def test_an_imgfi_config_without_key_has_no_onlyimage_note(tmp_path, capsys):
 
     assert data["tracker_config"]["ONLYIMAGE_KEY"] == "no_key"
     assert "onlyimage.org" not in capsys.readouterr().out
+@pytest.mark.parametrize("value, expected", [(None, True), ("False", False), ("True", True)])
+def test_auto_moderation(tmp_path, value, expected):
+    config = Load.default_config()
+    assert config["user_preferences"]["AUTO_MODERATION"] == "True"
+    if value is None:
+        # A config file of an older version
+        del config["user_preferences"]["AUTO_MODERATION"]
+    else:
+        config["user_preferences"]["AUTO_MODERATION"] = value
+    path = write(tmp_path / "ittup.json", config)
+
+    data = JsonConfig(path).process()
+
+    assert json.loads(path.read_text(encoding="utf-8"))["user_preferences"]["AUTO_MODERATION"] == \
+        (value or "True")
+    assert Config(**data).user_preferences.AUTO_MODERATION is expected

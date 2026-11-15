@@ -125,6 +125,18 @@ class UploadBot:
         """ Freeleech percentage from the -fl25, -fl50, -fl75, -fl100 flags, 0 without them """
         return int(getattr(self.cli, "freeleech", None) or 0)
 
+    def moderation(self) -> int:
+        """
+        1 with the -mod flag, or with AUTO_MODERATION when the file may not be what its name says
+        (es. a fake REMUX): the torrent waits for the staff even for a trusted user.
+        The title, the type and the description don't change: the staff decides
+        """
+        reasons = list(getattr(self.content, "review_reasons", None) or [])
+        if not config_settings.user_preferences.AUTO_MODERATION or not reasons:
+            return int(bool(getattr(self.cli, "moderation", False)))
+        custom_console.bot_warning_log(f"Sent to moderation: {'; '.join(reasons)}")
+        return 1
+
     def resolution_id(self) -> int | None:
         value = self.content.resolution
         _id = self.tracker_data.resolution.get(value)
@@ -162,7 +174,7 @@ class UploadBot:
                                                  or int(self.cli.personal))
         self.tracker.data["internal"] = self.internal()
         self.tracker.data["free"] = self.freeleech()
-        self.tracker.data["mod_queue_opt_in"] = int(self.cli.moderation)
+        self.tracker.data["mod_queue_opt_in"] = self.moderation()
 
 
         # skip upload if the key is missing

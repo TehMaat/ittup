@@ -34,3 +34,20 @@ The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`
 
 !!! tip "Wrong category?"
     If the bot mistakes the game for a movie, force the category with `-force game`.
+
+## 4. Description
+
+The torrent description is built from IGDB, in sections:
+
+1. the cover, centered;
+2. title and release year;
+3. a table with platforms, genre, developer, publisher, release date and game modes (a row without data is left out);
+4. the description: the Italian one of Steam when there is one, otherwise the IGDB `summary`;
+5. the system requirements, minimum and recommended (only PC games on Steam);
+6. up to 4 screenshots;
+7. the trailer, inside a spoiler: the first video with "trailer" in its name, otherwise the first video;
+8. the links to the IGDB page and, when there is one, to the Steam page.
+
+The cover and the screenshots are downloaded from IGDB and uploaded again on the [image hosts](../config/imagehosts.md) with a key, in the same order of priority as the screenshots of the videos. They are decorative: without an image host key, or when an image fails, the description goes without it and the upload goes on, even with `SCREENSHOTS_QUORUM` on.
+
+The Steam data is read only for a **PC** game (the `PC` tag in the name) that IGDB links to Steam, with a single request for each game (cached with `CACHE_DBONLINE`) and no key. When Steam doesn't answer, or doesn't know the game, the description has no requirements and the upload goes on.

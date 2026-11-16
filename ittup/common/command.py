@@ -54,6 +54,7 @@ class CommandLine:
         upload_group.add_argument("-reseed", "--reseed", action="store_true", help="Reseed folder")
         upload_group.add_argument("-watcher", "--watcher", action="store_true", help="Start watcher")
         upload_group.add_argument("-notitle", "--notitle", type=str, help="Manual title")
+        upload_group.add_argument("-tag", "--tag", type=str, help="Release group at the end of the title")
 
         upload_group.add_argument(
             "-force",

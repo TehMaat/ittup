@@ -213,6 +213,18 @@ def test_scan_uploads_a_pack_for_each_season_folder(home, shows):
     ]
 
 
+def test_tag_and_the_lists_of_the_old_versions(home, media):
+    # #112: the lists copied by the versions before 2.0 are no longer read, nor deleted
+    for name in ("tags_list.json", "sign_list.json", "ban_list.json"):
+        (home / "ittup_config" / name).write_text('{"vcodec": "banned"}', encoding="utf-8")
+
+    run = ittup(home, "-u", str(media / MOVIE), "-noseed", "-tag", "NAHOM")
+
+    assert_clean(run)
+    [upload] = run.uploads()
+    assert upload["name"] == "Film Finto 2020 1080p FullHD WEB-DL AAC 2.0 ITA SDR H.264-NAHOM"
+    assert "arenolongerused" in "".join(run.output.split())
+    assert (home / "ittup_config" / "ban_list.json").exists()
 def test_folder_mode_stops_on_a_series_with_a_folder_for_each_season(home, shows):
     """ #116: -f uploads the files of a folder, not the seasons in its subfolders """
     run = ittup(home, "-f", str(shows / "tv" / SERIES), "-noseed")

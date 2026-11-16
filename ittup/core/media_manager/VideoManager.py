@@ -12,6 +12,7 @@ from ittup.common.frames import VideoFrame
 from ittup.common.integrity import MediaIntegrity, MIN_FFPROBE_VERSION, UnsupportedFFprobe
 from ittup.common.tags import SearchTags
 from ittup.common.rename import rename_to_title
+from ittup.common.settings import Validate
 from ittup.common.utility import ManageTitles, System
 from ittup.common import title
 
@@ -27,7 +28,7 @@ from ittup.view import custom_console
 
 class VideoManager:
 
-    def __init__(self, contents: list[Media], cli: Namespace, tags_list: dict, sign_list: dict, ban_list: dict,
+    def __init__(self, contents: list[Media], cli: Namespace,
                  on_upload: Callable[[BittorrentData], None] | None = None):
         """
         Initialize the VideoManager with the given contents
@@ -41,11 +42,18 @@ class VideoManager:
         self.torrent_found: bool = False
         self.contents: list[Media] = contents
         self.cli: Namespace = cli
-        self.tags_list: dict = tags_list
-        self.sign_list: dict = sign_list
-        self.ban_list: dict = ban_list
         self.on_upload = on_upload
         self.screenshots_executor: ThreadPoolExecutor | None = None
+
+    def releaser_sign(self) -> str:
+        """
+        The release group at the end of the title: '-tag' of this upload, then RELEASER_SIGN of the config.
+        '' lets the title read it from the file name
+        """
+        tag = Validate.sign(getattr(self.cli, "tag", None) or "").lstrip("-").strip()
+        if tag:
+            return f"-{tag}"
+        return config_settings.user_preferences.RELEASER_SIGN or ""
 
     @staticmethod
     def rename_files(content: Media) -> None:
@@ -172,11 +180,8 @@ class VideoManager:
                                  year=guess.get("year", ""),
                                  season=content.guess_season,
                                  episode=content.guess_episode,
-                                 releaser_sign=config_settings.user_preferences.RELEASER_SIGN,
+                                 releaser_sign=self.releaser_sign(),
                                  tags_position=tags_position,
-                                 tags_list=self.tags_list,
-                                 sign_list=self.sign_list,
-                                 ban_list=self.ban_list,
                                  media=content,
                                  )
         content.display_name, _ = search_tags.process()

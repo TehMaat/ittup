@@ -4,7 +4,6 @@ from types import SimpleNamespace
 import pytest
 
 from ittup.common.tags import SearchTags
-from ittup.common.trackers.tags_list import TAGS_LIST
 from ittup.common.trackers.trackers import TRACKData
 
 POSITION = ["title", "year", "resolution", "source", "remux", "vcodec"]
@@ -15,8 +14,7 @@ def search(filename: str, general: dict | None = None, video: dict | None = None
                                 audio_track=[], subtitle_track=[])
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     return SearchTags(filename=filename, title="Movie", year=2020, season=None, episode=None, media=media,
-                      tags_position=POSITION, tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"},
-                      releaser_sign="")
+                      tags_position=POSITION, releaser_sign="")
 
 
 def test_the_source_of_the_name_wins():

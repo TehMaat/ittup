@@ -21,13 +21,10 @@ from ittup.view import custom_console
 
 
 class TorrentManager:
-    def __init__(self, cli: argparse.Namespace, tracker_archive: str, tags_list: dict, sign_list: dict, ban_list: dict):
+    def __init__(self, cli: argparse.Namespace, tracker_archive: str):
 
         self.preferred_lang = my_language(config_settings.user_preferences.PREFERRED_LANG)
         self.tracker_archive = tracker_archive
-        self.tags_list: dict = tags_list
-        self.sign_list: dict = sign_list
-        self.ban_list: dict = ban_list
 
         self.videos: list[Media] = []
         self.games: list[Media] = []
@@ -117,9 +114,7 @@ class TorrentManager:
             # Build the torrent file and upload each VIDEO to the trackers
             if self.videos:
                 video_manager = VideoManager(contents=self.videos[:self.fast_load],
-                                             cli=self.cli, tags_list=self.tags_list,
-                                             sign_list=self.sign_list,
-                                             ban_list=self.ban_list,
+                                             cli=self.cli,
                                              on_upload=partial(self.send_now, message='VIDEO') if seed_now else None)
                 video_process_results = video_manager.process(selected_tracker=selected_tracker,
                                                               tracker_name_list=trackers_name_list,

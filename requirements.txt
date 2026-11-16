@@ -1,4 +1,5 @@
 guessit==4.4.0
+babelfish==0.6.1          # the languages: a release group is never one
 pymediainfo==7.0.1        # era 6.1.0
 qbittorrent-api==2026.6.0
 pydantic==2.13.4          # era 2.10.6

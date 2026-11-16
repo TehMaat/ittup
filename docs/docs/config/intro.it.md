@@ -14,12 +14,9 @@ Contenuto della cartella:
 | File | A cosa serve |
 |---|---|
 | `ittup.json` | **Configurazione principale**: tracker, api key, client torrent, preferenze |
-| `tags_list.json` | Tag personalizzati per la costruzione dei titoli ([dettagli](../usage/tags.md)) |
-| `sign_list.json` | Firme releaser ([dettagli](../usage/tags.md)) |
-| `ban_list.json` | Tag da escludere dall'autobuild del titolo ([dettagli](../usage/tags.md)) |
 
 !!! note "Arrivi da Unit3Dup?"
-    Al primo avvio ITTup copia `Unit3Dup_config/Unit3Dbot.json` e le tre liste in `ittup_config` (la vecchia cartella non viene toccata). Dettagli: [Aggiornamento](../install/upgrade.md#arrivi-da-unit3dup).
+    Al primo avvio ITTup copia `Unit3Dup_config/Unit3Dbot.json` in `ittup_config/ittup.json` (la vecchia cartella non viene toccata). Dettagli: [Aggiornamento](../install/upgrade.md#arrivi-da-unit3dup).
 
 Nella stessa cartella il bot crea anche le sottocartelle di default `torrent_archive_path` (dove archivia i `.torrent` generati), `cache_path`, `watcher_path`, `watcher_destination_path` e `watcher_quarantine_path` (dove il watcher sposta gli upload falliti) — tutte personalizzabili (vedi [Opzioni avanzate](options.md)). Il watcher salva qui anche la sua coda di upload, `watcher_queue.json`.
 

@@ -202,11 +202,10 @@ def test_the_missing_source_is_added_to_the_pack(tmp_path):
 def test_title_info_from_the_tags():
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
-    from ittup.common.trackers.tags_list import TAGS_LIST
     mediafile = SimpleNamespace(general_track={}, video_track=[{"format": "HEVC"}], audio_track=[], subtitle_track=[])
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="2160p", pack=None)
     search = SearchTags(filename="Movie.2020.2160p.BluRay.REMUX.mkv", title="Movie", year=2020, season=None,
                         episode=None, media=media, tags_position=["title", "year", "source", "remux", "vcodec"],
-                        tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+                        releaser_sign="")
     search.process()
     assert search.title_info() == TitleInfo(resolution="2160p", family="265", source="BluRay REMUX", year=2020)

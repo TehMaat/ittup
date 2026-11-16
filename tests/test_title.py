@@ -36,12 +36,11 @@ def test_italian_title_from_tmdb():
 def test_the_tmdb_title_replaces_the_file_name_title():
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
-    from ittup.common.trackers.tags_list import TAGS_LIST
     mediafile = SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[])
     media = SimpleNamespace(mediafile=mediafile, torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename="Wicked.Part.2.2025.1080p.WEB-DL.mkv", title="Wicked", year=2025, season=None,
                         episode=None, media=media, tags_position=["title", "year", "part", "source"],
-                        tags_list=TAGS_LIST, sign_list={}, ban_list={"dummy": "banned"}, releaser_sign="")
+                        releaser_sign="")
     assert search.process()[0] == "Wicked 2025 Part 2 WEB-DL"
     assert search.set_title("Wicked - Parte 2")[0] == "Wicked - Parte 2 2025 WEB-DL"
 
@@ -49,12 +48,10 @@ def test_the_tmdb_title_replaces_the_file_name_title():
 def test_a_word_with_part_inside_keeps_the_part_tag():
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
-    from ittup.common.trackers.tags_list import TAGS_LIST
     media = SimpleNamespace(mediafile=SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[]),
                             torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename="Movie.Part.2.2020.mkv", title="Movie", year=2020, season=None, episode=None,
-                        media=media, tags_position=["title", "year", "part"], tags_list=TAGS_LIST, sign_list={},
-                        ban_list={"dummy": "banned"}, releaser_sign="")
+                        media=media, tags_position=["title", "year", "part"], releaser_sign="")
     search.process()
     assert search.set_title("The Departed")[0] == "The Departed 2020 Part 2"
 
@@ -70,12 +67,10 @@ def test_a_word_with_part_inside_keeps_the_part_tag():
 def test_the_source_between_special_characters(filename, expected):
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
-    from ittup.common.trackers.tags_list import TAGS_LIST
     media = SimpleNamespace(mediafile=SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[]),
                             torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename=filename, title="Titolo", year=1990, season=None, episode=None, media=media,
-                        tags_position=["title", "year", "part", "source"], tags_list=TAGS_LIST, sign_list={},
-                        ban_list={"dummy": "banned"}, releaser_sign="")
+                        tags_position=["title", "year", "part", "source"], releaser_sign="")
     assert search.process()[0] == expected
 
 
@@ -88,10 +83,8 @@ def test_the_source_between_special_characters(filename, expected):
 def test_the_remux_tags_are_vu_remux(filename, expected):
     from types import SimpleNamespace
     from ittup.common.tags import SearchTags
-    from ittup.common.trackers.tags_list import TAGS_LIST
     media = SimpleNamespace(mediafile=SimpleNamespace(video_track=[], audio_track=[], subtitle_track=[]),
                             torrent_pack=False, resolution="1080p", pack=None)
     search = SearchTags(filename=filename, title="Titolo", year=1990, season=None, episode=None, media=media,
-                        tags_position=["title", "year", "source", "remux"], tags_list=TAGS_LIST, sign_list={},
-                        ban_list={"dummy": "banned"}, releaser_sign="")
+                        tags_position=["title", "year", "source", "remux"], releaser_sign="")
     assert search.process()[0] == expected

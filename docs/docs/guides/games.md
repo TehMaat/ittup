@@ -35,6 +35,10 @@ The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`
 !!! tip "Wrong category?"
     If the bot mistakes the game for a movie, force the category with `-force game`.
 
+!!! note "ISO images and the NFO"
+    A `.iso` without a video track is a game, whatever the release group or the platform in the name: this holds for the `.iso` file and for a folder with a `.iso` and no video file. A `.iso` with a video track (a DVD) is not.
+    The release NFO is sent to the tracker only when you upload the **folder** (`-f`): with `-u` on a single file the bot warns that the `.nfo` next to it is not sent.
+
 ## 4. Description
 
 The torrent description is built from IGDB, in sections:

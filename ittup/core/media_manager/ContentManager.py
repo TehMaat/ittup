@@ -8,6 +8,7 @@ from ittup.common.rename import rename_invalid
 from ittup.common.utility import ManageTitles, System
 from ittup.core.automode import Auto
 from ittup.core.media import Media
+from ittup.view import custom_console
 
 # {tmdb-603}, [tmdbid-603], [tmdbid=603], (tmdb-603), tmdb 603, {imdb-tt0133093}..
 ID_PATTERN = re.compile(r"[\[{(]?(?<![a-z0-9])(imdb|tmdb|tvdb|igdb)(?:id)?\s*[-=:\s]\s*(tt)?(\d+)(?![0-9])\s*[\]})]?",
@@ -32,6 +33,8 @@ class ContentManager:
         self.display_name: str | None = None
         self.meta_info_list: list[dict] = []
         self.nfo: str = ''
+        # Folders whose release NFO was already reported with -u: one warning per folder
+        self._nfo_warned: set[str] = set()
         self.category: int | None = None
 
         self.meta_info: str | None = None
@@ -138,6 +141,8 @@ class ContentManager:
         self.file_name = self.path
         # A single file has no release NFO
         self.nfo = ''
+        if self.mode == "man":
+            self.warn_nfo_next_to_file()
 
         # # Display name on webpage
         self.display_name, _ = os.path.splitext(os.path.basename(self.file_name))
@@ -191,6 +196,20 @@ class ContentManager:
 
         self.meta_info = json.dumps(self.meta_info_list, indent=4)
         return True
+
+    def warn_nfo_next_to_file(self) -> None:
+        """
+        -u on a file: the release NFO next to it is not sent. Tell the user to upload the folder with -f (#170)
+        """
+        folder = os.path.dirname(os.path.abspath(self.path))
+        if folder in self._nfo_warned:
+            return
+        nfo = self.find_nfo(folder)
+        if nfo:
+            self._nfo_warned.add(folder)
+            custom_console.bot_warning_log(
+                f"<> '{os.path.basename(nfo)}' is not sent with a single file: "
+                f"upload the folder with -f \"{folder}\" to send the NFO to the tracker")
 
     @staticmethod
     def find_nfo(folder: str) -> str:

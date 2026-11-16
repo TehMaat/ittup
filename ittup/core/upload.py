@@ -7,6 +7,7 @@ import json
 from ittup.common.external_services.igdb.core.models.search import Game
 from ittup.common.trackers.trackers import TRACKData
 from ittup.common.about import APP_NAME, REPO_URL
+from ittup.common.utility import System
 
 from ittup.core.pvtTracker import Unit3d
 from ittup.core.pvtDocu import PdfImages
@@ -138,8 +139,16 @@ class UploadBot:
         return 1
 
     def resolution_id(self) -> int | None:
+        """
+        Tracker ID of the resolution. A resolution the tracker doesn't have is sent as 'altro' (Altro),
+        so the upload goes on and the uploader can fix it on the tracker
+        """
         value = self.content.resolution
         _id = self.tracker_data.resolution.get(value)
+        if not _id:
+            _id = self.tracker_data.resolution.get(System.NO_RESOLUTION)
+            custom_console.bot_warning_log(f"Resolution '{value}' unknown to the tracker: sent as"
+                                           f" '{System.NO_RESOLUTION}', fix it on the tracker if needed")
         if not _id:
             custom_console.bot_error_log(f"Resolution ID {value} not found")
         return _id
@@ -183,8 +192,9 @@ class UploadBot:
         else:
             return None
 
-        if self.resolution_id():
-            self.tracker.data["resolution_id"] = self.resolution_id()
+        resolution_id = self.resolution_id()
+        if resolution_id:
+            self.tracker.data["resolution_id"] = resolution_id
         else:
             return None
 

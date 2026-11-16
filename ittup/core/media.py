@@ -432,6 +432,11 @@ class Media:
 
         return self._resolution
 
+    @resolution.setter
+    def resolution(self, value: str):
+        """The resolution chosen by the user (-fres) instead of the one read from MediaInfo"""
+        self._resolution = value
+
     @staticmethod
     def _crew(filename: str) -> list[str]:
         # Get the crew name only if the substr is at end of the string

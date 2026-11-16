@@ -33,6 +33,7 @@ I flag di upload si combinano tra loro (es. `-dup -u "<file>"`); i flag di ricer
 | `-fl25` `-fl50` `-fl75` `-fl100` | — | Carica in freeleech 25/50/75/100% (uno solo alla volta) |
 | `-int`, `--internal` | — | Carica come release internal |
 | `-mod`, `--moderation` | — | Chiede al tracker di [moderare](../usage/upload.md#moderazione) l'upload |
+| `-fres`, `--force-resolution` | risoluzione | Usa questa risoluzione (`720p`, `480p`, `altro`…) invece di quella letta da MediaInfo, per tutti i file della run |
 | `-ftp` | — | [Browser FTP interattivo](../usage/ftp.md): scarica dal server remoto e carica |
 
 !!! note "Flag di Unit3Dup rimossi"

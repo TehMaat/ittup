@@ -4,11 +4,23 @@ import argparse
 
 from ittup.common.utility import System
 from ittup.common.about import APP_DESCRIPTION, APP_NAME, PACKAGE_NAME
+from ittup.common.trackers import TRACKER_NAME, tracker_list
 
 
 class RemovedFlag(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         parser.error(f"'{option_string}' has been removed: {APP_NAME} uploads only to ItaTorrents")
+
+
+def tracker_resolution(value: str) -> str:
+    """
+    -fres: a resolution of the tracker, case-insensitive ('720P' -> '720p', 'Altro' -> 'altro')
+    """
+    resolutions = list(tracker_list[TRACKER_NAME]["RESOLUTION"])
+    resolution = value.strip().lower()
+    if resolution not in resolutions:
+        raise argparse.ArgumentTypeError(f"invalid resolution '{value}', choose one of: {', '.join(resolutions)}")
+    return resolution
 
 
 class CommandLine:
@@ -72,6 +84,9 @@ class CommandLine:
         upload_group.add_argument("-mod", "--moderation", action="store_true",
                                   help="Ask the tracker to moderate the upload")
         upload_group.add_argument("-ftp", "--ftp", action="store_true", help="Connect FTP")
+        upload_group.add_argument("-fres", "--force-resolution", dest="force_resolution", type=tracker_resolution,
+                                  help="Resolution of the upload instead of the one read from MediaInfo, for every"
+                                       " file of the run (es. 720p, 480p, altro)")
 
         # Freeleech of the uploaded torrents
         freeleech_group = upload_group.add_mutually_exclusive_group()

@@ -48,6 +48,7 @@ They combine with `-u`, `-f` and `-scan`:
 | `-fl25` `-fl50` `-fl75` `-fl100` | Uploads as **freeleech** 25, 50, 75 or 100% (`--freeleech25`…). The tracker applies it only if your account can set the freeleech |
 | `-int` | Uploads as an **internal release** (`--internal`) |
 | `-mod` | Asks the tracker to **moderate** the upload (`--moderation`): the torrent waits for the staff's approval |
+| `-fres <resolution>` | Uses this **resolution** instead of the one read from MediaInfo (`--force-resolution`): the title, the tracker resolution and the duplicate check follow it. It must be a resolution of the tracker (`4320p`, `2160p`, `1080p`, `1080i`, `720p`, `576p`, `576i`, `480p`, `480i`, `altro`) |
 | `-force <category>` | Forces the category: `movie`, `tv`, `game`, `edicola` (without argument: `movie`) |
 | `-notitle "<title>"` | Uses this title for the TMDB search instead of the one derived from the file name |
 | `-reseed` | Reseed mode ([Reseed](reseed.md)) |

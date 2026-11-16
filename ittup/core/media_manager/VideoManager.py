@@ -150,6 +150,18 @@ class VideoManager:
             return f"S{season:02d}"
         return None
 
+    def force_resolution(self, content: Media) -> None:
+        """
+        Set the resolution of the -fres flag instead of the one read from MediaInfo
+        """
+        forced = getattr(self.cli, "force_resolution", None)
+        if not forced:
+            return
+        if len(self.contents) > 1 and content is self.contents[0]:
+            custom_console.bot_warning_log(f"-fres: '{forced}' is the resolution of every file of this run")
+        custom_console.bot_log(f"Resolution '{forced}' from -fres, MediaInfo is not read")
+        content.resolution = forced
+
     def check(self, content: Media, selected_tracker: str, archive: str):
         """
         Build the final title of the content and check it for duplicates on the tracker
@@ -160,6 +172,9 @@ class VideoManager:
         if self.cli.watcher and os.path.exists(os.path.join(archive, f"{content.torrent_name}.torrent")):
             custom_console.bot_log(f"Watcher Active.. skip the old upload '{content.file_name}'")
             return None
+
+        # -fres: the title, the tracker ID, the rename check and the duplicates use the resolution of the user
+        self.force_resolution(content)
 
         # /// User request to build the title; overwriting display_name
         guess_filename = title.Guessit(content.title_sanitize_tags)

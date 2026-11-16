@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-from ittup.common.utility import ManageTitles
+from ittup.common.utility import ManageTitles, System
 from ittup.common.mediainfo import MediaFile
 from ittup.common.rename import TitleInfo
 from ittup.core.media import Media
@@ -717,7 +717,8 @@ class SearchTags(object):
 
     def mediainfo_uhd(self, category: str) -> dict:
         """
-        identify resolution based on Height and Width tolerance 5%
+        The resolution and its UHD/FullHD/HD/SD tag. An unknown resolution ('altro': MediaInfo has no width)
+        is not written, and a resolution with no tag has only the resolution
         """
         mapping = {
             '2160p': 'UHD',
@@ -729,10 +730,13 @@ class SearchTags(object):
             '480p': 'SD',
             '480i': 'SD',
         }
-        return {
-            'resolution': self.media.resolution,
-            'uhd': mapping.get(self.media.resolution, 'unknown')
-        }
+        resolution = self.media.resolution
+        if not resolution or str(resolution).lower() == System.NO_RESOLUTION:
+            return {}
+        tags = {'resolution': resolution}
+        if resolution in mapping:
+            tags['uhd'] = mapping[resolution]
+        return tags
 
     @staticmethod
     def detect_releaser(name: str, signs_list: dict) -> str:

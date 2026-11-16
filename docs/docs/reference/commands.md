@@ -33,6 +33,7 @@ Upload flags combine with each other (e.g. `-dup -u "<file>"`); search flags com
 | `-fl25` `-fl50` `-fl75` `-fl100` | — | Uploads as freeleech 25/50/75/100% (one at a time) |
 | `-int`, `--internal` | — | Uploads as internal release |
 | `-mod`, `--moderation` | — | Asks the tracker to [moderate](../usage/upload.md#moderation) the upload |
+| `-fres`, `--force-resolution` | resolution | Uses this resolution (`720p`, `480p`, `altro`…) instead of the one read from MediaInfo, for every file of the run |
 | `-ftp` | — | [Interactive FTP browser](../usage/ftp.md): download from the remote server and upload |
 
 !!! note "Removed Unit3Dup flags"

@@ -139,6 +139,8 @@ class SearchTags(object):
         self.name_family: str | None = None
         # The source and remux tags read from MediaInfo when the file name has no source
         self.mediainfo_tags: dict[str, list[str]] = {}
+        # No source in the name nor in MediaInfo: the H.264/H.265 video is taken as an encode of a Blu-ray
+        self.assumed_encode = False
         self.original_language: str = DEFAULT_ORIGINAL_LANGUAGE
         # Why the file may not be what its name says (es. a fake REMUX): the upload asks for moderation
         self.review_reasons: list[str] = []
@@ -279,13 +281,20 @@ class SearchTags(object):
             if found:
                 self.mediainfo_tags = found
                 self.tags_dict.update({category: list(tags) for category, tags in found.items()})
-                custom_console.bot_log(f"Source not in the file name: '{' '.join(sum(found.values(), []))}'"
-                                       f" from MediaInfo")
+                source = ' '.join(sum(found.values(), []))
+                if self.assumed_encode:
+                    custom_console.bot_log(f"Source not in the file name nor in MediaInfo: '{source}' for an encode"
+                                           f" (x264/x265 signature or codec in the name)")
+                else:
+                    custom_console.bot_log(f"Source not in the file name: '{source}' from MediaInfo")
 
         # Read the release type before 'remux' gets the REMUX tag appended below
         self.release_type = self.detect_release_type(
             self.tags_dict.get('source', []) + self.tags_dict.get('remux', [])
         )
+        if self.assumed_encode:
+            # The title writes x264/x265 as the tracker type Encode, even when the encoder signature was removed
+            self.release_type = "encode"
 
         if norm:
             # Skip if it is part of title es: "Wicked.Parte.2.2025.iTA" Title = Wicked Parte 2
@@ -500,9 +509,23 @@ class SearchTags(object):
         if 'blu-ray' in medium or 'bluray' in medium:
             # The video track copied from the disc is a remux, re-encoded it is an encode of the Blu-ray
             return {'source': ['BluRay']} if encoded else {'source': ['BluRay'], 'remux': ['REMUX']}
-        if 'dvd' in medium and encoded:
-            return {'source': ['DVDRip']}
+        if 'dvd' in medium:
+            return {'source': ['DVDRip']} if encoded else {}
+        if self.no_source_encode(video):
+            # The tracker type Encode is the encode of a Blu-ray (WEBRip, BDRip and DVDRip have their own type)
+            self.assumed_encode = True
+            return {'source': ['BluRay']}
         return {}
+
+    def no_source_encode(self, video: dict) -> bool:
+        """
+        Neither the name nor MediaInfo tell the source: an H.264/H.265 video is an encode when the video track has
+        the x264/x265 signature or the name writes the codec (the codec in the name makes the tracker type Encode).
+        Without both the video stays as it is (es. 'H.264')
+        """
+        video_format = str(video.get('format') or '')
+        family = video_family.get(video_format) if video_format else self.name_family
+        return bool(family) and (self.encoder_signature(video) is not None or self.name_family is not None)
 
     @staticmethod
     def detect_release_type(tags: list) -> str | None:

@@ -30,7 +30,7 @@ ittup -f "/percorso/Nome.Gioco.v1.0.REPACK"
 ittup -force game -f "/percorso/cartella_gioco"
 ```
 
-Il bot crea un **oggetto Game**: cerca il titolo su IGDB, ricava l'ID (`igdb`) e riconosce la **piattaforma** (PC, console…) per il tag corrispondente. Le altre proprietà (`name`, `category_id`, `description`…) funzionano [come per i video](../index.md#oggetto-game), con `tmdb` a valore neutro.
+Il bot crea un **oggetto Game**: cerca il titolo su IGDB, ricava l'ID (`igdb`) e riconosce la **piattaforma** (PC, console…) per il tag corrispondente. Senza una piattaforma nel nome (un gioco riconosciuto dalla crew, o forzato con `-force game`) il tipo è **Windows**; anche `STEAM` e `STEAMVR` sono Windows, e una piattaforma che il tracker non ha come tipo diventa **Altro**. Le altre proprietà (`name`, `category_id`, `description`…) funzionano [come per i video](../index.md#oggetto-game), con `tmdb` a valore neutro.
 
 !!! tip "Categoria non riconosciuta?"
     Se il bot scambia il gioco per un film, forza la categoria con `-force game`.

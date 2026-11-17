@@ -30,7 +30,7 @@ ittup -f "/path/Game.Name.v1.0.REPACK"
 ittup -force game -f "/path/game_folder"
 ```
 
-The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`igdb`) and detects the **platform** (PC, console…) for the matching tag. The other properties (`name`, `category_id`, `description`…) work [like for videos](../index.md#game-object), with `tmdb` set to a neutral value.
+The bot creates a **Game object**: it looks the title up on IGDB, gets the ID (`igdb`) and detects the **platform** (PC, console…) for the matching tag. Without a platform in the name (a game found from its crew, or forced with `-force game`) the type is **Windows**; `STEAM` and `STEAMVR` are Windows too, and a platform the tracker has no type for is **Altro**. The other properties (`name`, `category_id`, `description`…) work [like for videos](../index.md#game-object), with `tmdb` set to a neutral value.
 
 !!! tip "Wrong category?"
     If the bot mistakes the game for a movie, force the category with `-force game`.

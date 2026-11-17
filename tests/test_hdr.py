@@ -56,6 +56,23 @@ def test_hdr10plus_without_hdr10_metadata(warnings):
     assert not warnings
 
 
+def test_hdr10plus_with_static_metadata_not_in_the_hdr_format(warnings):
+    # Issue #142: the video track of 'Upload S01E01 2160p WEBRip HDR x265-BlackBit'. The mastering display and
+    # MaxCLL/MaxFALL are there, but MediaInfo lists only SMPTE ST 2094 App 4 in the HDR format
+    title, tags_dict = build_title("Upload.S01E01.Benvenuto.nell.Upload.2160p.WEBRip.ITA.ENG.DDP5.1.Multisub.HDR"
+                                   ".x265-BlackBit.mkv",
+                                   format_profile="Main 10@L5@Main",
+                                   hdr_format_commercial="SMPTE ST 2094 App 4", hdr_format="SMPTE ST 2094 App 4",
+                                   other_hdr_format=["SMPTE ST 2094 App 4, Version 0"],
+                                   mastering_display_color_primaries="Display P3",
+                                   mastering_display_luminance="min: 0.0001 cd/m2, max: 1000 cd/m2",
+                                   maximum_content_light_level="1000 cd/m2",
+                                   maximum_frameaverage_light_level="71 cd/m2")
+    assert tags_dict["hdr"] == "HDR10+"
+    assert "*HDR" not in title
+    assert not any("hdr_map" in message or "HDR Warning" in message for message in warnings)
+
+
 @pytest.mark.parametrize("commercial, hdr_format, expected", [
     ("Dolby Vision", "Dolby Vision", "DV"),
     ("HDR10 / HDR10", "Dolby Vision / SMPTE ST 2086", "DV HDR10"),

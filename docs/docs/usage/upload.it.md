@@ -48,6 +48,7 @@ Si combinano con `-u`, `-f` e `-scan`:
 | `-fl25` `-fl50` `-fl75` `-fl100` | Carica in **freeleech** 25, 50, 75 o 100% (`--freeleech25`…). Il tracker lo applica solo se il tuo account può impostare il freeleech |
 | `-int` | Carica come **release internal** (`--internal`) |
 | `-mod` | Chiede al tracker di **moderare** l'upload (`--moderation`): il torrent aspetta l'approvazione dello staff |
+| `-fres <risoluzione>` | Usa questa **risoluzione** invece di quella letta da MediaInfo (`--force-resolution`): titolo, risoluzione sul tracker e controllo dei duplicati la seguono. Deve essere una risoluzione del tracker (`4320p`, `2160p`, `1080p`, `1080i`, `720p`, `576p`, `576i`, `480p`, `480i`, `altro`) |
 | `-force <categoria>` | Forza la categoria: `movie`, `tv`, `game`, `edicola` (senza argomento: `movie`) |
 | `-notitle "<titolo>"` | Usa questo titolo per la ricerca su TMDB invece di quello ricavato dal nome del file |
 | `-reseed` | Modalità reseed ([Reseed](reseed.md)) |

@@ -191,14 +191,28 @@ X264_CRF = ("cabac=1 / ref=4 / deblock=1:0:0 / analyse=0x3:0x113 / me=hex / subm
             " / scenecut=40 / intra_refresh=0 / rc_lookahead=50 / rc=crf / mbtree=1 / crf=21.0 / qcomp=0.60"
             " / qpmin=0 / qpmax=69 / qpstep=4 / ip_ratio=1.40 / aq=1:1.00")
 X264_CAPPED_CRF = X264_CRF.replace(" / qcomp=0.60", " / qcomp=0.60 / vbv_maxrate=8000 / vbv_bufsize=16000")
+# ABR/2-pass with no VBV (#168): an encode, not the stream of a service
 X264_2PASS = X264_CRF.replace("rc=crf / mbtree=1 / crf=21.0", "rc=2pass / mbtree=1 / bitrate=3270 / ratetol=1.0")
 X264_ABR = X264_CRF.replace("rc=crf / mbtree=1 / crf=21.0", "rc=abr / mbtree=1 / bitrate=3270 / ratetol=1.0")
+# ABR/2-pass with a tight VBV limit (ratio < VBV_RATIO_MAX): the settings of a service
+X264_2PASS_CAPPED = X264_2PASS.replace(" / qcomp=0.60", " / qcomp=0.60 / vbv_maxrate=6000 / vbv_bufsize=12000")
+X264_ABR_CAPPED = X264_ABR.replace(" / qcomp=0.60", " / qcomp=0.60 / vbv_maxrate=6000 / vbv_bufsize=12000")
+# The x264 settings of the 'Descendants 2' WEB-DL of #168: ABR, VBV at the maximum of level 4.1 (ratio 11.4)
+X264_ABR_LEVEL_MAX = (X264_CRF.replace("ref=4", "ref=2").replace("subme=7", "subme=6")
+                      .replace("threads=34 / lookahead_threads=5", "threads=18 / lookahead_threads=3")
+                      .replace("rc_lookahead=50 / rc=crf / mbtree=1 / crf=21.0",
+                               "rc_lookahead=30 / rc=abr / mbtree=1 / bitrate=4400 / ratetol=1.0")
+                      .replace("qpstep=4", "qpstep=4 / vbv_maxrate=50000 / vbv_bufsize=62500 / nal_hrd=none"
+                               " / filler=0"))
 X265_CRF = ("cpuid=1111039 / frame-threads=4 / numa-pools=16 / wpp / no-pmode / no-pme / no-psnr / no-ssim"
             " / log-level=2 / input-csp=1 / input-res=1920x1080 / interlace=0 / total-frames=0 / level-idc=0"
             " / ctu=64 / min-cu-size=8 / max-tu-size=32 / rc=crf / crf=22.0 / qcomp=0.60 / qpstep=4"
             " / stats-write=0 / stats-read=0 / vbv-maxrate=0 / vbv-bufsize=0 / vbv-init=0.9 / crf-max=0.0"
             " / crf-min=0.0 / ipratio=1.40 / pbratio=1.30 / aq-mode=2 / aq-strength=1.00")
 X265_CAPPED_CRF = X265_CRF.replace("vbv-maxrate=0 / vbv-bufsize=0", "vbv-maxrate=10000 / vbv-bufsize=20000")
+X265_ABR = X265_CRF.replace("rc=crf / crf=22.0", "rc=abr / bitrate=5000")
+X265_ABR_CAPPED = X265_ABR.replace("vbv-maxrate=0 / vbv-bufsize=0", "vbv-maxrate=10000 / vbv-bufsize=20000")
+X265_ABR_LEVEL_MAX = X265_ABR.replace("vbv-maxrate=0 / vbv-bufsize=0", "vbv-maxrate=50000 / vbv-bufsize=62500")
 
 
 @pytest.mark.parametrize("video, expected", [
@@ -207,8 +221,8 @@ X265_CAPPED_CRF = X265_CRF.replace("vbv-maxrate=0 / vbv-bufsize=0", "vbv-maxrate
     ({"encoding_settings": X264_CRF}, "x264 crf=21.0, no VBV"),
     ({"writing_library": X264_LIBRARY, "encoding_settings": X264_CAPPED_CRF}, None),
     ({"writing_library": X265_LIBRARY, "encoding_settings": X265_CAPPED_CRF}, None),
-    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_2PASS}, None),
-    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_ABR}, None),
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_2PASS_CAPPED}, None),
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_ABR_CAPPED}, None),
     ({"writing_library": X264_LIBRARY}, None),
     ({"writing_library": X264_LIBRARY, "encoding_settings": "rc=crf / vbv_maxrate=n/a"}, None),
     ({}, None),
@@ -237,12 +251,91 @@ def test_web_dl_hevc_encoded_with_crf_is_a_possible_webrip(warnings):
     assert search.review_reasons == ["possible WEBRip: x265 crf=22.0, no VBV"]
 
 
-@pytest.mark.parametrize("encoding_settings", [X264_CAPPED_CRF, X264_2PASS, X264_ABR, ""])
+@pytest.mark.parametrize("encoding_settings", [X264_CAPPED_CRF, X264_2PASS_CAPPED, X264_ABR_CAPPED, ""])
 def test_web_dl_with_the_settings_of_a_service(warnings, encoding_settings):
     search = search_tags("Movie.2020.1080p.AMZN.WEB-DL.DDP5.1.H.264-GRP.mkv", "AVC",
                          writing_library=X264_LIBRARY, encoding_settings=encoding_settings)
     assert search.tags_dict["vcodec"] == "H.264"
     assert not warnings
+    assert search.review_reasons == []
+
+
+def bitrate_settings(rc: str, values: str, library: str = X264_LIBRARY) -> dict:
+    return {"writing_library": library, "encoding_settings": f"cabac=1 / ref=4 / rc={rc} / mbtree=1 / {values}"}
+
+
+@pytest.mark.parametrize("video, expected", [
+    # No VBV limit
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_2PASS}, "x264 2pass bitrate=3270, no VBV"),
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_ABR}, "x264 abr bitrate=3270, no VBV"),
+    ({"encoding_settings": X264_ABR}, "x264 abr bitrate=3270, no VBV"),
+    ({"writing_library": X265_LIBRARY, "encoding_settings": X265_ABR}, "x265 abr bitrate=5000, no VBV"),
+    (bitrate_settings("2pass", "bitrate=3270 / vbv_maxrate=0"), "x264 2pass bitrate=3270, no VBV"),
+    # A VBV limit far above the average bitrate
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_ABR_LEVEL_MAX},
+     "x264 abr bitrate=4400, vbv_maxrate=50000"),
+    ({"writing_library": X265_LIBRARY, "encoding_settings": X265_ABR_LEVEL_MAX},
+     "x265 abr bitrate=5000, vbv-maxrate=50000"),
+    (bitrate_settings("2pass", "bitrate=3000 / vbv_maxrate=12001"), "x264 2pass bitrate=3000, vbv_maxrate=12001"),
+    # A tight VBV limit: the settings of a service
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_2PASS_CAPPED}, None),
+    ({"writing_library": X264_LIBRARY, "encoding_settings": X264_ABR_CAPPED}, None),
+    ({"writing_library": X265_LIBRARY, "encoding_settings": X265_ABR_CAPPED}, None),
+    # The ratio equal to VBV_RATIO_MAX is still a cap
+    (bitrate_settings("abr", f"bitrate=3000 / vbv_maxrate={3000 * tags.VBV_RATIO_MAX}"), None),
+    # Missing or unreadable values: no guess
+    (bitrate_settings("abr", "ratetol=1.0"), None),
+    (bitrate_settings("abr", "bitrate=n/a"), None),
+    (bitrate_settings("abr", "bitrate=0"), None),
+    (bitrate_settings("abr", "bitrate=nan"), None),
+    (bitrate_settings("2pass", "bitrate=3270 / vbv_maxrate=n/a"), None),
+    (bitrate_settings("abr", "bitrate=5000 / vbv-maxrate=n/a", X265_LIBRARY), None),
+    # Other rate controls are not checked
+    (bitrate_settings("cqp", "qp=20"), None),
+    ({"writing_library": X264_LIBRARY, "encoding_settings": "bitrate=3270"}, None),
+])
+def test_home_encode_settings_abr_and_2pass(video, expected):
+    assert SearchTags.home_encode_settings(video) == expected
+
+
+def test_web_dl_encoded_with_abr_and_the_vbv_of_the_level_is_a_possible_webrip(warnings):
+    search = search_tags("Descendants 2 - (2017) WEB-DL.mkv", "AVC", writing_library="x264 core 157 r2935 545de2f",
+                         encoding_settings=X264_ABR_LEVEL_MAX, format_profile="Main@L4.1")
+    # The title doesn't change: the staff decides
+    assert search.tags_dict["vcodec"] == "H.264"
+    assert search.tags_dict["source"] == ["WEB-DL"]
+    webrip = [message for message in warnings if "possible WEBRip" in message]
+    assert webrip == ["<> Warning: possible WEBRip, the video track was encoded with x264 abr bitrate=4400,"
+                      " vbv_maxrate=50000: a WEB-DL keeps the stream of the service. Check the source in the name"]
+    assert search.review_reasons == ["possible WEBRip: x264 abr bitrate=4400, vbv_maxrate=50000"]
+
+
+@pytest.mark.parametrize("filename, video_format, library, encoding_settings, reason", [
+    ("Movie.2020.1080p.AMZN.WEB-DL.DDP5.1.H.264-GRP.mkv", "AVC", X264_LIBRARY, X264_2PASS,
+     "possible WEBRip: x264 2pass bitrate=3270, no VBV"),
+    ("Movie.2020.1080p.WEB-DL.x265-GRP.mkv", "HEVC", X265_LIBRARY, X265_ABR,
+     "possible WEBRip: x265 abr bitrate=5000, no VBV"),
+])
+def test_web_dl_encoded_with_abr_or_2pass_and_no_vbv_is_a_possible_webrip(warnings, filename, video_format,
+                                                                           library, encoding_settings, reason):
+    search = search_tags(filename, video_format, writing_library=library, encoding_settings=encoding_settings)
+    assert search.tags_dict["vcodec"] == {"AVC": "H.264", "HEVC": "H.265"}[video_format]
+    assert sum("possible WEBRip" in message for message in warnings) == 1
+    assert search.review_reasons == [reason]
+
+
+@pytest.mark.parametrize("filename, video_format, library, expected", [
+    ("Movie.2020.1080p.WEBRip.x264-GRP.mkv", "AVC", X264_LIBRARY, "x264"),
+    ("Movie.2020.1080p.BDRip.x264-GRP.mkv", "AVC", X264_LIBRARY, "x264"),
+    ("Movie.2020.1080p.BluRay.x264-GRP.mkv", "AVC", X264_LIBRARY, "x264"),
+    ("Movie.2020.1080p.BluRay.x265-GRP.mkv", "HEVC", X265_LIBRARY, "x265"),
+])
+@pytest.mark.parametrize("encoding_settings", [X264_2PASS, X264_ABR, X264_ABR_LEVEL_MAX, X265_ABR])
+def test_abr_and_2pass_are_normal_on_an_encode(warnings, filename, video_format, library, expected,
+                                               encoding_settings):
+    search = search_tags(filename, video_format, writing_library=library, encoding_settings=encoding_settings)
+    assert search.tags_dict["vcodec"] == expected
+    assert not any("possible WEBRip" in message for message in warnings)
     assert search.review_reasons == []
 
 

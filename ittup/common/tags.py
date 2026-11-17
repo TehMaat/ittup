@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import math
 import re
 from ittup.common.utility import ManageTitles
 from ittup.common.mediainfo import MediaFile
@@ -12,6 +13,9 @@ HDR10PLUS_FORMATS = ("SMPTE ST 2094", "SMPTE ST 2094 APP 4")
 HDR10_FORMATS = ("SMPTE ST 2086",)
 # Parts with no HDR tag of their own: the Blu-ray compatibility of Dolby Vision profile 7
 NEUTRAL_HDR_FORMATS = ("", "BLU-RAY")
+# ABR/2-pass with a VBV limit above this many times the average bitrate: the limit is the maximum of the level
+# (e.g. 50000 for 4.1 Main), not the cap of a streaming service, which stays close to the average (1-3 times)
+VBV_RATIO_MAX = 4
 
 
 def hdr_part(part: str) -> str | None:
@@ -568,8 +572,12 @@ class SearchTags(object):
     @staticmethod
     def home_encode_settings(video: dict) -> str | None:
         """
-        x264/x265 settings of an encode with CRF and no VBV limit (es. 'x264 crf=21.0, no VBV'), None otherwise.
-        A streaming service always caps the bitrate (VBV): a WEB-DL with these settings was encoded again
+        x264/x265 settings of an encode made at home, None otherwise:
+        - CRF with no VBV limit (es. 'x264 crf=21.0, no VBV')
+        - ABR or 2-pass with no VBV limit (es. 'x264 2pass bitrate=3270, no VBV'), or with a limit more than
+          VBV_RATIO_MAX times the average bitrate (es. 'x264 abr bitrate=4400, vbv_maxrate=50000')
+        A streaming service always caps the bitrate close to the average (VBV): a WEB-DL with these settings
+        was encoded again. Missing or unreadable values give None: better a missed warning than a false one
         """
         family = SearchTags.encoder_signature(video)
         if not family:
@@ -579,17 +587,38 @@ class SearchTags(object):
             key, separator, value = item.strip().partition('=')
             if separator:
                 settings[key.strip().lower()] = value.strip()
-        if settings.get('rc', '').lower() != 'crf' or not settings.get('crf'):
-            return None
         # x264 writes vbv_maxrate only with a limit, x265 always writes vbv-maxrate (0 = no limit)
-        maxrate = settings.get('vbv_maxrate', settings.get('vbv-maxrate'))
-        if maxrate is not None:
-            try:
-                if float(maxrate) > 0:
-                    return None
-            except ValueError:
+        maxrate_key = 'vbv_maxrate' if 'vbv_maxrate' in settings else 'vbv-maxrate'
+        maxrate = SearchTags.setting_number(settings.get(maxrate_key, '0'))
+        if maxrate is None:
+            return None
+        rc = settings.get('rc', '').lower()
+        if rc == 'crf':
+            if not settings.get('crf') or maxrate > 0:
                 return None
-        return f"x{family} crf={settings['crf']}, no VBV"
+            return f"x{family} crf={settings['crf']}, no VBV"
+        if rc not in ('abr', '2pass'):
+            return None
+        bitrate = SearchTags.setting_number(settings.get('bitrate', ''))
+        if not bitrate or bitrate <= 0:
+            return None
+        description = f"x{family} {rc} bitrate={settings['bitrate']}"
+        if maxrate <= 0:
+            return f"{description}, no VBV"
+        if maxrate > VBV_RATIO_MAX * bitrate:
+            return f"{description}, {maxrate_key}={settings[maxrate_key]}"
+        return None
+
+    @staticmethod
+    def setting_number(value: str) -> float | None:
+        """
+        Number of an x264/x265 setting ('4400' -> 4400.0), None when it isn't a finite number
+        """
+        try:
+            number = float(value)
+        except ValueError:
+            return None
+        return number if math.isfinite(number) else None
 
     @staticmethod
     def normalize_other_codec(video: dict, filename: str) -> str:

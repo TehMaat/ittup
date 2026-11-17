@@ -202,13 +202,12 @@ class UploadBot:
 
     def data_game(self, igdb: Game) -> Unit3d | None:
 
-        igdb_platform = self.content.platform_list[0].lower() if self.content.platform_list else ''
         self.tracker.data["name"] = self.content.display_name
         self.tracker.data["tmdb"] = 0
         self.tracker.data["category_id"] = self.tracker_data.category.get(self.content.category)
         self.tracker.data["anonymous"] = int(config_settings.user_preferences.ANON)
         self.tracker.data["description"] = igdb.description + self.sign if igdb else "Sorry, there is no valid IGDB"
-        self.tracker.data["type_id"] = self.tracker_data.type_id.get(igdb_platform) if igdb_platform else 1
+        self.tracker.data["type_id"] = self.tracker_data.game_type(self.content.platform_list)
         self.tracker.data["igdb"] = igdb.id if igdb else 1  # need zero not one ( fix tracker)
         self.tracker.data["internal"] = self.internal()
         self.tracker.data["free"] = self.freeleech()

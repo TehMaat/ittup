@@ -7,6 +7,7 @@ import pytest
 from ittup.core.report import report, TemporaryFailure
 from ittup.core import upload
 from ittup.core.upload import UploadBot
+from ittup.common.trackers.trackers import TRACKData
 
 
 def bot() -> UploadBot:
@@ -100,3 +101,42 @@ def test_a_content_without_review_reasons():
     # A content that didn't go through SearchTags
     upload_bot = SimpleNamespace(cli=SimpleNamespace(moderation=False), content=SimpleNamespace())
     assert UploadBot.moderation(upload_bot) == 0
+
+
+def game_upload(name: str, platform_list: list[str]) -> dict:
+    """ The data of a game upload to ITT, as sent to the tracker """
+    upload_bot = UploadBot.__new__(UploadBot)
+    upload_bot.cli = SimpleNamespace(personal=False, internal=False, freeleech=None)
+    upload_bot.sign = "[sign]"
+    upload_bot.content = SimpleNamespace(display_name=name, category="game", platform_list=platform_list)
+    upload_bot.tracker_data = TRACKData.load_from_module(tracker_name="ITT")
+    upload_bot.tracker = SimpleNamespace(data={})
+    return upload_bot.data_game(igdb=SimpleNamespace(id=1, description="[igdb]")).data
+
+
+WINDOWS, ALTRO = 13, 15
+
+
+@pytest.mark.parametrize("name, platform_list", [
+    # Found as a game from the crew, without a platform: a PC game, not a Full Disc (#175)
+    ("Black.Mesa.Anomalous.Improvements-RUNE", []),
+    # A .iso without video or a game forced with -force game, without a platform in the name
+    ("STAR.WARS.Galactic.Racer-voices38", []),
+    ("Some.Game.STEAM-TENOKE", ["STEAM"]),
+    ("Some.Game.SteamVR-NOGRP", ["SteamVR"]),
+    ("Some.Game.PC-FitGirl", ["PC"]),
+])
+def test_a_pc_game_is_windows(name, platform_list):
+    assert game_upload(name, platform_list)["type_id"] == WINDOWS
+
+
+@pytest.mark.parametrize("platform", ["LIN", "IOS", "OCULUS", "XBX", "XONE"])
+def test_a_platform_without_a_type_on_the_tracker_is_altro(platform):
+    assert game_upload(f"Some.Game.{platform}-NOGRP", [platform])["type_id"] == ALTRO
+
+
+@pytest.mark.parametrize("platform, type_id", [
+    ("MACOS", 12), ("NSW", 17), ("NINTENDO", 17), ("PS4", 18), ("PSN", 18), ("PS5", 35), ("PSVR", 35),
+])
+def test_the_other_platforms_keep_their_type(platform, type_id):
+    assert game_upload(f"Some.Game.{platform}-NOGRP", [platform])["type_id"] == type_id

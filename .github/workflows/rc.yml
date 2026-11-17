@@ -242,3 +242,20 @@ jobs:
             echo "Soak period: at least 3-5 days of real use, checklist in docs/release-testing.md."
             echo "OK: open a PR $BRANCH → main (merge commit). KO: fix on dev and cut the next rc from dev."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The rc on the project's Discord channel, once it installs from PyPI (RELEASING.md, "Discord").
+  # Without the secret DISCORD_WEBHOOK_URL (forks) it is skipped; a failed post doesn't fail the rc
+  discord:
+    needs: [validate, smoke]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the last stable tag, for the notes
+
+      - name: Announce the rc on Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: .github/scripts/discord-notify.sh rc "$VERSION"

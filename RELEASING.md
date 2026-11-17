@@ -82,7 +82,8 @@ At the feature freeze of milestone `1.13.0`:
 
    Then it runs the full test matrix (`pip-audit` blocking) and the Windows unit tests, builds `1.13.0rc1`,
    tests the wheel, **tags `1.13.0rc1`**, publishes it on PyPI as a pre-release (environment `staging`),
-   installs it back from PyPI and prints the install command for the testers in the run summary.
+   installs it back from PyPI, prints the install command for the testers in the run summary and announces it
+   on Discord (see "Discord" below).
 4. **Soak period**: at least 3-5 days of real use, following [docs/release-testing.md](docs/release-testing.md).
 5. **KO**: the rc branch is not fixed and not merged. The fix is a PR to dev; then cut the next rc from dev,
    `1.13.0-rc2`, and the soak starts over.
@@ -102,7 +103,8 @@ and environment `staging` (once, see "PyPI and TestPyPI" below).
    `STRICT_RELEASE=true`); `pip-audit` warns.
 4. The `pypi` environment waits for the **manual approval** of a maintainer, then publishes to PyPI with trusted
    publishing. Its name is the one in the PyPI trusted publisher: don't rename it.
-5. Smoke test: `pip install ittup==1.13.0` from PyPI in a clean virtualenv, then `ittup --help`.
+5. Smoke test: `pip install ittup==1.13.0` from PyPI in a clean virtualenv, then `ittup --help`; then the
+   release is announced on Discord (see "Discord" below).
 6. The milestone `1.13.0` is closed; its open issues move to the next milestone or back to the backlog.
 7. A PR **main → dev** ("chore: back-merge main into dev", from the copy `back-merge/main`) is opened
    automatically: merge it with a merge commit.
@@ -205,6 +207,33 @@ To do on `TehMaat/ittup` (a fork can be set up the same way to try the flow, wit
   the back-merge PR need it); "Require approval for all external contributors".
 - Settings → General: "Automatically delete head branches", Issues and Discussions on.
 - Run the `Labels` workflow once.
+- Discord announcements: see "Discord" below.
+
+## Discord
+
+Every rc and every stable release (major, minor and patch) is announced on the project's Discord channel, after
+its smoke test from PyPI: the `discord` job of [`rc.yml`](.github/workflows/rc.yml) and of
+[`publish.yml`](.github/workflows/publish.yml) runs [`discord-notify.sh`](.github/scripts/discord-notify.sh).
+The message has the version, the notes (rc: the `feat:`/`fix:` commits since the last stable tag; stable: the
+release-please notes), the install command and the links to GitHub and PyPI. The fixed text is in Italian, the
+notes stay in English. It never pings anybody, not even with an `@everyone` in a commit.
+
+Setup, once:
+
+1. Discord, in the channel of the announcements: Edit channel → Integrations → Webhooks → New webhook (needs the
+   "Manage webhooks" permission), then copy its URL. Whoever has the URL can write in the channel: keep it secret.
+2. GitHub: Settings → Secrets and variables → Actions → New repository secret `DISCORD_WEBHOOK_URL` with that URL.
+
+Without the secret (forks) the job only prints a notice. A failed post is a warning and doesn't fail the
+release: post it by hand. To see a message without posting it:
+
+```bash
+.github/scripts/discord-notify.sh --dry-run rc 1.13.0rc1 | jq .
+NOTES="$(cat notes.md)" .github/scripts/discord-notify.sh --dry-run stable 1.13.0 <release url> | jq .
+```
+
+To change the channel, create a webhook there and replace the secret. If the URL leaks, delete the webhook on
+Discord and create a new one.
 
 ## Checklists
 

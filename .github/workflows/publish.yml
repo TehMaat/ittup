@@ -20,6 +20,8 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      html_url: ${{ steps.release.outputs.html_url }}
+      body: ${{ steps.release.outputs.body }}
     steps:
       - id: release
         uses: googleapis/release-please-action@v4
@@ -147,6 +149,26 @@ jobs:
         run: |
           cp -r tests/smoke tests/conftest.py "$RUNNER_TEMP/"
           cd "$RUNNER_TEMP" && pytest -v smoke
+
+  # The release on the project's Discord channel, once it installs from PyPI (RELEASING.md, "Discord").
+  # Here and not in an 'on: release' workflow: a release created with GITHUB_TOKEN doesn't trigger other workflows.
+  # Without the secret DISCORD_WEBHOOK_URL (forks) it is skipped; a failed post doesn't fail the release
+  discord:
+    needs: [release-please, smoke]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Announce the release on Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
+          URL: ${{ needs.release-please.outputs.html_url }}
+          NOTES: ${{ needs.release-please.outputs.body }}
+        run: .github/scripts/discord-notify.sh stable "$VERSION" "$URL"
 
   # main goes back into dev after every change (rc merged, release, hotfix), so dev always contains main.
   # A PR, because dev accepts only PRs: merge it with a merge commit, never squash.

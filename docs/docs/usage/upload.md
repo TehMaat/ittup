@@ -60,7 +60,7 @@ They combine with `-u`, `-f` and `-scan`:
 When MediaInfo says that a file may not be what its name says, the bot still uploads it but asks the tracker to **moderate** it, even if your account is trusted: a staff member checks it before it goes online. Today this happens for:
 
 - a **possible fake REMUX**: a REMUX whose video track was encoded with x264/x265;
-- a **possible WEBRip**: a WEB-DL, DLMux or WEBMux whose video track was encoded with x264/x265 CRF and no VBV limit, which a streaming service never does.
+- a **possible WEBRip**: a WEB-DL, DLMux or WEBMux whose video track was encoded with x264/x265 CRF and no VBV limit, or with ABR/2-pass and no VBV limit or a limit more than 4 times the average bitrate (the maximum of the level, e.g. `bitrate=4400, vbv_maxrate=50000`). A streaming service always caps the bitrate close to the average.
 
 The log says why:
 

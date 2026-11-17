@@ -60,7 +60,7 @@ Si combinano con `-u`, `-f` e `-scan`:
 Quando il MediaInfo dice che un file potrebbe non essere quello che dice il nome, il bot lo carica comunque ma chiede al tracker di **moderarlo**, anche se il tuo account è trusted: uno staffer lo controlla prima che vada online. Oggi succede per:
 
 - un **possibile falso REMUX**: un REMUX con la traccia video ricodificata con x264/x265;
-- un **possibile WEBRip**: un WEB-DL, DLMux o WEBMux con la traccia video ricodificata con x264/x265 CRF e senza limite VBV, cosa che un servizio di streaming non fa mai.
+- un **possibile WEBRip**: un WEB-DL, DLMux o WEBMux con la traccia video ricodificata con x264/x265 CRF e senza limite VBV, oppure con ABR/2-pass e senza limite VBV o con un limite più di 4 volte il bitrate medio (il massimo del livello, es. `bitrate=4400, vbv_maxrate=50000`). Un servizio di streaming limita sempre il bitrate vicino al valore medio.
 
 Il log dice il motivo:
 

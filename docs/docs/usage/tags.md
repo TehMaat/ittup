@@ -90,6 +90,8 @@ Maps **word → tag type**: it teaches the bot to recognize words in file names 
 
 Used when building the title: when the word appears in the file name, the value lands in the right tag of the title. You can add your own entries (e.g. release group names or unusual sources).
 
+The word is found whatever its case in the file name, and the title writes it as the key of `tags_list.json`: `Movie.2020.Repack…` and `Movie.2020.repack…` both give `REPACK`, `Remux` gives `REMUX`, `Amzn` gives `AMZN`. A few sources have a fixed spelling: `BluRay`, `WEB-DL`, `WEBRip`, `BDRip`, `UHDRip`, `WEBMux`.
+
 !!! warning "Required file"
     If `tags_list.json` is missing, the bot reports it at startup.
 

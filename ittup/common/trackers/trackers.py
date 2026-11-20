@@ -53,6 +53,15 @@ class TRACKData:
                 return self.type_id.get("encode", -1)
         return self.type_id.get("altro", -1)
 
+    def game_type(self, platforms: list[str]) -> int:
+        """
+        Tracker type ID of a game from the platforms in its name. Without a platform the game is found from
+        a PC crew (or forced with -force game): Windows. A platform without a type on the tracker is 'altro'
+        """
+        platform = platforms[0].lower() if platforms else "windows"
+        platform = "windows" if platform in PC_PLATFORMS else platform
+        return self.type_id.get(platform, self.type_id.get("altro", -1))
+
     def type_tags(self, name: str) -> list[str]:
         """
         TYPE_ID tags written in the name, after the title
@@ -105,6 +114,10 @@ TYPE_PRIORITY = [
     "3d",
     "encode", "hdrip", "bluray", "hevc", "fullhd",
 ]
+
+
+# Game platforms in the name that are a PC game
+PC_PLATFORMS = {"steam", "steamvr"}
 
 
 def type_priority(tag: str) -> int:

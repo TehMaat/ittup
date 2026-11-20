@@ -90,6 +90,8 @@ Mappa **parola → tipo di tag**: insegna al bot a riconoscere parole nei nomi d
 
 Usato nella costruzione del titolo: se nel nome del file compare la parola, il valore corrispondente finisce nel tag giusto del titolo. Puoi aggiungere le tue voci (es. sigle di release group o sorgenti particolari).
 
+La parola viene trovata con qualunque combinazione di maiuscole e minuscole, e il titolo la scrive come la chiave di `tags_list.json`: `Movie.2020.Repack…` e `Movie.2020.repack…` danno entrambi `REPACK`, `Remux` dà `REMUX`, `Amzn` dà `AMZN`. Alcune sorgenti hanno una grafia fissa: `BluRay`, `WEB-DL`, `WEBRip`, `BDRip`, `UHDRip`, `WEBMux`.
+
 !!! warning "File richiesto"
     Se `tags_list.json` manca, il bot lo segnala all'avvio.
 

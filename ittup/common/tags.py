@@ -231,8 +231,8 @@ class SearchTags(object):
                 norm = self.normalize_video_encoder(tag)
             else:
                 norm = re.escape(tag)
-            # Save a regex pattern for each category
-            patterns.append([norm, category])
+            # Save a regex pattern for each category, with the tag as the tags list writes it
+            patterns.append([norm, category, tag])
 
         # NFRip -> NF WEBRip: the streaming platform and the source
         text = self.expand_platform_rip(text)
@@ -240,12 +240,12 @@ class SearchTags(object):
         # Run regex: a tag is delimited by anything but a letter or a digit ('Titolo_1990_BDRip_1080p')
         tags = {}
         positions = {}
-        for p, category in patterns:
+        for p, category, tag in patterns:
             regex = re.compile(r'(?<![^\W_])' + p + r'(?![^\W_])', re.IGNORECASE)
             match = regex.search(text)
             if match:
-                # Normalize Tag_list
-                tags.setdefault(category, []).append(TAG_NORMALIZE.get(match.group(0).upper(), match.group(0)))
+                # The title writes the tag as the tags list does, not as the file name ('Repack' -> 'REPACK')
+                tags.setdefault(category, []).append(TAG_NORMALIZE.get(tag.upper(), tag))
                 positions.setdefault(category, []).append(match.start())
         # Remux tags in the order of the name, but always 'VU REMUX' (the ItaTorrents type), never 'REMUX VU'
         if len(tags.get('remux', [])) > 1:

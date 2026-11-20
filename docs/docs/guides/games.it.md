@@ -35,6 +35,10 @@ Il bot crea un **oggetto Game**: cerca il titolo su IGDB, ricava l'ID (`igdb`) e
 !!! tip "Categoria non riconosciuta?"
     Se il bot scambia il gioco per un film, forza la categoria con `-force game`.
 
+!!! note "Immagini ISO e NFO"
+    Un `.iso` senza traccia video è un gioco, qualunque sia il gruppo o la piattaforma nel nome: vale per il file `.iso` e per una cartella con un `.iso` e nessun file video. Un `.iso` con una traccia video (un DVD) no.
+    L'NFO della release viene inviato al tracker solo se carichi la **cartella** (`-f`): con `-u` su un singolo file il bot avvisa che il `.nfo` accanto non viene inviato.
+
 ## 4. Descrizione
 
 La descrizione del torrent è costruita da IGDB, a sezioni:

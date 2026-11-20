@@ -29,6 +29,9 @@ INTERLACED_RESOLUTIONS = {"1080p": "1080i", "576p": "576i", "480p": "480i"}
 # MediaInfo 'Scan type' of an interlaced video (MBAFF/PAFF: interlaced H.264). 'Mixed' is progressive
 INTERLACED_SCAN_TYPES = {"interlaced", "mbaff", "paff"}
 
+# Disc image of a game: without a video track it is not a movie or a series (#170)
+ISO_EXTENSION = ".iso"
+
 
 class Media:
     def __init__(self, folder: str, subfolder: str):
@@ -346,6 +349,11 @@ class Media:
         if self._category:
             return self._category
 
+        # An ISO without video is a game, whatever the crew or the platform in the name (#170)
+        if self.iso_without_video(self.torrent_path):
+            self._category = System.category_list.get(System.GAME)
+            return self._category
+
         # Check for ext file
         if ManageTitles.media_docu_type(self.title):
             self._category = System.category_list.get(System.DOCUMENTARY)
@@ -365,6 +373,24 @@ class Media:
     @category.setter
     def category(self, value):
         self._category = value
+
+    @staticmethod
+    def iso_without_video(path: str) -> bool:
+        """
+        True for a .iso file without a video track, or for a folder with no video file and a .iso without
+        a video track (the release of a game). A .iso with a video track (es. a DVD) is not a game
+        """
+        if os.path.isfile(path):
+            images = [path] if path.lower().endswith(ISO_EXTENSION) else []
+        elif os.path.isdir(path):
+            files = os.listdir(path)
+            if any(ManageTitles.filter_ext(file) for file in files):
+                return False
+            images = [os.path.join(path, file) for file in sorted(files, key=System.natural_key)
+                      if file.lower().endswith(ISO_EXTENSION) and os.path.isfile(os.path.join(path, file))]
+        else:
+            return False
+        return bool(images) and not any(MediaFile(image).video_track for image in images)
 
     @property
     def mediafile(self):
@@ -401,7 +427,10 @@ class Media:
             try:
                 width = int(self.mediafile.video_width)
             except ValueError:
-                print(f"{self.file_name} Video width unknown or file corrupted")
+                # A disc image or a file that is not a video: MediaInfo has no video track (#170)
+                custom_console.bot_error_log(
+                    f"'{self.file_name}' has no video track: it can't be uploaded as a movie or a series. "
+                    "If it is a game, use -force game")
                 exit()
             if self.mediafile.video_width:
                 try:

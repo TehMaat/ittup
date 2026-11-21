@@ -31,6 +31,8 @@ class ContentManager:
 
         self.languages: list[str] | None = None
         self.display_name: str | None = None
+        # Name of the file without the extension or of the folder, before clean_text
+        self.release_name: str = ''
         self.meta_info_list: list[dict] = []
         self.nfo: str = ''
         # Folders whose release NFO was already reported with -u: one warning per folder
@@ -108,6 +110,9 @@ class ContentManager:
             media.tmdb_id = self.tmdb_id
             media.igdb_id = self.igdb_id
             media.display_name = self.display_name
+            if media.category == System.category_list.get(System.GAME):
+                # The title of a game is the name of the release: keep the '-' before the releaser
+                media.display_name = ManageTitles.restore_releaser(self.display_name, self.release_name)
 
             return media
         else:
@@ -145,8 +150,8 @@ class ContentManager:
             self.warn_nfo_next_to_file()
 
         # # Display name on webpage
-        self.display_name, _ = os.path.splitext(os.path.basename(self.file_name))
-        self.display_name = ManageTitles.clean_text(self.display_name)
+        self.release_name, _ = os.path.splitext(os.path.basename(self.file_name))
+        self.display_name = ManageTitles.clean_text(self.release_name)
         self.display_name = re.sub(r'[\[\]()]', '', self.display_name)
 
         # current media path
@@ -173,7 +178,8 @@ class ContentManager:
         self.file_name = os.path.join(self.path, files_list[0])
 
         # # Display name on webpage
-        self.display_name = ManageTitles.clean_text(os.path.basename(self.path))
+        self.release_name = os.path.basename(self.path)
+        self.display_name = ManageTitles.clean_text(self.release_name)
         self.display_name = re.sub(r'[\[\]()]', '', self.display_name)
 
         # current media path

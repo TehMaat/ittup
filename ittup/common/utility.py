@@ -396,6 +396,17 @@ class ManageTitles:
         return filename_sanitized
 
     @staticmethod
+    def restore_releaser(display_name: str, release_name: str) -> str:
+        """
+        clean_text writes the '-' before the release group as a space ('Game.Name-RUNE' -> 'Game Name RUNE'):
+        write it again as in the name of the release ('Game Name-RUNE')
+        """
+        group = re.search(r"-([^\s._\-\[\](){}]+)$", release_name.strip())
+        if not group:
+            return display_name
+        return re.sub(rf"\s+({re.escape(group.group(1))})$", r"-\1", display_name, flags=re.IGNORECASE)
+
+    @staticmethod
     def clean_tags(filename: str) -> str:
         """
             Clean filename for title generation

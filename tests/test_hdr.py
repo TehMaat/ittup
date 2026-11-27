@@ -110,3 +110,60 @@ def test_hybrid_remux_with_dolby_vision_profile_8(warnings):
     assert tags_dict["hdr"] == "DV HDR10"
     assert "HYBRID" in tags_dict["remux"]
     assert any("HYBRID REMUX" in message for message in warnings)
+
+
+# Issue #181: the video track of 'Piedone꞉ Uno sbirro a Napoli S02E01 Scugnizzi 2160p WEB-DL E-AC3 ITA SUBS HLG
+# H.265': HLG has no HDR metadata, so MediaInfo has no HDR format
+HLG_FILENAME = "Piedone꞉ Uno sbirro a Napoli S02E01 Scugnizzi 2160p WEB-DL E-AC3 ITA SUBS HLG H.265.mkv"
+
+
+@pytest.mark.parametrize("transfer, transfer_original", [
+    ("HLG", "HLG / HLG"),
+    ("HLG / HLG", ""),
+    # HLG in the alternative transfer characteristics SEI, BT.2020 in the VUI
+    ("HLG / BT.2020 (10-bit)", ""),
+    ("BT.2020 (10-bit)", "HLG / BT.2020 (10-bit)"),
+    ("ARIB STD-B67", ""),
+])
+def test_hlg_without_hdr_format(warnings, transfer, transfer_original):
+    title, tags_dict = build_title(HLG_FILENAME, format_profile="Main 10@L5@Main", color_range="Limited",
+                                   transfer_characteristics=transfer,
+                                   transfer_characteristics_original=transfer_original)
+    assert tags_dict["hdr"] == "HLG"
+    assert "HLG" in title.split()
+    assert "SDR" not in title.split()
+    assert not any("PQ10" in message for message in warnings)
+
+
+def test_bt2020_sdr_is_not_hlg(warnings):
+    # BT.2020 10 bit with a SDR transfer: neither HLG nor PQ10
+    _, tags_dict = build_title(WEB_DL, transfer_characteristics="BT.2020 (10-bit)")
+    assert tags_dict["hdr"] == "SDR"
+    assert any("PQ10" in message for message in warnings)
+
+
+def test_bt709_is_sdr(warnings):
+    _, tags_dict = build_title(WEB_DL, color_primaries="BT.709", matrix_coefficients="BT.709", bit_depth=8,
+                               transfer_characteristics="BT.709")
+    assert tags_dict["hdr"] == "SDR"
+    assert not warnings
+
+
+def test_dolby_vision_keeps_its_tag_with_hlg_transfer(warnings):
+    # The HDR format is read first: the HLG transfer doesn't replace it
+    _, tags_dict = build_title(WEB_DL, hdr_format_commercial="Dolby Vision", hdr_format="Dolby Vision",
+                               transfer_characteristics="HLG")
+    assert tags_dict["hdr"] == "DV"
+
+
+@pytest.mark.parametrize("transfers, expected", [
+    (("HLG",), True),
+    ((" hlg ",), True),
+    (("PQ", "HLG / BT.2020 (10-bit)"), True),
+    (("PQ",), False),
+    (("BT.2020 (10-bit)", ""), False),
+    (("", None), False),
+    ((), False),
+])
+def test_is_hlg(transfers, expected):
+    assert tags.is_hlg(*transfers) is expected

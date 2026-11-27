@@ -13,6 +13,8 @@ HDR10PLUS_FORMATS = ("SMPTE ST 2094", "SMPTE ST 2094 APP 4")
 HDR10_FORMATS = ("SMPTE ST 2086",)
 # Parts with no HDR tag of their own: the Blu-ray compatibility of Dolby Vision profile 7
 NEUTRAL_HDR_FORMATS = ("", "BLU-RAY")
+# MediaInfo names of the HLG transfer (ARIB STD-B67)
+HLG_TRANSFERS = ("HLG", "ARIB STD-B67")
 # ABR/2-pass with a VBV limit above this many times the average bitrate: the limit is the maximum of the level
 # (e.g. 50000 for 4.1 Main), not the cap of a streaming service, which stays close to the average (1-3 times)
 VBV_RATIO_MAX = 4
@@ -52,6 +54,16 @@ def hdr_tag(*formats: str) -> tuple[str, list[str]]:
     base = next((tag for tag in ("HDR10+", "HDR10", "HDR") if tag in tags), "")
     tag = " ".join(t for t in ("DV" if "DV" in tags else "", base) if t)
     return tag or "HDR", unknown
+
+
+def is_hlg(*transfers: str) -> bool:
+    """
+    True when one of the MediaInfo transfer characteristics is HLG. Each field can hold more values split on
+    " / " (e.g. 'HLG / BT.2020 (10-bit)': the stream signals BT.2020 in the VUI and HLG in the alternative
+    transfer characteristics SEI), and the HLG of the stream can be only in 'transfer_characteristics_original'
+    """
+    return any(part.strip().upper() in HLG_TRANSFERS
+               for transfer in transfers for part in str(transfer or "").split(" / "))
 
 
 audio_translate = {
@@ -712,6 +724,7 @@ class SearchTags(object):
                 matrix_coefficients = video.get('matrix_coefficients', "")
                 bit_depth = video.get('bit_depth', "")
                 transfer_characteristics = video.get('transfer_characteristics', "")
+                transfer_characteristics_original = video.get('transfer_characteristics_original', "")
                 # Check hdr
                 if hdr_format_commercial or hdr_format:
                     hdr, unknown = hdr_tag(hdr_format_commercial, hdr_format)
@@ -733,6 +746,9 @@ class SearchTags(object):
                     return {category: hdr}
                 else:
                     if "2020" in colour_primaries and "2020" in matrix_coefficients:
+                        # HLG has no HDR metadata, so MediaInfo has no HDR format: only the transfer tells it
+                        if is_hlg(transfer_characteristics, transfer_characteristics_original):
+                            return {category: 'HLG'}
                         if bit_depth == 10 and transfer_characteristics.strip() == 'PQ':
                             return {category: 'PQ10'}
                         else:
